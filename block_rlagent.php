@@ -41,17 +41,29 @@ class block_rlagent extends block_base {
      * Gets the content for this block
      */
     function get_content() {
-        global $CFG;
+        global $CFG, $DB;
 
         if ($this->content !== NULL) {
             return $this->content;
         }
 
-        $text = get_string('noupdate', $this->blockname);
 
-        $link = '<a href="'. $CFG->wwwroot .'/admin/settings.php?section=blocksettingrlagent">'
-              . get_string('settings', $this->blockname) .'</a>';
-        $text = $text ."<br />\n". $link;
+        $select = 'status = 0 AND scheduleddate >= '. time();
+        $records = $DB->get_records_select('block_rlagent_schedule', $select, array(), 'scheduleddate', '*', 0, 1);
+
+        if (sizeof($records) == 0) {
+            $text = get_string('noupdate', $this->blockname);
+        } else {
+            $record = reset($records);
+            $date = date('g:i:s A \o\n l, \t\h\e jS \of F, Y', $record->scheduleddate);
+            $text = get_string('nextupdate', $this->blockname, $date);
+        }
+
+        $settings = '<div style="float:left"><a href="'. $CFG->wwwroot .'/admin/settings.php?section=blocksettingrlagent">'
+              . get_string('settings', $this->blockname) .'</a></div>';
+        $schedule = '<div style="float:right"><a href="'. $CFG->wwwroot .'/block/rlagent/schedule.php">'
+              . get_string('schedule', $this->blockname) .'</a></div>';
+        $text = $text ."<br />\n". $settings . $schedule .'<br style="clear: both" />';
 
         $this->content = new stdClass;
         $this->content->text = $text;

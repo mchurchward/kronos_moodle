@@ -32,6 +32,7 @@ $string['nextupdate'] = 'The next update is scheduled for {$a}';
 $string['noupdate'] = 'No update currently scheduled';
 $string['recipients'] = 'Recipients';
 $string['recipientsdesc'] = 'List of email addresses to receive notification emails';
+$string['schedule'] = 'Schedule';
 $string['settings'] = 'Settings';
 $string['updatedisabled'] = 'Updates have been disabled';
 $string['updateend'] = 'Update Block End';
