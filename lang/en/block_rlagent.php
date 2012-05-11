@@ -34,6 +34,7 @@ $string['recipients'] = 'Recipients';
 $string['recipientsdesc'] = 'List of email addresses to receive notification emails';
 $string['schedule'] = 'Schedule';
 $string['settings'] = 'Settings';
+$string['siteadminonly'] = 'This page is for site administrators only.';
 $string['updatedisabled'] = 'Updates have been disabled';
 $string['updateend'] = 'Update Block End';
 $string['updateenddesc'] = 'The end of the maintenance period when updates can be performed.';

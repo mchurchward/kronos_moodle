@@ -43,9 +43,14 @@ class block_rlagent extends block_base {
     function get_content() {
         global $CFG, $DB;
 
+        if (!has_capability('moodle/site:config', get_context_instance(CONTEXT_SYSTEM))) {
+            return '';
+        }
+
         if ($this->content !== NULL) {
             return $this->content;
         }
+
 
 
         $select = 'status = 0 AND scheduleddate >= '. time();
@@ -61,7 +66,7 @@ class block_rlagent extends block_base {
 
         $settings = '<div style="float:left"><a href="'. $CFG->wwwroot .'/admin/settings.php?section=blocksettingrlagent">'
               . get_string('settings', $this->blockname) .'</a></div>';
-        $schedule = '<div style="float:right"><a href="'. $CFG->wwwroot .'/block/rlagent/schedule.php">'
+        $schedule = '<div style="float:right"><a href="'. $CFG->wwwroot .'/blocks/rlagent/schedule.php">'
               . get_string('schedule', $this->blockname) .'</a></div>';
         $text = $text ."<br />\n". $settings . $schedule .'<br style="clear: both" />';
 

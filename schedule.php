@@ -1,0 +1,54 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * Remote Learner Agent Schedule
+ *
+ * @package    blocks
+ * @subpackage rlagent
+ * @author     Remoter-Learner.net Inc
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright  (c) 2012 Remote Learner.net Inc http://www.remote-learner.net
+ */
+
+require('../../config.php');
+require($CFG->libdir .'/tablelib.php');
+require(dirname(__FILE__) .'/lib/table_schedule.php');
+
+require_login(SITEID);
+
+$PAGE->set_url('/blocks/community/communitycourse.php');
+$PAGE->set_heading($SITE->fullname);
+$PAGE->set_pagelayout('general');
+
+if (!has_capability('moodle/site:config', get_context_instance(CONTEXT_SYSTEM))) {
+    print_error('siteadminonly');
+}
+
+$fields  = 'id, scheduleddate, originaldate, startdate, enddate, description, status, log';
+$from    = 'mdl_block_rlagent_schedule';
+$columns = array('scheduleddate', 'originaldate', 'startdate', 'enddate', 'description', 'status', 'log');
+$headers = array('Scheduled Date', 'Original Date', 'Start Date', 'End Date', 'Description', 'Status', 'Log');
+
+$table = new table_schedule('scheduled_update_table');
+$table->set_sql($fields, $from, '1');
+$table->define_baseurl($CFG->wwwroot .'/blocks/rlagent/schedule.php');
+$table->define_columns($columns);
+$table->define_headers($headers);
+
+echo $OUTPUT->header();
+$table->out(10, false);
+echo $OUTPUT->footer();
