@@ -30,7 +30,7 @@ require(dirname(__FILE__) .'/lib/table_schedule.php');
 
 require_login(SITEID);
 
-$PAGE->set_url('/blocks/community/communitycourse.php');
+$PAGE->set_url('/blocks/rlagent/schedule.php');
 $PAGE->set_heading($SITE->fullname);
 $PAGE->set_pagelayout('general');
 

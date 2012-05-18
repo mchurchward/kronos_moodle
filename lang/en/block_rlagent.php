@@ -26,17 +26,25 @@
 
 $string['pluginname'] = 'RL Agent';
 
+$string['cancelled'] = 'Cancelled';
+$string['completed'] = 'Completed';
+$string['defaultdate'] = 'Default date and time: {$a}';
 $string['disable'] = 'Disable';
 $string['disabledesc'] = 'Disabling automatic updates will prevent the automatic application of bug fixes and security updates.';
+$string['error'] = 'Error';
 $string['nextupdate'] = 'The next update is scheduled for {$a}';
+$string['notstarted'] = 'Not Started';
 $string['noupdate'] = 'No update currently scheduled';
 $string['recipients'] = 'Recipients';
 $string['recipientsdesc'] = 'List of email addresses to receive notification emails';
 $string['schedule'] = 'Schedule';
+$string['scheduleddate'] = 'Scheduled date and time: {$a}';
 $string['settings'] = 'Settings';
 $string['siteadminonly'] = 'This page is for site administrators only.';
+$string['skipped'] = 'Skipped';
 $string['updatedisabled'] = 'Updates have been disabled';
 $string['updateend'] = 'Update Block End';
 $string['updateenddesc'] = 'The end of the maintenance period when updates can be performed.';
+$string['updateperiod'] = 'Update period from {$a->start} to {$a->end}';
 $string['updatestart'] = 'Update Block Start';
 $string['updatestartdesc'] = 'The start of the maintenance period when updates can be performed.';

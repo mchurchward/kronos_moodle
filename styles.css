@@ -1,0 +1,15 @@
+#page-blocks-rlagent-schedule table.flexible {
+	width: 80%;
+}
+
+#page-blocks-rlagent-schedule div.event {
+	background: #FAFAFA;
+	padding: 10px;
+	border: 1px solid black;
+}
+
+#page-blocks-rlagent-schedule div.event div.title {
+	font-size: 125%;
+	line-height: 125%;
+	font-weight: bolder;
+}
