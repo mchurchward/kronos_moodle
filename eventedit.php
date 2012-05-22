@@ -25,31 +25,59 @@
  */
 
 require('../../config.php');
-require($CFG->libdir .'/tablelib.php');
-require(dirname(__FILE__) .'/lib/table_schedule.php');
+require('lib/form_event.php');
 
 require_login(SITEID);
 
 $PAGE->set_url('/blocks/rlagent/schedule.php');
 $PAGE->set_heading($SITE->fullname);
 $PAGE->set_title(get_string('pluginname', 'block_rlagent'));
-$PAGE->set_pagelayout('general');
+$PAGE->set_pagelayout('popup');
 
 if (!has_capability('moodle/site:config', get_context_instance(CONTEXT_SYSTEM))) {
     print_error('siteadminonly');
 }
 
-$fields  = 'id, scheduleddate, originaldate, startdate, enddate, description, status, log';
-$from    = 'mdl_block_rlagent_schedule';
-$columns = array('scheduleddate', 'originaldate', 'startdate', 'enddate', 'description', 'status', 'log');
-$headers = array('Scheduled Date', 'Original Date', 'Start Date', 'End Date', 'Description', 'Status', 'Log');
+$done   = false;
+$id     = required_param('id', PARAM_INT);
 
-$table = new table_schedule('scheduled_update_table');
-$table->set_sql($fields, $from, '1');
-$table->define_baseurl($CFG->wwwroot .'/blocks/rlagent/schedule.php');
-$table->define_columns($columns);
-$table->define_headers($headers);
+$event = $DB->get_record('block_rlagent_schedule', array('id' => $id));
+
+if (empty($event)) {
+    print_error('eventnotfound', 'block_rlagent');
+}
+
+$data = array();
+$data['id'] = $id;
+$data['name'] = $event->description;
+$data['scheduleddate'] = $event->scheduleddate;
+$data['originaldate']  = userdate($event->originaldate);
+$data['startdate'] = $event->startdate;
+$data['enddate'] = $event->enddate;
+
+$span = new object();
+$span->start = $event->startdate;
+$span->end   = $event->enddate;
+
+$data['updateperiod']  = get_string('updatespan', 'block_rlagent', $span);
+
+$form = new form_event();
+$form->set_data($data);
+
+$data = $form->get_data();
+
+if (!empty($data) && ($data->action = 'update')) {
+    $event->scheduleddate = $data->scheduleddate;
+    $DB->update_record('block_rlagent_schedule', $event);
+    $done = true;
+}
 
 echo $OUTPUT->header();
-$table->out(10, false);
+
+if (! $done) {
+    $form->display();
+} else {
+    echo '<a href="Javascript:self.close();">Close this Window</a>';
+}
+
 echo $OUTPUT->footer();

@@ -39,7 +39,6 @@ class table_schedule extends table_sql {
         self::CANCELLED   => 'cancelled',
     );
 
-    public $dateformat = 'Y-m-d g:i:s A';
     protected $block = 'block_rlagent';
 
     /**
@@ -48,7 +47,7 @@ class table_schedule extends table_sql {
      * @param array $row A row of data
      */
     function col_originaldate($row) {
-        return date($this->dateformat, $row->originaldate);
+        return userdate($row->originaldate);
     }
 
     /**
@@ -57,7 +56,7 @@ class table_schedule extends table_sql {
      * @param array $row A row of data
      */
     function col_scheduleddate($row) {
-        return date($this->dateformat, $row->scheduleddate);
+        return userdate($row->scheduleddate);
     }
 
     /**
@@ -66,7 +65,24 @@ class table_schedule extends table_sql {
      * @param array $row A row of data
      */
     function col_status($row) {
-        return get_string($this->strings[$row->status], $this->block);
+        global $OUTPUT;
+
+        if ($row->status == self::NOT_STARTED) {
+            $text = get_string('change', $this->block);
+
+//          if (ajaxenabled()) {
+//              $link = $text;
+//          } else {
+            $url    = new moodle_url('/blocks/rlagent/eventedit.php', array('id'=>$row->id));
+            $action = new popup_action('click', $url, 'change', array('height' => 400, 'width' => 450));
+            $col   = $OUTPUT->action_link($url, $text, $action, array('title'=>$text));
+//          }
+        } else {
+            $col = get_string('status', $this->block) .' '
+                 . get_string($this->strings[$row->status], $this->block);
+        }
+
+        return $col;
     }
 
     /**
@@ -90,10 +106,8 @@ class table_schedule extends table_sql {
      */
     function print_row($row, $classname = '') {
         static $suppress_lastrow = NULL;
-        static $oddeven = 1;
-        $rowclasses = array('r' . $oddeven);
-        $oddeven = $oddeven ? 0 : 1;
 
+        $rowclasses = array();
         if ($classname) {
             $rowclasses[] = $classname;
         }
@@ -113,17 +127,31 @@ class table_schedule extends table_sql {
 
             $content = array();
             $content[] = html_writer::tag('div', $row[4], array('class' => 'title'));
-            $content[] = html_writer::tag('div', get_string('updateperiod', $this->block, $a));
+
+            $text = get_string('updateperiod', $this->block);
+            $content[] = html_writer::tag('div', $text, array('class' => 'heading clear'));
+
+            $text = get_string('updatespan', $this->block, $a);
+            $content[] = html_writer::tag('div',$text, array('class' => 'value'));
 
             if ($row[0] != $row[1]) {
-                $content[] = html_writer::tag('div', get_string('defaultdate', $this->block, $row[0]));
+                $text = get_string('defaultdate', $this->block);
+                $content[] = html_writer::tag('div', $text,   array('class' => 'heading clear'));
+                $content[] = html_writer::tag('div', $row[0], array('class' => 'value'));
             }
-            $content[] = html_writer::tag('div', get_string('scheduleddate', $this->block, $row[1]));
 
-            if (! empty($log)) {
+            $text = get_string('scheduleddate', $this->block);
+            $content[] = html_writer::tag('div', $text,   array('class' => 'heading clear'));
+            $content[] = html_writer::tag('div', $row[1], array('class' => 'value')
+            );
+
+            $content[] = html_writer::tag('div', $row[5], array('class' => 'status'));
+
+            if (! empty($row[6])) {
                 $log = get_string('log', $this->block) . html_writer::tag('div', $row[6]);
                 $content[] = html_writer::tag('div', $log);
             }
+            $content[] = html_writer::empty_tag('br', array('class' => 'clear'));
             $div  = html_writer::tag('div', implode("\n", $content), array('class' => 'event'));
             echo html_writer::tag('td', $div);
         }

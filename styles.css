@@ -13,3 +13,39 @@
 	line-height: 125%;
 	font-weight: bolder;
 }
+
+#page-blocks-rlagent-schedule div.event div.heading {
+	float: left;
+	width: 12em;
+}
+
+#page-blocks-rlagent-schedule div.event div.value {
+	float: left;
+}
+
+#page-blocks-rlagent-schedule div.event div.change {
+    float: right;
+}
+
+#page-blocks-rlagent-schedule div.event div.status {
+    float: right;
+    padding-left: 1em;
+}
+
+#page-blocks-rlagent-schedule .clear {
+	clear: both;
+}
+
+#page-blocks-rlagent-schedule #popup {
+	margin-top: 8em;
+	padding: 1em;
+}
+
+#page-blocks-rlagent-schedule #popup .mform .fitem .fitemtitle {
+	width: 20%;
+}
+
+#page-blocks-rlagent-schedule #popup .mform .fitem .felement {
+	margin-left: 21%;
+	width: 75%;
+}
