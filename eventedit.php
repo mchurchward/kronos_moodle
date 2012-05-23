@@ -70,6 +70,8 @@ if (!empty($data) && ($data->action = 'update')) {
     $event->scheduleddate = $data->scheduleddate;
     $DB->update_record('block_rlagent_schedule', $event);
     $done = true;
+} else  if ($form->is_cancelled()) {
+    $done = true;
 }
 
 echo $OUTPUT->header();

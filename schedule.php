@@ -30,10 +30,16 @@ require(dirname(__FILE__) .'/lib/table_schedule.php');
 
 require_login(SITEID);
 
+$pluginname = get_string('pluginname', 'block_rlagent');
+$pagetitle  = get_string('scheduledevents', 'block_rlagent');
+
 $PAGE->set_url('/blocks/rlagent/schedule.php');
+$PAGE->set_context(get_context_instance(CONTEXT_SYSTEM));
 $PAGE->set_heading($SITE->fullname);
-$PAGE->set_title(get_string('pluginname', 'block_rlagent'));
+$PAGE->set_title($pluginname);
 $PAGE->set_pagelayout('general');
+$PAGE->navbar->add($pluginname);
+$PAGE->navbar->add($pagetitle);
 
 if (!has_capability('moodle/site:config', get_context_instance(CONTEXT_SYSTEM))) {
     print_error('siteadminonly');
@@ -48,8 +54,9 @@ $table = new table_schedule('scheduled_update_table');
 $table->set_sql($fields, $from, '1');
 $table->define_baseurl($CFG->wwwroot .'/blocks/rlagent/schedule.php');
 $table->define_columns($columns);
-$table->define_headers($headers);
+$table->sortable(true, 'scheduleddate', SORT_DESC);
 
-echo $OUTPUT->header();
+print($OUTPUT->header($pagetitle));
+print($OUTPUT->heading(get_string('scheduledevents', 'block_rlagent')));
 $table->out(10, false);
-echo $OUTPUT->footer();
+print($OUTPUT->footer());

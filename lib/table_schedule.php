@@ -70,13 +70,9 @@ class table_schedule extends table_sql {
         if ($row->status == self::NOT_STARTED) {
             $text = get_string('change', $this->block);
 
-//          if (ajaxenabled()) {
-//              $link = $text;
-//          } else {
             $url    = new moodle_url('/blocks/rlagent/eventedit.php', array('id'=>$row->id));
             $action = new popup_action('click', $url, 'change', array('height' => 400, 'width' => 450));
             $col   = $OUTPUT->action_link($url, $text, $action, array('title'=>$text));
-//          }
         } else {
             $col = get_string('status', $this->block) .' '
                  . get_string($this->strings[$row->status], $this->block);
@@ -96,13 +92,16 @@ class table_schedule extends table_sql {
     /**
      * Override row printing to print nice rows
      *
-     * $row[0] = original date
-     * $row[1] = scheduled date
+     * $row[0] = scheduled date
+     * $row[1] = original date
      * $row[2] = period start date
      * $row[3] = period end date
      * $row[4] = description/title
      * $row[5] = status
      * $row[6] = log
+     *
+     * @param array  $row       The row to print
+     * @param string $classname A class to be applied to the row
      */
     function print_row($row, $classname = '') {
         static $suppress_lastrow = NULL;
@@ -137,22 +136,23 @@ class table_schedule extends table_sql {
             if ($row[0] != $row[1]) {
                 $text = get_string('defaultdate', $this->block);
                 $content[] = html_writer::tag('div', $text,   array('class' => 'heading clear'));
-                $content[] = html_writer::tag('div', $row[0], array('class' => 'value'));
+                $content[] = html_writer::tag('div', $row[1], array('class' => 'value'));
             }
 
             $text = get_string('scheduleddate', $this->block);
             $content[] = html_writer::tag('div', $text,   array('class' => 'heading clear'));
-            $content[] = html_writer::tag('div', $row[1], array('class' => 'value')
+            $content[] = html_writer::tag('div', $row[0], array('class' => 'value')
             );
 
             $content[] = html_writer::tag('div', $row[5], array('class' => 'status'));
 
             if (! empty($row[6])) {
-                $log = get_string('log', $this->block) . html_writer::tag('div', $row[6]);
-                $content[] = html_writer::tag('div', $log);
+                $content[] = html_writer::tag('div', get_string('log', $this->block), array('class' => 'heading clear'));
+                $content[] = html_writer::tag('div', $row[6], array('class' => 'log'));
             }
             $content[] = html_writer::empty_tag('br', array('class' => 'clear'));
-            $div  = html_writer::tag('div', implode("\n", $content), array('class' => 'event'));
+            $div  = html_writer::tag('div', implode("\n", $content), array('class' => 'event content'));
+            $div  = html_writer::tag('div', $div, array('class' => 'block'));
             echo html_writer::tag('td', $div);
         }
 
