@@ -1,3 +1,25 @@
+.region-content .block_rlagent .content {
+    padding: 0.5em;
+}
+.block_rlagent .warning {
+    float: left;
+}
+.block_rlagent .error {
+	width: 9em;
+	float: right;
+    color: #A00;
+}
+
+.block_rlagent .event {
+    padding-top: 1em;
+	text-align: center;
+}
+
+.block_rlagent .clear,
+#page-blocks-rlagent-schedule .clear {
+    clear: both;
+}
+
 #page-blocks-rlagent-schedule table.flexible {
     width: 80%;
 }
@@ -39,10 +61,6 @@
     border: solid 1px #999999;
     padding: 1em;
     overflow: auto;
-}
-
-#page-blocks-rlagent-schedule .clear {
-    clear: both;
 }
 
 #page-blocks-rlagent-schedule #popup {

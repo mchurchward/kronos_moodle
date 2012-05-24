@@ -26,13 +26,15 @@
 
 class table_schedule extends table_sql {
     const NOT_STARTED = 0;
-    const COMPLETED   = 1;
-    const ERROR       = 2;
-    const SKIPPED     = 3;
-    const CANCELLED   = 4;
+    const IN_PROGRESS = 1;
+    const COMPLETED   = 2;
+    const ERROR       = 3;
+    const SKIPPED     = 4;
+    const CANCELLED   = 5;
 
     protected $strings = array(
         self::NOT_STARTED => 'notstarted',
+        self::IN_PROGRESS => 'inprogress',
         self::COMPLETED   => 'completed',
         self::ERROR       => 'error',
         self::SKIPPED     => 'skipped',

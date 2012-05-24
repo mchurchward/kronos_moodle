@@ -18,8 +18,8 @@ defined('MOODLE_INTERNAL') || die;
 
 $block = 'block_rlagent';
 
-$settings->add(new admin_setting_configcheckbox($block .'_enabled', get_string('disable', $block),
-               get_string('disabledesc', $block), false));
+$settings->add(new admin_setting_configcheckbox($block .'_enabled', get_string('enable', $block),
+               get_string('disabledesc', $block), true));
 
 $settings->add(new admin_setting_configtime($block .'_starthour', $block .'_startmin', get_string('updatestart', $block),
                get_string('updatestartdesc', $block), array('h' => '0', 'm' => '00')));

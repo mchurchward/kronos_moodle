@@ -56,19 +56,29 @@ class block_rlagent extends block_base {
         $select = 'status = 0 AND scheduleddate >= '. time();
         $records = $DB->get_records_select('block_rlagent_schedule', $select, array(), 'scheduleddate', '*', 0, 1);
 
-        if (sizeof($records) == 0) {
+        $error = '';
+        if (! empty($CFG->block_rlagent_error)) {
+            $error = '<span class="warning">'. get_string('warning', $this->blockname) .'</span>'
+                   .' <span class="error">'. get_string($CFG->block_rlagent_error, $this->blockname)
+                   . '</span>';
+        }
+
+        if (empty($CFG->block_rlagent_enabled)) {
+            $text = get_string('disabled', $this->blockname);
+        } else if (sizeof($records) == 0) {
             $text = get_string('noupdate', $this->blockname);
         } else {
             $record = reset($records);
-            $date = date('g:i:s A \o\n l, \t\h\e jS \of F, Y', $record->scheduleddate);
-            $text = get_string('nextupdate', $this->blockname, $date);
+            $date = str_replace(',', ',<br />', userdate($record->scheduleddate));
+            $text = get_string('nextupdate', $this->blockname, $date) .'<br />'. $date;
         }
 
         $settings = '<div style="float:left"><a href="'. $CFG->wwwroot .'/admin/settings.php?section=blocksettingrlagent">'
               . get_string('settings', $this->blockname) .'</a></div>';
         $schedule = '<div style="float:right"><a href="'. $CFG->wwwroot .'/blocks/rlagent/schedule.php">'
               . get_string('schedule', $this->blockname) .'</a></div>';
-        $text = $text ."<br />\n". $settings . $schedule .'<br style="clear: both" />';
+        $text = $error .'<div class="event clear">'. $text ."</div>\n". $settings . $schedule
+              .'<br class="clear" />';
 
         $this->content = new stdClass;
         $this->content->text = $text;
