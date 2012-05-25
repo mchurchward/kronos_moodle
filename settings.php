@@ -27,6 +27,9 @@ $settings->add(new admin_setting_configtime($block .'_starthour', $block .'_star
 $settings->add(new admin_setting_configtime($block .'_endhour', $block .'_endmin', get_string('updateend', $block),
                get_string('updateenddesc', $block), array('h' => '4', 'm' => '00')));
 
+$settings->add(new admin_setting_configcheckbox($block .'_notify_on_success', get_string('notifyonsuccess', $block),
+               get_string('notifyonsuccessdesc', $block), false));
+
 $admins = get_admins();
 $addresses = array();
 foreach ($admins as $admin) {
