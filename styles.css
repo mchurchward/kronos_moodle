@@ -22,6 +22,7 @@
 
 #page-blocks-rlagent-schedule table.flexible {
     width: 80%;
+    margin: 0 auto;
 }
 
 #page-blocks-rlagent-schedule div.event {
