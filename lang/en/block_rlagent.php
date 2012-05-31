@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component 'block_admin_bookmarks', language 'en', branch 'MOODLE_20_STABLE'
+ * Strings for component 'block_rlagent', language 'en'
  *
  * @package    blocks
  * @subpackage block_rladmin
@@ -28,13 +28,17 @@ $string['pluginname'] = 'RL Agent';
 
 $string['cancelled'] = 'Cancelled';
 $string['change'] = 'Change';
-$string['changedfiles'] = 'Changed files detected.  Updates disabled.';
 $string['completed'] = 'Completed';
 $string['defaultdate'] = 'Default time:';
 $string['enable'] = 'Enable';
 $string['disabled'] = 'The RL Agent block has been manually disabled, no updates will occur until the Agent is enabled.';
 $string['disabledesc'] = 'Disabling automatic updates will prevent the automatic application of bug fixes and security updates.';
 $string['error'] = 'Error';
+$string['error_brokengit'] = 'There was an error while checking your git status.';
+$string['error_changedfiles'] = 'Your Moodle files have unapproved changes.';
+$string['error_conflicts'] = 'Your Moodle repository has unresolved conflicts.';
+$string['error_diverged'] = 'Your Moodle repository has unapproved changes.';
+$string['error_updatefailed'] = 'An error occurred during the update process.';
 $string['eventnotfound'] = 'Sorry, that scheduled update could be found in the database';
 $string['inprogress'] = 'In Progress';
 $string['log'] = 'Log:';

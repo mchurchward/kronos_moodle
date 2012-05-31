@@ -60,6 +60,7 @@ class block_rlagent extends block_base {
         if (! empty($CFG->block_rlagent_error)) {
             $error = '<span class="warning">'. get_string('warning', $this->blockname) .'</span>'
                    .' <span class="error">'. get_string($CFG->block_rlagent_error, $this->blockname)
+                   . '</br>'. get_string('updatedisabled', $this->blockname)
                    . '</span>';
         }
 
