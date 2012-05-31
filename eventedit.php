@@ -74,12 +74,13 @@ if (!empty($data) && ($data->action = 'update')) {
     $done = true;
 }
 
-echo $OUTPUT->header();
+print($OUTPUT->header());
 
 if (! $done) {
     $form->display();
 } else {
-    echo '<a href="Javascript:self.close();">Close this Window</a>';
+    print('<div class="close"><a href="Javascript:self.close();">'
+        . get_string('closewindow') .'</a></div>');
 }
 
-echo $OUTPUT->footer();
+print($OUTPUT->footer());

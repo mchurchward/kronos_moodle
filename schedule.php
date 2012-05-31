@@ -24,9 +24,9 @@
  * @copyright  (c) 2012 Remote Learner.net Inc http://www.remote-learner.net
  */
 
-require('../../config.php');
-require($CFG->libdir .'/tablelib.php');
-require(dirname(__FILE__) .'/lib/table_schedule.php');
+require_once('../../config.php');
+require_once($CFG->libdir .'/tablelib.php');
+require_once(dirname(__FILE__) .'/lib/table_schedule.php');
 
 require_login(SITEID);
 

@@ -23,6 +23,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @copyright  (c) 2012 Remote Learner.net Inc http://www.remote-learner.net
  */
+require_once($CFG->libdir .'/tablelib.php');
+require_once(dirname(__FILE__) .'/lib/table_schedule.php');
 
 /**
  * The Remote Learner agent block class
@@ -35,6 +37,70 @@ class block_rlagent extends block_base {
      */
     function applicable_formats() {
         return array('site' => true);
+    }
+
+    /**
+     * cron - Sends notification emails
+     *
+     * @return boolean true if all notifications were sent succesfully
+     */
+    function cron() {
+        global $CFG, $DB;
+
+        // Mark old updates as Skipped.
+        $query = 'UPDATE {block_rlagent_schedule} SET notification='. table_schedule::NOT_SENT
+               .' WHERE status != '. table_schedule::NOT_STARTED
+               .' AND notification='. table_schedule::READY .' AND rundate < '. (time() - 3600);
+        $DB->execute($query);
+
+        $select = 'status NOT IN ('. table_schedule::NOT_STARTED .', '. table_schedule::IN_PROGRESS .')'
+                .' AND notification='. table_schedule::READY;
+        $records = $DB->get_records_select('block_rlagent_schedule', $select);
+
+        // There should usually only be one update.
+        foreach ($records as $record) {
+
+            if ($record->status == table_schedule::COMPLETED && empty($CFG->block_rlagent_notify_on_success)) {
+                continue;
+            }
+
+            $data = new stdclass;
+            $data->www = $CFG->wwwroot;
+            $data->log = $record->log;
+
+            if ($record->status == table_schedule::ERROR) {
+                if (! empty($CFG->block_rlagent_error)) {
+                    $data->log = get_string($CFG->block_rlagent_error, $this->blockname);
+                }
+            }
+
+            $messages = array(
+                table_schedule::COMPLETED => 'completed',
+                table_schedule::ERROR     => 'error',
+                table_schedule::SKIPPED   => 'skipped',
+            );
+
+            $subject = get_string('email_sub_'.  $messages[$record->status], $this->blockname);
+            $message = get_string('email_text_'. $messages[$record->status], $this->blockname, $data);
+            $html    = get_string('email_html_'. $messages[$record->status], $this->blockname, $data);
+
+            $emails = explode("\n", $CFG->block_rlagent_recipients);
+            $users  = $DB->get_records_list('user', 'email', $emails);
+
+            foreach ($users as $user) {
+                ob_start();
+                $log = $user->email .' at '. userdate(time());
+                if (email_to_user($user, 'RL Agent', $subject, $message, $html)) {
+                    $log = "\nEmail sent to $log.";
+                } else {
+                    $log = "\nFailed to send email to $log:\n". ob_get_contents();
+                }
+                $record->log .= $log;
+                ob_end_flush();
+            }
+            $record->notification = table_schedule::SENT;
+            $DB->update_record('block_rlagent_schedule', $record);
+        }
     }
 
     /**

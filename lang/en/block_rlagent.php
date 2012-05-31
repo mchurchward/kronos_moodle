@@ -31,6 +31,17 @@ $string['change'] = 'Change';
 $string['completed'] = 'Completed';
 $string['defaultdate'] = 'Default time:';
 $string['enable'] = 'Enable';
+$string['email_text_completed'] = 'Your Moodle site ({$a->www}) has been updated!';
+$string['email_text_error'] = 'An error occurred during the automatic update of your site ({$a->www}):
+{$a->log}';
+$string['email_text_skipped'] = 'An update to your Moodle site ({$a->www}) was skipped:
+{$a->log}';
+$string['email_html_completed'] = '';
+$string['email_html_error'] = '';
+$string['email_html_skipped'] = '';
+$string['email_sub_completed'] = 'Successful Site Update';
+$string['email_sub_error'] = 'Error During Site Update';
+$string['email_sub_skipped'] = 'Site Update Skipped';
 $string['disabled'] = 'The RL Agent block has been manually disabled, no updates will occur until the Agent is enabled.';
 $string['disabledesc'] = 'Disabling automatic updates will prevent the automatic application of bug fixes and security updates.';
 $string['error'] = 'Error';
@@ -52,7 +63,7 @@ $string['notinrange'] = 'The selected date does not fall within the specified up
 $string['notstarted'] = 'Not Started';
 $string['noupdate'] = 'No update currently scheduled';
 $string['recipients'] = 'Recipients';
-$string['recipientsdesc'] = 'List of email addresses to receive notification emails';
+$string['recipientsdesc'] = 'List of email addresses to receive notification emails (one per line)';
 $string['save'] = 'Save';
 $string['schedule'] = 'Schedule';
 $string['scheduleddate'] = 'Scheduled time:';

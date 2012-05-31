@@ -32,6 +32,10 @@ class table_schedule extends table_sql {
     const SKIPPED     = 4;
     const CANCELLED   = 5;
 
+    const READY       = 0;
+    const SENT        = 1;
+    const NOT_SENT    = 2;
+
     protected $strings = array(
         self::NOT_STARTED => 'notstarted',
         self::IN_PROGRESS => 'inprogress',
