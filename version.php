@@ -25,6 +25,6 @@
  */
 
 $plugin->version   = 2012040100;
-$plugin->requires  = 2011033006;
+$plugin->requires  = 2011120500.00;
 $plugin->component = 'block_rlagent';
 $plugin->cron      = 300;
