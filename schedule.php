@@ -37,7 +37,7 @@ $PAGE->set_url('/blocks/rlagent/schedule.php');
 $PAGE->set_context(get_context_instance(CONTEXT_SYSTEM));
 $PAGE->set_heading($SITE->fullname);
 $PAGE->set_title($pluginname);
-$PAGE->set_pagelayout('general');
+$PAGE->set_pagelayout('standard');
 $PAGE->navbar->add($pluginname);
 $PAGE->navbar->add($pagetitle);
 
