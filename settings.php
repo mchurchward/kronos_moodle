@@ -36,5 +36,5 @@ foreach ($admins as $admin) {
     $addresses[] = $admin->email;
 }
 $settings->add(new admin_setting_configtextarea($block .'_recipients', get_string('recipients', $block),
-               get_string('recipientsdesc', $block), implode(', ', $addresses)));
+               get_string('recipientsdesc', $block), implode("\n", $addresses)));
 
