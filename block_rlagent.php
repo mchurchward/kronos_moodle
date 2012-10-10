@@ -60,45 +60,57 @@ class block_rlagent extends block_base {
         // There should usually only be one update.
         foreach ($records as $record) {
 
-            if ($record->status == table_schedule::COMPLETED && empty($CFG->block_rlagent_notify_on_success)) {
-                continue;
-            }
+            if (($record->status == table_schedule::COMPLETED) && empty($CFG->block_rlagent_notify_on_success)) {
+                $record->notification = table_schedule::NOT_SENT;
+                $record->log .= "\nNotify on success disabled.  Email not sent.";
 
-            $data = new stdclass;
-            $data->www = $CFG->wwwroot;
-            $data->log = $record->log;
+            } else {
 
-            if ($record->status == table_schedule::ERROR) {
-                if (! empty($CFG->block_rlagent_error)) {
-                    $data->log = get_string($CFG->block_rlagent_error, $this->blockname);
+                $data = new stdclass;
+                $data->www = $CFG->wwwroot;
+                $data->log = $record->log;
+
+                if ($record->status == table_schedule::ERROR) {
+                    if (! empty($CFG->block_rlagent_error)) {
+                        $data->log = get_string($CFG->block_rlagent_error, $this->blockname);
+                    }
                 }
-            }
 
-            $messages = array(
-                table_schedule::COMPLETED => 'completed',
-                table_schedule::ERROR     => 'error',
-                table_schedule::SKIPPED   => 'skipped',
-            );
+                $messages = array(
+                    table_schedule::COMPLETED => 'completed',
+                    table_schedule::ERROR     => 'error',
+                    table_schedule::SKIPPED   => 'skipped',
+                );
 
-            $subject = get_string('email_sub_'.  $messages[$record->status], $this->blockname);
-            $message = get_string('email_text_'. $messages[$record->status], $this->blockname, $data);
-            $html    = get_string('email_html_'. $messages[$record->status], $this->blockname, $data);
+                $subject = get_string('email_sub_'.  $messages[$record->status], $this->blockname);
+                $message = get_string('email_text_'. $messages[$record->status], $this->blockname, $data);
+                $html    = get_string('email_html_'. $messages[$record->status], $this->blockname, $data);
 
-            $emails = explode("\n", $CFG->block_rlagent_recipients);
-            $users  = $DB->get_records_list('user', 'email', $emails);
+                $emails = explode("\n", $CFG->block_rlagent_recipients);
 
-            foreach ($users as $user) {
-                ob_start();
-                $log = $user->email .' at '. userdate(time());
-                if (email_to_user($user, 'RL Agent', $subject, $message, $html)) {
-                    $log = "\nEmail sent to $log.";
-                } else {
-                    $log = "\nFailed to send email to $log:\n". ob_get_contents();
+                $users = $this->get_email_users($emails);
+
+                foreach ($users as $user) {
+                    ob_start();
+                    $log = $user->email .' at '. userdate(time());
+                    if (email_to_user($user, 'RL Agent', $subject, $message, $html)) {
+                        $log = "\nEmail sent to $log.";
+                    } else {
+                        $log = "\nFailed to send email to $log:\n". ob_get_contents();
+                    }
+                    $record->log .= $log;
+                    ob_end_flush();
                 }
-                $record->log .= $log;
-                ob_end_flush();
+
+                $record->notification = table_schedule::SENT;
+
+                if (empty($users)) {
+                    $record->notification = table_schedule::NOT_SENT;
+                    $record->log .= "\nNo valid email addresses configured.  Email not sent.";
+                }
+
             }
-            $record->notification = table_schedule::SENT;
+
             $DB->update_record('block_rlagent_schedule', $record);
         }
     }
@@ -152,6 +164,39 @@ class block_rlagent extends block_base {
         $this->content->footer = '';
 
         return $this->content;
+    }
+
+    /**
+     * Get or make the user objects for the provided email addresses
+     */
+    function get_email_users($emails) {
+        global $DB;
+
+        $found = array();
+
+        foreach ($emails as $key => $email) {
+            $email = trim($email);
+            $emails[$key] = $email;
+            $found[$email] = false;
+        }
+
+        $users  = $DB->get_records_list('user', 'email', $emails);
+
+        foreach ($users as $user) {
+            $found[$user->email] = true;
+        }
+
+        foreach ($found as $email => $exist) {
+
+            if (! $exist) {
+                $user = new stdClass();
+                $user->id    = 0;
+                $user->email = $email;
+                $users[] = $user;
+            }
+        }
+
+        return $users;
     }
 
     /**
