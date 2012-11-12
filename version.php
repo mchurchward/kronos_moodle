@@ -28,4 +28,4 @@ $plugin->version   = 2012040100;
 $plugin->requires  = 2012062500.00;
 $plugin->component = 'block_rlagent';
 $plugin->cron      = 300;
-$plugin->release   = '2.3.0';
+$plugin->release   = '2.3.1.0';
