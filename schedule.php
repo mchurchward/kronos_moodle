@@ -46,7 +46,7 @@ if (!has_capability('moodle/site:config', get_context_instance(CONTEXT_SYSTEM)))
 }
 
 $fields  = 'id, scheduleddate, originaldate, startdate, enddate, description, status, log';
-$from    = 'mdl_block_rlagent_schedule';
+$from    = $CFG->prefix.'block_rlagent_schedule';
 $columns = array('scheduleddate', 'originaldate', 'startdate', 'enddate', 'description', 'status', 'log');
 $headers = array('Scheduled Date', 'Original Date', 'Start Date', 'End Date', 'Description', 'Status', 'Log');
 
