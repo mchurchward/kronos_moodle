@@ -15,17 +15,24 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details
+ * RL Agent Capabilities
  *
- * @package    block
- * @subpackage rlagent
+ * @package    blocks
+ * @subpackage block_rlagent
  * @author     Remoter-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (c) 2012 Remote Learner.net Inc http://www.remote-learner.net
+ * @copyright  (c) 2013 Remote Learner.net Inc http://www.remote-learner.net
  */
+$capabilities = array(
+    'block/rlagent:addinstance' => array(
+        'riskbitmask' => RISK_CONFIG | RISK_DATALOSS,
 
-$plugin->version   = 2013021500;
-$plugin->requires  = 2012120300.00;
-$plugin->component = 'block_rlagent';
-$plugin->cron      = 300;
-$plugin->release   = '2.4.0.0';
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_BLOCK,
+        'archetypes' => array(
+            'manager' => CAP_ALLOW
+        ),
+
+        'clonepermissionsfrom' => 'moodle/site:manageblocks'
+    ),
+);
