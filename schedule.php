@@ -34,14 +34,14 @@ $pluginname = get_string('pluginname', 'block_rlagent');
 $pagetitle  = get_string('scheduledevents', 'block_rlagent');
 
 $PAGE->set_url('/blocks/rlagent/schedule.php');
-$PAGE->set_context(get_context_instance(CONTEXT_SYSTEM));
+$PAGE->set_context(context_system::instance());
 $PAGE->set_heading($SITE->fullname);
 $PAGE->set_title($pluginname);
 $PAGE->set_pagelayout('standard');
 $PAGE->navbar->add($pluginname);
 $PAGE->navbar->add($pagetitle);
 
-if (!has_capability('moodle/site:config', get_context_instance(CONTEXT_SYSTEM))) {
+if (!has_capability('moodle/site:config', context_system::instance())) {
     print_error('siteadminonly');
 }
 

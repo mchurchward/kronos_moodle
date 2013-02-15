@@ -34,7 +34,7 @@ $PAGE->set_heading($SITE->fullname);
 $PAGE->set_title(get_string('pluginname', 'block_rlagent'));
 $PAGE->set_pagelayout('popup');
 
-if (!has_capability('moodle/site:config', get_context_instance(CONTEXT_SYSTEM))) {
+if (!has_capability('moodle/site:config', context_system::instance())) {
     print_error('siteadminonly');
 }
 
