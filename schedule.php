@@ -51,7 +51,7 @@ $columns = array('scheduleddate', 'originaldate', 'startdate', 'enddate', 'descr
 $headers = array('Scheduled Date', 'Original Date', 'Start Date', 'End Date', 'Description', 'Status', 'Log');
 
 $table = new table_schedule('scheduled_update_table');
-$table->set_sql($fields, $from, '1');
+$table->set_sql($fields, $from, 'true');
 $table->define_baseurl($CFG->wwwroot .'/blocks/rlagent/schedule.php');
 $table->define_columns($columns);
 $table->sortable(true, 'scheduleddate', SORT_DESC);
