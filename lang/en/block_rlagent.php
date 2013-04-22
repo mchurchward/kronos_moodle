@@ -64,6 +64,7 @@ $string['notstarted'] = 'Not Started';
 $string['noupdate'] = 'No update currently scheduled';
 $string['recipients'] = 'Recipients';
 $string['recipientsdesc'] = 'List of email addresses to receive notification emails (one per line)';
+$string['rlagent:addinstance'] = 'Add a new RL Agent block';
 $string['save'] = 'Save';
 $string['schedule'] = 'Schedule';
 $string['scheduleddate'] = 'Scheduled time:';
