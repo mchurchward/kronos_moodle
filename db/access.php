@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * RL Agent Capabilities
+ * RL Update Manager Capabilities
  *
  * @package    blocks
  * @subpackage block_rlagent

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Remote Learner Agent Schedule
+ * Remote Learner Update Manager Schedule
  *
  * @package    blocks
  * @subpackage rlagent

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="blocks/search/db" VERSION="20120531" COMMENT="XMLDB file for RL Agent"
+<XMLDB PATH="blocks/search/db" VERSION="20120531" COMMENT="XMLDB file for RL Update Manager"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
   <TABLES>

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Remote Learner Agent Block.
+ * Remote Learner Update Manager Block.
  *
  * @package    blocks
  * @subpackage rlagent
@@ -93,7 +93,7 @@ class block_rlagent extends block_base {
                 foreach ($users as $user) {
                     ob_start();
                     $log = $user->email .' at '. userdate(time());
-                    if (email_to_user($user, 'RL Agent', $subject, $message, $html)) {
+                    if (email_to_user($user, 'RL Update Manager', $subject, $message, $html)) {
                         $log = "\nEmail sent to $log.";
                     } else {
                         $log = "\nFailed to send email to $log:\n". ob_get_contents();

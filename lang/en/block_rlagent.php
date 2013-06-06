@@ -24,7 +24,7 @@
  * @copyright  (c) 2012 Remote Learner.net Inc http://www.remote-learner.net
  */
 
-$string['pluginname'] = 'RL Agent';
+$string['pluginname'] = 'RL Update Manager';
 
 $string['cancelled'] = 'Cancelled';
 $string['change'] = 'Change';
@@ -42,7 +42,7 @@ $string['email_html_skipped'] = '';
 $string['email_sub_completed'] = 'Successful Site Update';
 $string['email_sub_error'] = 'Error During Site Update';
 $string['email_sub_skipped'] = 'Site Update Skipped';
-$string['disabled'] = 'The RL Agent block has been manually disabled, no updates will occur until the Agent is enabled.';
+$string['disabled'] = 'The RL Update Manager block has been manually disabled, no updates will occur until the block is enabled.';
 $string['disabledesc'] = 'Disabling automatic updates will prevent the automatic application of bug fixes and security updates.';
 $string['error'] = 'Error';
 $string['error_brokengit'] = 'There was an error while checking your git status.';
@@ -64,7 +64,7 @@ $string['notstarted'] = 'Not Started';
 $string['noupdate'] = 'No update currently scheduled';
 $string['recipients'] = 'Recipients';
 $string['recipientsdesc'] = 'List of email addresses to receive notification emails (one per line)';
-$string['rlagent:addinstance'] = 'Add a new RL Agent block';
+$string['rlagent:addinstance'] = 'Add a new RL Update Manager block';
 $string['save'] = 'Save';
 $string['schedule'] = 'Schedule';
 $string['scheduleddate'] = 'Scheduled time:';

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Post install function for RL Agent block
+ * Post install function for RL Update Manager block
  *
  * @package    blocks
  * @subpackage block_rladmin
