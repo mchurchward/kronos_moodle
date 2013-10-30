@@ -25,8 +25,8 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-$plugin->version  = 2012063000;
-$plugin->release  = '2.3.1';
+$plugin->version  = 2012123000;
+$plugin->release  = '2.4.1';
 $plugin->maturity  = MATURITY_ALPHA;
-$plugin->requires  = 2012062500;  // Moodle 2.3
+$plugin->requires  = 2012120300;  // Moodle 2.4
 $plugin->component = 'auth_rladmin';
