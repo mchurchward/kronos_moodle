@@ -211,6 +211,7 @@ class core_files_renderer extends plugin_renderer_base {
                     <a role="button" title="'.$strdownload.'" href="#"><img src="'.$this->pix_url('a/download_all').'" alt="" /></a>
                 </div>
                 <img class="fp-img-downloading" src="'.$this->pix_url('i/loading_small').'" alt="" />
+                <div class="fp-menu-jumpto" style="border: none"></div>
             </div>
             <div class="fp-viewbar">
                 <a title="'. get_string('displayicons', 'repository') .'" class="fp-vb-icons" href="#">
@@ -562,6 +563,10 @@ class core_files_renderer extends plugin_renderer_base {
      * @return string
      */
     private function fp_js_template_generallayout() {
+        // RL edit: add "executesearch" to the listing
+        // note that title text is set up for "refresh" as well, but dynamicall
+        // JS so that it only displayed for the ELIS Files repo plugin
+
         $rv = '
 <div tabindex="0" class="file-picker fp-generallayout" role="dialog" aria-live="assertive">
     <div class="fp-repo-area">
@@ -573,13 +578,19 @@ class core_files_renderer extends plugin_renderer_base {
     </div>
     <div class="fp-repo-items" tabindex="0">
         <div class="fp-navbar">
-            <div>
+            <div class="fp-height">
                 <div class="fp-toolbar">
                     <div class="fp-tb-back">
                         <a href="#">'.get_string('back', 'repository').'</a>
                     </div>
                     <div class="fp-tb-search">
                         <form></form>
+                    </div>
+                    <div class="fp-tb-advancedsearch" title="'.get_string('advanced').'">
+                        <a href="#"><img src="'.$this->pix_url('a/advancedsearch').'" /></a>
+                    </div>
+                    <div class="fp-tb-executesearch" title="'.get_string('search').'">
+                        <a href="#"><img src="'.$this->pix_url('a/executesearch').'" /></a>
                     </div>
                     <div class="fp-tb-refresh">
                         <a title="'. get_string('refresh', 'repository') .'" href="#">
@@ -603,6 +614,7 @@ class core_files_renderer extends plugin_renderer_base {
                     </div>
                     <div class="fp-tb-message"></div>
                 </div>
+                <div class="fp-vb-menu-jumpto"></div>
                 <div class="fp-viewbar">
                     <a title="'. get_string('displayicons', 'repository') .'" class="fp-vb-icons" href="#">
                         <img alt="" src="'. $this->pix_url('fp/view_icon_active', 'theme') .'" />
@@ -1050,8 +1062,9 @@ class core_files_renderer extends plugin_renderer_base {
     public function repository_default_searchform() {
         $searchinput = html_writer::label(get_string('searchrepo', 'repository'),
             'reposearch', false, array('class' => 'accesshide'));
+        $prompttag = (core_useragent::is_ie() && !core_useragent::check_browser_version('MSIE', '10.0')) ? 'value' : 'placeholder';
         $searchinput .= html_writer::empty_tag('input', array('type' => 'text',
-            'id' => 'reposearch', 'name' => 's', 'value' => get_string('search', 'repository')));
+            'id' => 'reposearch', 'name' => 's', $prompttag => get_string('searchforfilesinrepository', 'repository_elisfiles')));
         $str = html_writer::tag('div', $searchinput, array('class' => "fp-def-search"));
 
         return $str;

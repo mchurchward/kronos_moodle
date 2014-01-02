@@ -67,6 +67,11 @@ class tinymce_texteditor extends texteditor {
      * Sets up head code if necessary.
      */
     public function head_setup() {
+        // RL EDIT: includes filemanager & filepicker CSS
+        global $CFG;
+        require_once($CFG->dirroot.'/repository/lib.php');
+        repository::include_fmfp_css();
+        // End RL EDIT
     }
 
     /**

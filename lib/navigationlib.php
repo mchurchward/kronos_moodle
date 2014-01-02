@@ -2084,7 +2084,7 @@ class global_navigation extends navigation_node {
      * @return bool
      */
     protected function load_for_user($user=null, $forceforcontext=false) {
-        global $DB, $CFG, $USER, $SITE;
+        global $DB, $CFG, $USER, $SITE, $COURSE; // RL EDIT: BJB130215 - ELIS-7127
 
         if ($user === null) {
             // We can't require login here but if the user isn't logged in we don't
@@ -2215,7 +2215,7 @@ class global_navigation extends navigation_node {
         }
 
         if ($iscurrentuser && has_capability('moodle/user:manageownfiles', context_user::instance($USER->id))) {
-            $url = new moodle_url('/user/files.php');
+            $url = new moodle_url('/user/files.php', array('courseid' => $COURSE->id)); // RL EDIT: BJB130215 - ELIS-7127: added courseid
             $usernode->add(get_string('myfiles'), $url, self::TYPE_SETTING);
         }
 
@@ -3783,6 +3783,34 @@ class settings_navigation extends navigation_node {
             $coursenode->add(get_string('courselegacyfiles'), $url, self::TYPE_SETTING, null, 'coursefiles', new pix_icon('i/folder', ''));
 
         }
+
+        // RL EDIT: BJB130215
+        $systemcontext = get_system_context();
+        $systemcapabilities = array(
+            'repository/elisfiles:viewsitecontent',
+            'repository/elisfiles:createsitecontent',
+        );
+
+        $coursecapabilities = array(
+            'repository/elisfiles:viewcoursecontent',
+            'repository/elisfiles:createcoursecontent',
+        );
+
+        // ELIS files
+        if (has_capability('repository/elisfiles:view', $coursecontext) &&
+            (has_any_capability($systemcapabilities, $systemcontext) || has_any_capability($coursecapabilities, $coursecontext))) {
+            require_once($CFG->dirroot.'/repository/lib.php');
+            require_once($CFG->dirroot.'/repository/elisfiles/lib.php');
+            if (repository_elisfiles::is_repo_visible('elisfiles')) {
+                $url = new moodle_url('/repository/filemanager.php', array(
+                           'course' => $course->id,
+                           'ctx_id' => $coursecontext->id,
+                           'sesskey' => sesskey()));
+                $coursenode->add(get_string('pluginname', 'repository_elisfiles'), $url, self::TYPE_SETTING, null, 'elisfiles',
+                                 new pix_icon('i/files', ''));
+            }
+        }
+        // End RL EDIT
 
         // Switch roles
         $roles = array();

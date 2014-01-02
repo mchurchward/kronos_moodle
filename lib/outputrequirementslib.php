@@ -700,7 +700,32 @@ class page_requirements_manager {
                                                         array('nofilesavailable', 'repository'), array('norepositoriesavailable', 'repository'),
                                                         array('fileexistsdialogheader', 'repository'), array('fileexistsdialog_editor', 'repository'),
                                                         array('fileexistsdialog_filemanager', 'repository'), array('renameto', 'repository'),
-                                                        array('referencesexist', 'repository'), array('select', 'repository')
+                                                        array('referencesexist', 'repository'),
+                                                        array('select', 'repository'),
+                                                        array('entername', 'repository'),
+                                                        // Added for ELIS files
+                                                        array('errorupload', 'repository_elisfiles'),
+                                                        array('actions', 'repository_elisfiles'),
+                                                        array('advancedsearch', 'repository_elisfiles'),
+                                                        array('createfolder', 'repository_elisfiles'),
+                                                        array('uploadfiles', 'repository_elisfiles'),
+                                                        array('advanced', 'repository_elisfiles'),
+                                                        array('detailview', 'repository_elisfiles'),
+                                                        array('strdelete', 'repository_elisfiles'),
+                                                        array('deletecheckwarning', 'repository_elisfiles'),
+                                                        array('move', 'repository_elisfiles'),
+                                                        array('movefiles', 'repository_elisfiles'),
+                                                        array('onlyincategories', 'repository_elisfiles'),
+                                                        array('nocategoriesfound', 'repository_elisfiles'),
+                                                        array('pleaseenterfoldername', 'repository_elisfiles'),
+                                                        array('pleaseselectfilesfirst', 'repository_elisfiles'),
+                                                        array('pleaseselectfolder', 'repository_elisfiles'),
+                                                        array('refresh', 'repository'),
+                                                        array('uploadpopuptitle', 'repository_elisfiles'),
+                                                        array('filesuploaded', 'repository_elisfiles'),
+                                                        array('withselectedfiles', 'repository_elisfiles'),
+                                                        array('jump', 'repository_elisfiles'),
+                                                        array('moodle', 'repository_elisfiles')
                                                     ));
                     break;
                 case 'core_comment':

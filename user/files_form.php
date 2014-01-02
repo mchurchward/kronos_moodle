@@ -33,17 +33,62 @@ require_once("$CFG->libdir/formslib.php");
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class user_files_form extends moodleform {
-
     /**
      * Add elements to this form.
      */
     public function definition() {
+        // RL EDIT
+        global $CFG, $DB, $USER, $COURSE;
+        if ($has_elisfiles = file_exists($CFG->dirroot.'/repository/elisfiles/lib.php')) {
+            require_once($CFG->dirroot.'/repository/elisfiles/lib.php');
+        }
         $mform = $this->_form;
+        $data  = $this->_customdata['data'];
 
-        $data = $this->_customdata['data'];
+        // RL: ELIS Files locations
+        // Determine if the ELIS Files repository is enabled
+        $sql = 'SELECT i.name, i.typeid, r.type
+                FROM {repository} r
+                JOIN {repository_instances} i
+                WHERE r.type = ?
+                AND i.typeid = r.id';
+
+        $repository = $DB->get_record_sql($sql, array('elisfiles'), IGNORE_MISSING);
+
+        if ($has_elisfiles && !empty($repository)) {
+            try {
+                $ctx = context_user::instance($USER->id);
+                $options = array(
+                    'ajax' => false,
+                    'name' => $repository->name,
+                    'type' => 'elisfiles'
+                );
+                $repo = new repository_elisfiles('elisfiles', $ctx, $options);
+                if (!empty($repo) && !empty($repo->elis_files)) {
+                    $locations = array();
+                    // Get the list of browsing locations that this user currently has access to
+                    $repo->elis_files->file_browse_options($COURSE->id, $USER->id, false, 0, $locations);
+                    if (!empty($locations)) {
+                        // Set the browsing locations for the Jump To menu
+                        $this->_customdata['options']['locations'] = $locations;
+                    }
+                }
+            } catch (Exception $e) {
+                error_log('/user/files_form.php::definition(): Exception: '.$e->getMessage());
+                $repo = null;
+           }
+        }
+
         $options = $this->_customdata['options'];
 
-        $mform->addElement('filemanager', 'files_filemanager', get_string('files'), null, $options);
+        $label = get_string('files');
+        if (!empty($options['label'])) {
+            $label =  $options['label'];
+            unset($options['label']);
+        }
+
+        $mform->addElement('filemanager', 'files_filemanager', $label, null, $options);
+        // End RL EDIT
         $mform->addElement('hidden', 'returnurl', $data->returnurl);
         $mform->setType('returnurl', PARAM_LOCALURL);
 
@@ -62,6 +107,7 @@ class user_files_form extends moodleform {
     public function validation($data, $files) {
         $errors = array();
         $draftitemid = $data['files_filemanager'];
+        // TBD: RL EDIT - ELIS Files (alfresco) validation ???
         if (file_is_draft_area_limit_reached($draftitemid, $this->_customdata['options']['areamaxbytes'])) {
             $errors['files_filemanager'] = get_string('userquotalimit', 'error');
         }

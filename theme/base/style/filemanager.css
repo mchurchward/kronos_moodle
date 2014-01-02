@@ -80,9 +80,19 @@ background:#E2E2E2;filter:progid:DXImageTransform.Microsoft.gradient(startColors
 .dir-rtl .fp-navbar .filemanager-toolbar .fp-toolbar div {margin:4px 4px 4px 0;}
 .file-picker .fp-toolbar div.disabled {display:none;}
 .fp-toolbar img {vertical-align:-15%;margin:7px;}
-.file-picker .fp-toolbar .fp-tb-search {height:30px;}
-.file-picker .fp-toolbar .fp-tb-search .fp-def-search {border:0;background:transparent;margin:0;padding:0;}
-.fp-toolbar .fp-tb-search input {background:#fff url('[[pix:a/search]]') no-repeat 7px 7px;padding:2px 6px 1px 27px;width:200px;height:27px;border: 1px solid #bbb;-webkit-border-radius: 4px;-moz-border-radius: 4px;border-radius: 4px;}
+
+/* RL: fix alignment of icons on Chrome */
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    .fp-tb-advancedsearch img {vertical-align: -150%;}
+    .fp-tb-executesearch img {vertical-align: -150%;}
+    .fp-tb-executesearch[class="fp-tb-executesearch enabled"] + .fp-tb-refresh img {vertical-align: -150%;}
+}
+
+.file-picker .fp-toolbar .fp-tb-search {width:235px;height:30px;}
+.file-picker .fp-toolbar .fp-tb-search .fp-def-search {border:0;background:transparent;margin:0;padding:0;width:235px;}
+.dir-rtl .file-picker .fp-toolbar .fp-tb-search {width:242px;}
+.dir-rtl .file-picker .fp-toolbar .fp-tb-search .fp-def-search {width:242px;}
+.fp-toolbar .fp-tb-search input {background:#fff url('[[pix:a/search]]') no-repeat 7px 7px;padding:2px 6px 1px 27px;width:210px;height:27px;border:1px solid #bbb;-webkit-border-radius: 4px;-moz-border-radius: 4px;border-radius: 4px;}
 .dir-rtl .fp-toolbar img {vertical-align:-35%;}
 .dir-rtl .file-picker .fp-viewbar, .dir-rtl .fp-navbar .filemanager-toolbar .fp-viewbar {float:left;}
 .file-picker .fp-viewbar, .fp-navbar .filemanager-toolbar .fp-viewbar {float:right;margin:4px; background:white;border:1px solid #CCCCCC;border-radius:4px;border-bottom:1px solid #B3B3B3;height:30px;}
@@ -94,6 +104,19 @@ background:#E2E2E2;filter:progid:DXImageTransform.Microsoft.gradient(startColors
 .fp-viewbar a.checked, .fp-viewbar a:active {background-image:radial-gradient(ellipse at center, #ffffff 40%,#dfdfdf 100%);background-color:#dfdfdf;}
 .fp-viewbar.disabled a {opacity:.45;background:none;cursor:default;}
 .file-picker .fp-clear-left {clear:left;}
+
+/* RL: jump menu class for file picker */
+.fp-vb-menu-jumpto {float:left; margin-left: 80px;}
+.dir-rtl .fp-vb-menu-jumpto {float: right; margin-right: 80px;}
+.fp-vb-menu-jumpto #locationbutton-button {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 11px; color: #555;}
+.elis_files-jump-menu .yuimenuitemlabel {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 11px; color: #555;}
+.fp-menu-jumpto #fmlocationbutton-button {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 11px; color: #555;}
+.elis_fm-jumpto-menu .yuimenuitemlabel {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 11px; color: #555;}
+
+/* RL: override toolbar height for Chrome */
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    .fp-height { height: 48px; }
+}
 
 /* over ride hover rule from core.css*/
 .dir-rtl .filemanager-toolbar .fp-vb-icons a:hover {background:url('[[pix:theme|fp/view_icon_selected]]');}
@@ -336,7 +359,10 @@ a.ygtvspacer:hover {color:transparent;text-decoration:none;}
  * Drag and drop support (filemanager and filepicker form elements)
  */
 .filepicker-filelist .filepicker-container,
-.filemanager.fm-noitems .fm-empty-container {display:block;position:absolute;top:10px;bottom:10px;left:10px;right:10px;border:2px dashed #BBBBBB;padding-top:85px;text-align:center;}
+.filemanager.fm-noitems .fm-empty-container {display:block;position:absolute;top:10px;bottom:10px;left:10px;right:10px;border: 2px dashed #BBBBBB;padding-top:85px;text-align:center;}
++/* RL edit: Hide dashed file manager border if drag and drop not available */
++.dndnotsupported .filemanager.fm-noitems .fm-empty-container {border:none}
++/* End of RL edit */
 .filepicker-filelist .dndupload-target,
 .filemanager-container .dndupload-target {background:#FFFFFF;position:absolute;top:10px;bottom:10px;left:10px;right:10px;border:2px dashed #fb7979;padding-top:85px;text-align:center;-webkit-box-shadow: 0px 0px 0px 10px #FFFFFF;-moz-box-shadow:0px 0px 0px 10px #FFFFFF;box-shadow: 0px 0px 0px 10px #FFFFFF;}
 .filepicker-filelist.dndupload-over .dndupload-target,
