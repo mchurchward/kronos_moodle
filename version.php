@@ -24,8 +24,8 @@
  * @copyright  (c) 2012 Remote Learner.net Inc http://www.remote-learner.net
  */
 
-$plugin->version   = 2013062400;
-$plugin->requires  = 2013051400.00;
+$plugin->version   = 2014010900;
+$plugin->requires  = 2013111800;
 $plugin->component = 'block_rlagent';
 $plugin->cron      = 300;
-$plugin->release   = '2.5.1.0';
+$plugin->release   = '2.6.1.0';
