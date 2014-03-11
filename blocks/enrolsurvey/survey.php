@@ -142,7 +142,11 @@ if ($surveyform->is_cancelled()) {
 
     $usernew = $DB->get_record('user', array('id' => $moodle_user->id));
     if (!empty($usernew)) {
-        events_trigger('user_updated', $usernew);
+        $eventdata = array('context' => context_user::instance($moodle_user->id),
+            'objectid' => $moodle_user->id
+        );
+        $event = \core\event\user_updated::create($eventdata);
+        $event->trigger();
     }
 
     if (!is_survey_taken($USER->id, $instanceid) && empty($incomplete)) {
