@@ -3,7 +3,7 @@
  * Library of functions for the event handlers
  *
  * ELIS(TM): Enterprise Learning Intelligence Suite
- * Copyright (C) 2013 onwards Remote-Learner.net Inc (http://www.remote-learner.net)
+ * Copyright (C) 2014 onwards Remote-Learner.net Inc (http://www.remote-learner.net)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,21 +21,21 @@
  * @package    repository_elisfiles
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (C) 2008-2013 Remote-Learner.net Inc (http://www.remote-learner.net)
+ * @copyright  (C) 2008-2014 Remote-Learner.net Inc (http://www.remote-learner.net)
  *
  */
 
-
 require_once($CFG->dirroot.'/repository/elisfiles/ELIS_files_factory.class.php');
-
 
 /**
  * Handle the event when a user is deleted in Moodle.
  *
- * @param object $user Moodle user record object.
- * @return bool True on success, False otherwise.
+ * @param object $user The event object
+ * @return bool true
  */
 function elis_files_user_deleted($user) {
+    global $DB;
+    $user = $DB->get_record('user', array('id' => $user->objectid));
     // Only proceed here if the Alfresco plug-in is actually enabled.
     if (!$repo = repository_factory::factory('elisfiles')) {
         return true;
@@ -49,13 +49,13 @@ function elis_files_user_deleted($user) {
 /**
  * Handle the event when a Moodle course is deleted
  *
- * @param object $course The deleted Moodle course
+ * @param object $course The course_deleted event object
  * @return bool true
  */
 function elis_files_course_deleted($course) {
     global $DB;
-
-    if (isset($course->id)) {
+    $course = $DB->get_record('course', array('id' => $course->objectid));
+    if ($course && isset($course->id)) {
         $DB->delete_records('repository_elisfiles_course', array('courseid' => $course->id));
     }
 
@@ -65,12 +65,13 @@ function elis_files_course_deleted($course) {
 /**
  * Handle the event when an ELIS user set is deleted
  *
- * @param int $id The id of the deleted user set
+ * @param array $eventdata The eventdata for the userset being deleted
  * @return bool true
  */
-function elis_files_userset_deleted($id) {
+function elis_files_userset_deleted($eventdata) {
     global $DB;
 
+    $id = $eventdata->other['id'];
     if (!empty($id)) {
         $DB->delete_records('repository_elisfiles_userset', array('usersetid' => $id));
     }
@@ -82,11 +83,12 @@ function elis_files_userset_deleted($id) {
  * Handle the event when a user has a role unassigned in Moodle.
  *
  * @uses $DB
- * @param object $ra The Moodle role_assignment record object.
+ * @param object $ra The role_unassigned event object.
  * @return bool True on success, False otherwise.
  */
 function elis_files_role_unassigned($ra) {
     global $DB;
+    $ra = $DB->get_record('role_assignments', array('id' => $ra->other['id']));
 
     // Only proceed here if we have valid userid,contextid & the Alfresco plug-in is actually enabled.
     if (empty($ra->userid) || empty($ra->contextid) ||
@@ -279,11 +281,12 @@ function elis_files_role_unassigned($ra) {
  * Handle the event when a user is assigned to a cluster.
  *
  * @uses $DB
- * @param object $usersetinfo The ELIS crlm_cluster_assignments record object.
+ * @param object $usersetinfo The event object.
  * @return bool True on success or failure (event handlers must always return true).
  */
 function elis_files_userset_assigned($usersetinfo) {
     global $DB;
+    $usersetinfo = $usersetinfo->other;
 
     // Only proceed here if we have valid userid, clusterid & the Alfresco plug-in is actually enabled.
     if (empty($usersetinfo->userid) || empty($usersetinfo->clusterid) ||
@@ -383,11 +386,12 @@ function elis_files_userset_assigned($usersetinfo) {
  * Handle the event when a user is unassigned from a user set.
  *
  * @uses $DB
- * @param object $usersetinfo The ELIS crlm_cluster_assignments record object.
+ * @param object $usersetinfo The event object.
  * @return bool True on success or failure (event handlers must always return true).
  */
 function elis_files_userset_deassigned($usersetinfo) {
     global $DB;
+    $usersetinfo = $usersetinfo->other;
 
     // Only proceed here if we have valid userid,clusterid & the Alfresco plug-in is actually enabled.
     if (empty($usersetinfo->userid) || empty($usersetinfo->clusterid) ||
@@ -488,11 +492,15 @@ function elis_files_userset_deassigned($usersetinfo) {
  * Handle the event when a user is created in Moodle.
  *
  * @uses $CFG
- * @param object $user Moodle user record object.
+ * @param object $user Moodle user record object or user_created event object
  * @return bool True on success, False otherwise.
  */
 function elis_files_user_created($user) {
-    global $CFG;
+    global $CFG, $DB;
+
+    if (method_exists($user, 'trigger')) { // from user_created event
+        $user = $DB->get_record('user', array('id' => $user->objectid));
+    }
 
     // Only proceed here if the Alfresco plug-in is actually enabled.
     if (!($repo = repository_factory::factory('elisfiles')) || !$repo->is_configured() || !$repo->verify_setup()) {
