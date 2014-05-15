@@ -1593,6 +1593,10 @@ class moodle_page {
 
                 // RL EDIT
                 case 'userset':
+                    $localplugins = core_plugin_manager::instance()->get_plugins_of_type('local');
+                    if (empty($localplugins['elisprogram']) || !$localplugins['elisprogram']->is_installed_and_upgraded()) {
+                        continue;
+                    }
                     $elisprogramsetup = '/local/elisprogram/lib/setup.php';
                     if (!file_exists($CFG->dirroot.$elisprogramsetup)) {
                         continue;
