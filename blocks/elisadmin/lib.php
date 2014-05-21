@@ -59,6 +59,9 @@ function block_elisadmin_get_menu_item($type, $instance, $parent, $css_class, $p
         case 'course':
             $display = 'coursename';
             break;
+        case 'courseset':
+            $display = 'courseset';
+            break;
         case 'track':
             $display = 'name';
             break;
@@ -577,6 +580,7 @@ function block_elisadmin_get_item_css_class($class, $category = false) {
         'certificatelist' => 'elisicon-certificate',
         'managecurricula' => 'elisicon-program',
         'managecourses' => 'elisicon-course',
+        'managecoursesets' => 'elisicon-courseset',
         'manageclasses' => 'elisicon-class',
         'managetracks' => 'elisicon-track',
         'currentcourses' => 'elisicon-course',

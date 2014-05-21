@@ -253,6 +253,8 @@ class block_elisadmin extends block_base {
                              block_elisadmin_get_item_css_class('certificatelist')),
                 new menuitem('managecurricula', new menuitempage('curriculumpage'), null, '',
                              block_elisadmin_get_item_css_class('managecurricula')),
+                new menuitem('managecoursesets', new menuitempage('coursesetpage'), null, '',
+                             block_elisadmin_get_item_css_class('managecoursesets')),
                 new menuitem('managecourses', new menuitempage('coursepage'), null, '',
                              block_elisadmin_get_item_css_class('managecourses')),
                 new menuitem('manageclasses', new menuitempage('pmclasspage'), null, '',
