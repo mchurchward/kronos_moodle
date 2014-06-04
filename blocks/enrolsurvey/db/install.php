@@ -41,6 +41,10 @@ function xmldb_block_enrolsurvey_install() {
     $settings = (array)get_config('block_enrol_survey');
     if (!empty($settings)) {
         foreach ($settings as $name => $val) {
+            // We don't want version records.
+            if ($name === 'version') {
+                continue;
+            }
             set_config($name, $val, 'block_enrolsurvey');
         }
     }

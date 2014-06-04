@@ -241,6 +241,10 @@ function xmldb_repository_elisfiles_install() {
     // Copy any settings from old plugin
     $oldconfig = get_config('elis_files');
     foreach ($oldconfig as $name => $value) {
+        // We don't want version records.
+        if ($name === 'version') {
+            continue;
+        }
         set_config($name, $value, 'elisfiles');
     }
     unset_all_config_for_plugin('elis_files');
