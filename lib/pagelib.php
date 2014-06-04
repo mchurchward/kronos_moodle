@@ -1629,6 +1629,8 @@ class moodle_page {
                     $highestpriority = 0;
 
                     if (($userclusterrecords = $DB->get_recordset_sql($sql, $params)) && $userclusterrecords->valid()) {
+                        // Get list of valid themes
+                        $themelist = get_list_of_themes();
                         // retrieve the cluster context level
                         foreach($userclusterrecords as $userclusterrecord) {
                             $contextinstance = \local_elisprogram\context\userset::instance($userclusterrecord->id);
@@ -1643,7 +1645,7 @@ class moodle_page {
                             $usersettheme = $userset->field__elis_userset_theme;
                             $usersetthemepriority = (int)$userset->field__elis_userset_themepriority;
 
-                            if (!empty($usersettheme) && file_exists($CFG->dirroot.'/theme/'.$usersettheme) && $usersetthemepriority !== null) {
+                            if (!empty($usersettheme) && isset($themelist[$usersettheme]) && $usersetthemepriority !== null) {
                                 // update chosen theme as appropriate
                                 if ($usersetthemepriority > $highestpriority || empty($highestprioritytheme)) {
                                     $highestprioritytheme = $usersettheme;
