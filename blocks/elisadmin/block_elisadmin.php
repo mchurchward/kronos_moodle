@@ -209,6 +209,8 @@ class block_elisadmin extends block_base {
                 new menuitem('admn', null, 'root', get_string('admin'), block_elisadmin_get_item_css_class('admn', true)),
                 new menuitem('admininfo', new menuitempage('\local_elisprogram\pages\admininfo', 'classes/pages/admininfo.php'),
                         null, get_string('admin_dashboard', 'local_elisprogram'), block_elisadmin_get_item_css_class('configuration')),
+                new menuitem('healthcheck', new menuitempage('\local_elisprogram\pages\healthcheck', 'classes/pages/healthcheck.php'),
+                        null, get_string('page_healthcheck', 'local_elisprogram'), block_elisadmin_get_item_css_class('configuration')),
                 new menuitem('bulkuser', new menuitempage('bulkuserpage'), null, get_string('userbulk', 'admin'), block_elisadmin_get_item_css_class('bulkuser')),
                 new menuitem('resultsconfig', new menuitempage('resultsconfigpage'), null, 'Default Results Engine Score Settings', block_elisadmin_get_item_css_class('resultsconfig'))
                 );
