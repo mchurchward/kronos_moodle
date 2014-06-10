@@ -19,7 +19,7 @@
  * @package    block_elisadmin
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (C) 2008-2014 Remote Learner.net Inc http://www.remote-learner.net
+ * @copyright  (C) 2008-2014 Remote Learner.net Inc (http://www.remote-learner.net)
  *
  */
 
@@ -49,7 +49,6 @@ class block_elisadmin extends block_base {
 
     function init() {
         global $PAGE, $CFG, $DB;
-        require_once elispm::file('version.php');
         $this->title            = get_string('blockname', 'block_elisadmin');
         $this->release          = elispm::$release;
         $this->cron             = 300;
@@ -62,7 +61,6 @@ class block_elisadmin extends block_base {
         $this->lastcron         = $DB->get_field('block', 'lastcron', array('name' => 'elisadmin'));
         $this->divcounter       = 1;
     }
-
 
     function applicable_formats() {
         return array(
