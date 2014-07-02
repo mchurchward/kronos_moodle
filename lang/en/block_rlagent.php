@@ -28,6 +28,7 @@ $string['block_instructions'] = '<p>The MASS interface allows you to install, up
 $string['btn_addfilters'] = 'Add Filters';
 $string['btn_install'] = 'Install and Upgrade Add-Ons';
 $string['btn_rate'] = 'Rate Plugins';
+$string['cachedef_addondata'] = 'Cache for storing MASS Add-on data.';
 $string['cancelled'] = 'Cancelled';
 $string['change'] = 'Change';
 $string['completed'] = 'Completed';
