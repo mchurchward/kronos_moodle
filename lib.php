@@ -52,7 +52,11 @@ function needs_update() {
     $timepath = $CFG->dataroot.'/manager/';
     $timefile = $timepath.$timename;
 
-    $lastrefresh = file_get_contents($timefile);
+    $lastrefresh = @file_get_contents($timefile);
+
+    if ($lastrefresh === FALSE) {
+        $lastrefresh = 0;
+    }
 
     $date_diff = $currenttime - $lastrefresh;
     $day = 7* 24 * 60 * 60;

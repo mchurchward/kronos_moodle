@@ -5,6 +5,124 @@
 
 M.block_rlagent = M.block_rlagent || {};
 M.block_rlagent = {
+    // Object to contain selected actions.
+    data_actions: {},
+
+    // Object to contain addons.
+    data_addons: {},
+
+    plugin_types: {
+        "block" :  {"type":"block", "title":"Block", "icon":"fa-square-o"},
+        "mod":  {"type":"mod", "title":"Module", "icon":"fa-rocket"},
+        "auth":  {"type":"auth", "title":"Authentication", "icon":"fa-key"},
+        "enrol":  {"type":"enrol", "title":"Enrolment", "icon":"fa-group"},
+        "filter":  {"type":"filter", "title":"Filter", "icon":"fa-filter"},
+        "format":  {"type":"format", "title":"Course Format", "icon":"fa-columns"},
+        "gradeexport":  {"type":"gradeexport", "title":"Grade Export", "icon":"fa-download"},
+        "local":  {"type":"local", "title":"Local", "icon":"fa-home"},
+        "qtype":  {"type":"qtype", "title":"Question Type", "icon":"fa-check-square-o"},
+        "repository":  {"type":"repository", "title":"Repository", "icon":"fa-folder-open"},
+        "theme":  {"type":"theme", "title":"Theme", "icon":"fa-picture-o"},
+        "tinymce":  {"type":"tinymce", "title":"TinyMCE", "icon":"fa-text-height"},
+        "plagiarism":  {"type":"plagiarism", "title":"Plagiarism", "icon":"fa-eye"}
+    },
+
+    plugin_fetch_addons: function() {
+        Y.log('plugin_fetch_addons');
+        YUI().use("io-base", function(Y) {
+            $url = M.cfg.wwwroot + '/blocks/rlagent/addons.php?type=addonlist';
+            Y.log($url);
+            function complete(id, o, args) {
+                Y.log('complete');
+            }
+            function success(id, o, args) {
+                Y.log('success');
+                var $response = null;
+                YUI().use('json-parse', function (Y) {
+                    try {
+                        $response = Y.JSON.parse(o.responseText);
+                    }
+                    catch (e) {
+                        Y.log("Parsing failed.");
+                    }
+                });
+                Y.log($response);
+                M.block_rlagent.data_addons = $response;
+                Y.log(M.block_rlagent.data_addons);
+                M.block_rlagent.plugin_write_addons();
+            }
+            function failure(id, o, args) {
+                Y.log('Failure: '+args[0]);
+            }
+            Y.on('io:complete', complete, Y, []);
+            Y.on('io:success', success, Y, []);
+            Y.on('io:failure', failure, Y, ['AJAX request failed.']);
+            $addons = Y.io($url);
+        });
+    },
+
+    plugin_write_addons: function() {
+        // Inject addon HTML into page.
+        Y.log('plugin_write_addons');
+        Y.Object.each(M.block_rlagent.data_addons, function($value, $key) {
+            $displayname = $value.display_name;
+            $description = $value.description;
+            $rating = $value.rating;
+            // Not yet implemented, will convey installed/not installed, etc.
+            // $status = $value.status;
+            $type = $value.type;
+
+            // This will have to be updated when we start sending the plugin status.
+            $buttonmarkup = '<button type="button" class="btn btn-install btn-primary" data-toggle="modal" data-target="#manage_install_modal">';
+            $buttonmarkup += '<i class="fa fa-plus"></i>';
+            $buttonmarkup += 'Install';
+            $buttonmarkup += '</button>';
+
+            // Build markup for plugin average rating.
+            $ratingmarkup = '<div class="avg-rating"><h5>Average Rating</h5>';
+            for (i = 1; i < 6; i++) {
+                if (i <= $rating) {
+                    $ratingmarkup += '<i class="fa fa-star"></i>';
+                } else {
+                    $ratingmarkup += '<i class="fa fa-star-o"></i>';
+                }
+            }
+            $ratingmarkup += '</div>';
+
+            // Build markup for plugin title and description.
+            $itemmarkup = '<ul class="media-list"><li class="media">';
+            $itemmarkup += '<i class="pull-left plugin-type fa ' + M.block_rlagent.plugin_types[$type].icon + '"></i>';
+            $itemmarkup += '<div class="media-body">';
+            $itemmarkup += '<h3 class="media-heading">' + $displayname + '</h3>';
+            $itemmarkup += '<p>' + $description + '</p>';
+            $itemmarkup += '<div class="rate-plugin">';
+            $itemmarkup += '<p><strong>Add or update your rating</strong> for this plugin.</p>';
+            $itemmarkup += '<i class="fa fa-star-o" title="1 star"></i>';
+            $itemmarkup += '<i class="fa fa-star-o" title="2 stars"></i>';
+            $itemmarkup += '<i class="fa fa-star-o" title="3 stars"></i>';
+            $itemmarkup += '<i class="fa fa-star-o" title="4 stars"></i>';
+            $itemmarkup += '<i class="fa fa-star-o" title="5 stars"></i>';
+            $itemmarkup += '</div>';
+            $itemmarkup += '</div>';
+            $itemmarkup += '</li></ul>';
+
+            $html = '<div class="plugin well type-' + M.block_rlagent.plugin_types[$type].type + '">';
+            $html += '<div class="choose">';
+            $html += $buttonmarkup;
+            $html += $ratingmarkup;
+            $html += '</div>';
+
+            $html += $itemmarkup;
+
+            $html += '</div>';
+
+            Y.one('.plugin-select .plugins').insert($html, 'after');
+            // Init rate plugins *after* the plugins are printed to the page.
+            M.block_rlagent.plugin_rate_plugins();
+        });
+
+    },
+
     skip_update_init: function() {
         // Actions performed if user skips site update.
         $button = Y.one('#skipupdate');
@@ -38,7 +156,7 @@ M.block_rlagent = {
         M.block_rlagent.plugin_clear_filters();
         M.block_rlagent.plugin_input_filter();
         M.block_rlagent.plugin_dropdown_visibility();
-        M.block_rlagent.plugin_rate_plugins();
+        M.block_rlagent.plugin_fetch_addons();
     },
 
     plugin_manage_dropdown: function() {
@@ -70,7 +188,7 @@ M.block_rlagent = {
                 // Otherwise, add inside the parent container.
                 $item = Y.one('#filter-labels').insert($labelmarkup);
             }
-            M.block_rlagent.filter_plugins();
+            M.block_rlagent.plugin_filter_plugins();
             M.block_rlagent.plugin_remove_filter();
             M.block_rlagent.plugin_show_filterblock();
             return $item;
@@ -158,7 +276,7 @@ M.block_rlagent = {
         $clearbutton = Y.one('button#clear-filters');
         $clearbutton.on('click', function() {
             Y.all('#filter-labels span.badge').remove(true);
-            M.block_rlagent.filter_plugins();
+            M.block_rlagent.plugin_filter_plugins();
             M.block_rlagent.plugin_hide_filterblock();
         });
     },
@@ -218,32 +336,33 @@ M.block_rlagent = {
                 if ($starset.indexOf($star) === $starset.size() - 1) {
                     $emptystars.addClass('fa-star-o');
                     $fillstars.addClass('fa-star');
-                    M.block_rlagent.send_rating($rating);
+                    M.block_rlagent.plugin_send_rating($rating);
                 }
             });
         });
     },
 
-    send_rating: function($rating) {
-        Y.log('send_rating()');
+    plugin_send_rating: function($rating) {
+        Y.log('plugin_send_rating()');
         // TODO: AJAX to send rating.
     },
 
-    filter_plugins: function() {
+    plugin_filter_plugins: function() {
         // Filter plugins based on selected filters
-        // Y.log('filter_plugins');
+        // Y.log('plugin_filter_plugins');
     },
 
     init: function() {
         // Y.log('mass.js');
-        $updateshown = Y.one('.site-update').getStyle('display');
-        if ($updateshown === 'none') {
-            // Display the plugin selection interface
-            M.block_rlagent.plugin_select_init();
-        } else {
+        $updateshown = Y.all('.site-update'); // .getStyle('display');
+        if ($updateshown.length >= 1) {
+            Y.log($updateshown.length);
             // If plugin update available, display that interface
             M.block_rlagent.skip_update_init();
             M.block_rlagent.update_site_init();
+        } else {
+            // Display the plugin selection interface
+            M.block_rlagent.plugin_select_init();
         }
     }
 };
