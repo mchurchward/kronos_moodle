@@ -31,6 +31,7 @@ $string['btn_rate'] = 'Rate Plugins';
 $string['cachedef_addondata'] = 'Cache for storing MASS Add-on data.';
 $string['cancelled'] = 'Cancelled';
 $string['change'] = 'Change';
+$string['communication_error'] = 'There was a communication problem while attempting to fetch remote data.';
 $string['completed'] = 'Completed';
 $string['defaultdate'] = 'Default time:';
 $string['enable'] = 'Enable';
@@ -69,6 +70,7 @@ $string['notinrange'] = 'The selected date does not fall within the specified up
 $string['notstarted'] = 'Not Started';
 $string['noupdate'] = 'No update currently scheduled';
 $string['pagetitle'] = 'Install and Upgrade Add-Ons';
+$string['permission_denied'] = 'Permission to contact plugin server was denied.';
 $string['recipients'] = 'Recipients';
 $string['recipientsdesc'] = 'List of email addresses to receive notification emails (one per line)';
 $string['rlagent:addinstance'] = 'Add a new RL Update Manager block';
@@ -82,6 +84,8 @@ $string['skipped'] = 'Skipped';
 $string['skipupdate'] = 'Skip';
 $string['status'] = 'Status:';
 $string['syncsite'] = 'Perform Site Sync';
+$string['type_filter'] = 'Type filter and select Enter';
+$string['unknown_addon'] = 'Unknown addon';
 $string['update_available'] = '
     <p>This data for this staging site was last synced with the production site more than 7 days ago. If you wish to add or remove plugins with more current data, select the <strong>Update Data</strong> button below.</p>
     <p>Please note that this site sync will take several minutes. It will rewrite all site data, including this Web page. Your user account will be emailed when the update is complete. If the email below is not correct, please update your user account email before beginning this process.';

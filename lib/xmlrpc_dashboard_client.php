@@ -46,7 +46,7 @@ class block_rlagent_xmlrpc_dashboard_client {
      */
     protected function format_request($data) {
         $formatted = $this->identity;
-        $fomatted['data'] = array('0' => $data);
+        $formatted['data'] = array('0' => $data);
         return $formatted;
     }
 
@@ -107,6 +107,22 @@ class block_rlagent_xmlrpc_dashboard_client {
     }
 
     /**
+     * Assign a rating to an addon
+     *
+     * @param int $userid
+     * @param string $addon
+     * @param int $rating
+     */
+    public function rate_addon($addon, $rating) {
+        global $CFG, $USER;
+        $branch = $this->get_branch_number();
+        $data = array('plugin_name' => $addon, 'url' => $CFG->wwwroot, 'user_id' => $USER->id, 'rating' => $rating);
+
+        $response = $this->send_request('rate_moodle_plugin', $data);
+        return $response;
+    }
+
+    /**
      * Send the request to the dashboard.
      *
      * @param string $type The request type
@@ -131,7 +147,9 @@ class block_rlagent_xmlrpc_dashboard_client {
         $response = trim(curl_exec($curl));
 
         $code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        if ($code != 0) {
+        if ($code == 403) {
+            $decoded = get_string('permission_denied', 'block_rlagent');
+        } else if ($code != 0) {
             $decoded = xmlrpc_decode($response);
         } else {
             $decoded = curl_error($curl);

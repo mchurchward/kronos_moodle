@@ -22,7 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$plugin->version   = 2014010900;
+$plugin->version   = 2014010901;
 $plugin->requires  = 2013111800;
 $plugin->component = 'block_rlagent';
 $plugin->cron      = 300;

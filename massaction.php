@@ -23,7 +23,9 @@
  */
 $dir = dirname(__FILE__);
 require_once($dir.'/../../config.php');
+require_once($dir.'/lib.php');
 require_once($dir.'/lib/xmlrpc_dashboard_client.php');
+require_once($dir.'/lib/data_cache.php');
 
 require_login(SITEID);
 global $USER;
@@ -38,13 +40,8 @@ $actions = array('remove', 'add', 'update');
 
 $types = core_component::get_plugin_types();
 
-$cache = cache::make('block_rlagent', 'addondata');
-$list = $cache->get('addonlist');
-if ($list === false) {
-    $client = new block_rlagent_xmlrpc_dashboard_client();
-    $list = $client->get_addon_data();
-    $cache->set('addonlist', $list);
-}
+$cache = new block_rlagent_data_cache();
+$list = $cache->get_data('addonlist');
 
 $messages = array();
 $skipped = array();
@@ -65,7 +62,7 @@ foreach ($actions as $action) {
         } else if (!array_key_exists($type, $types)) {
             $messages[] = "Unknown addon type: {$type} for addon $item.  Skipping.";
             $skip = true;
-        } else if (!array_key_exists($item, $list)) {
+        } else if (!array_key_exists($item, $list['data'])) {
             $messages[] = "Unknown addon: {$item}.  Skipping.";
             $skip = true;
         }

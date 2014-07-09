@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Remote Learner Update Manager - Plugin data provider page
+ * Remote Learner Update Manager - Moodle Addon Self Service addon rating page
  *
  * @package   block_rlagent
  * @copyright 2014 Remote Learner Inc http://www.remote-learner.net
@@ -25,19 +25,33 @@ $dir = dirname(__FILE__);
 require_once($dir.'/../../config.php');
 require_once($dir.'/lib.php');
 require_once($dir.'/lib/xmlrpc_dashboard_client.php');
+require_once($dir.'/lib/data_cache.php');
 
 require_login(SITEID);
+
 if (!has_capability('moodle/site:config', context_system::instance())) {
     print_error('siteadminonly');
 }
 
-$type = optional_param('type', 'list', PARAM_ALPHA);
+$cache = new block_rlagent_data_cache();
+$addons = $cache->get_data('addonlist');
 
-$types = array('addonlist' => 'addonlist', 'grouplist' => 'grouplist');
-if (!array_key_exists($type, $types)) {
-    print_error('Unknown type');
+$addon = required_param('addon', PARAM_ALPHANUMEXT);
+$rating = required_param('rating', PARAM_INT);
+
+if (($addons['result'] == 'OK') && (array_key_exists($addon, $addons['data']))) {
+    $client = new block_rlagent_xmlrpc_dashboard_client();
+    $result = $client->rate_addon($addon, $rating);
+    if (is_array($result) && array_key_exists('result', $result) && ($result['result'] == 'OK')) {
+        $row = new stdClass();
+        $row->userid = $USER->id;
+        $row->plugin = $addon;
+        $row->rating = $rating;
+        $DB->insert_record('block_rlagent_rating', $row);
+    }
+} else if ($addons['result'] == 'OK') {
+    $result = array('result' => 'Failed', 'error' => get_string('unknown_addon', 'block_rlagent'));
+} else {
+    $result = array('result' => 'Failed', 'error' => get_string('communication_error', 'block_rlagent'));
 }
-
-$list = block_rlagent_get_data($type);
-
-print(json_encode($list));
+print(json_encode($result));
