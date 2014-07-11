@@ -38,3 +38,28 @@ function block_rlagent_get_branch_number() {
 
     return $branch;
 }
+
+/*
+ * If more than 24 hours have elapsed since last sandbox update, return true.
+ *
+ * @return Boolean True if > 7 days since last sandbox update.
+ */
+function needs_update() {
+    global $CFG;
+    $currenttime = time();
+
+    $timename = 'refreshtime';
+    $timepath = $CFG->dataroot.'/manager/';
+    $timefile = $timepath.$timename;
+
+    $lastrefresh = file_get_contents($timefile);
+
+    $date_diff = $currenttime - $lastrefresh;
+    $day = 7* 24 * 60 * 60;
+
+    if ($date_diff <= $day) {
+        return false;
+    } else {
+        return true;
+    }
+}

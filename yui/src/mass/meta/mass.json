@@ -1,0 +1,13 @@
+{
+  "moodle-block_rlagent-mass": {
+    "requires": [
+        "base",
+        "node",
+        "panel",
+        "plugin",
+        "transition",
+        "event",
+        "event-delegate"
+    ]
+  }
+}

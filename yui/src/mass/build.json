@@ -1,0 +1,10 @@
+{
+  "name": "moodle-block_rlagent-mass",
+  "builds": {
+    "moodle-block_rlagent-mass": {
+        "jsfiles": [
+            "mass.js"
+        ]
+    }
+  }
+}
