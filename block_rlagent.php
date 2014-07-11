@@ -17,11 +17,9 @@
 /**
  * Remote Learner Update Manager Block.
  *
- * @package    blocks
- * @subpackage rlagent
- * @author     Remoter-Learner.net Inc
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (c) 2012 Remote Learner.net Inc http://www.remote-learner.net
+ * @package   block_rlagent
+ * @copyright 2012 Remote Learner Inc http://www.remote-learner.net
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 require_once($CFG->libdir .'/tablelib.php');
 require_once(dirname(__FILE__) .'/lib/table_schedule.php');
@@ -119,7 +117,7 @@ class block_rlagent extends block_base {
      * Gets the content for this block
      */
     function get_content() {
-        global $CFG, $DB;
+        global $CFG, $DB, $OUTPUT;
 
         if (!has_capability('moodle/site:config', context_system::instance())) {
             return '';
@@ -129,7 +127,9 @@ class block_rlagent extends block_base {
             return $this->content;
         }
 
-
+        $br = html_writer::empty_tag('br');
+        $mass = new moodle_url('/blocks/rlagent/mass.php');
+        $text = $OUTPUT->action_link($mass, get_string('manageaddon', $this->blockname)).$br.$br;
 
         $select = 'status = 0 AND scheduleddate >= '. time();
         $records = $DB->get_records_select('block_rlagent_schedule', $select, array(), 'scheduleddate', '*', 0, 1);
@@ -143,13 +143,13 @@ class block_rlagent extends block_base {
         }
 
         if (empty($CFG->block_rlagent_enabled)) {
-            $text = get_string('disabled', $this->blockname);
+            $text .= get_string('disabled', $this->blockname);
         } else if (sizeof($records) == 0) {
-            $text = get_string('noupdate', $this->blockname);
+            $text .= get_string('noupdate', $this->blockname);
         } else {
             $record = reset($records);
-            $date = str_replace(',', ',<br />', userdate($record->scheduleddate));
-            $text = get_string('nextupdate', $this->blockname, $date) .'<br />'. $date;
+            $date = str_replace(',', ",$br", userdate($record->scheduleddate));
+            $text .= get_string('nextupdate', $this->blockname, $date).$br.$date;
         }
 
         $settings = '<div style="float:left"><a href="'. $CFG->wwwroot .'/admin/settings.php?section=blocksettingrlagent">'

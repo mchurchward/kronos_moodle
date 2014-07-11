@@ -17,15 +17,17 @@
 /**
  * Strings for component 'block_rlagent', language 'en'
  *
- * @package    blocks
- * @subpackage block_rladmin
- * @author     Remoter-Learner.net Inc
+ * @package    block_rladmin
+ * @copyright  2012 Remote Learner Inc http://www.remote-learner.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (c) 2012 Remote Learner.net Inc http://www.remote-learner.net
  */
 
 $string['pluginname'] = 'RL Update Manager';
 
+$string['block_instructions'] = '<p>The MASS interface allows you to install, upgrade, and rate plugins on your sandbox site.</p>';
+$string['btn_addfilters'] = 'Add Filters';
+$string['btn_install'] = 'Install and Upgrade Add-Ons';
+$string['btn_rate'] = 'Rate Plugins';
 $string['cancelled'] = 'Cancelled';
 $string['change'] = 'Change';
 $string['completed'] = 'Completed';
@@ -52,16 +54,20 @@ $string['error_diverged'] = 'Your Moodle repository has unapproved changes.';
 $string['error_updatefailed'] = 'An error occurred during the update process.';
 $string['eventnotfound'] = 'Sorry, that scheduled update could be found in the database';
 $string['inprogress'] = 'In Progress';
+$string['install_instructions'] = 'Configure and test your plugins on your sandbox site, then request that the changes be moved to your production site.';
 $string['log'] = 'Log:';
+$string['manageaddon'] = 'Manage Addons';
 $string['name'] = 'Name:';
 $string['newdate'] = 'New time:';
 $string['nextupdate'] = 'Your next update is:';
 $string['notchanged'] = 'The selected date is identical to the currently scheduled date';
+$string['notification_email'] = 'Notification Email: ';
 $string['notifyonsuccess'] = 'Notify on success:';
 $string['notifyonsuccessdesc'] = 'Check this option to send an email to the recipient list every time a successful update happens.';
 $string['notinrange'] = 'The selected date does not fall within the specified update period';
 $string['notstarted'] = 'Not Started';
 $string['noupdate'] = 'No update currently scheduled';
+$string['pagetitle'] = 'Install and Upgrade Add-Ons';
 $string['recipients'] = 'Recipients';
 $string['recipientsdesc'] = 'List of email addresses to receive notification emails (one per line)';
 $string['rlagent:addinstance'] = 'Add a new RL Update Manager block';
@@ -72,7 +78,13 @@ $string['scheduledevents'] = 'Update Schedule';
 $string['settings'] = 'Settings';
 $string['siteadminonly'] = 'This page is for site administrators only.';
 $string['skipped'] = 'Skipped';
+$string['skipupdate'] = 'Skip';
 $string['status'] = 'Status:';
+$string['syncsite'] = 'Perform Site Sync';
+$string['update_available'] = '
+    <p>This data for this staging site was last synced with the production site more than 7 days ago. If you wish to add or remove plugins with more current data, select the <strong>Update Data</strong> button below.</p>
+    <p>Please note that this site sync will take several minutes. It will rewrite all site data, including this Web page. Your user account will be emailed when the update is complete. If the email below is not correct, please update your user account email before beginning this process.';
+$string['update_available_heading'] = 'Update Available';
 $string['updatedisabled'] = 'Updates have been disabled';
 $string['updateend'] = 'Update Block End';
 $string['updateenddesc'] = 'The end of the maintenance period when updates can be performed.';
@@ -81,4 +93,5 @@ $string['updatescheduling'] = 'Update Scheduling';
 $string['updatespan'] =  '{$a->start} to {$a->end}';
 $string['updatestart'] = 'Update Block Start';
 $string['updatestartdesc'] = 'The start of the maintenance period when updates can be performed.';
+$string['updatingdata'] = 'Updating Site Data';
 $string['warning'] = 'Warning:';

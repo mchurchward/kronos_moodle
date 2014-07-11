@@ -17,11 +17,9 @@
 /**
  * Remote Learner Update Manager Schedule
  *
- * @package    blocks
- * @subpackage rlagent
- * @author     Remoter-Learner.net Inc
+ * @package    block_rlagent
+ * @copyright  2012 Remote Learner Inc http://www.remote-learner.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (c) 2012 Remote Learner.net Inc http://www.remote-learner.net
  */
 
 class table_schedule extends table_sql {

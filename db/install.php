@@ -17,13 +17,10 @@
 /**
  * Post install function for RL Update Manager block
  *
- * @package    blocks
- * @subpackage block_rladmin
- * @author     Remoter-Learner.net Inc
+ * @package    block_rladmin
+ * @copyright  2012 Remote Learner Inc http://www.remote-learner.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (c) 2012 Remote Learner.net Inc http://www.remote-learner.net
  */
-
 function xmldb_block_rlagent_install() {
     global $DB;
 
