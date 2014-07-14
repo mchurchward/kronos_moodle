@@ -27,6 +27,8 @@ $string['blockname'] = 'ELIS Administration';
 $string['elisadmin:addinstance'] = 'Add a new ELIS Administration block';
 $string['pluginname'] = 'ELIS Administration';
 
+$string['menu_item_widgetsettings'] = 'Widget Settings';
+
 // "More" links in curr admin menu
 $string['menu_summary_item_userset'] = '{$a} more User Sets...';
 $string['menu_summary_item_curriculum'] = '{$a} more programs...';

@@ -565,7 +565,6 @@ function block_elisadmin_get_item_css_class($class, $category = false) {
     $validclasses = array();
 
     $iconmap = array(
-        'dashboard' => 'elisicon-dashboard',
         'bulkuser' => 'elisicon-bulkuseractions',
         'resultsconfig' => 'elisicon-resultsengine',
         'reportslist' => 'elisicon-report',
@@ -593,6 +592,7 @@ function block_elisadmin_get_item_css_class($class, $category = false) {
         'course_instance' => 'elisicon-course',
         'track_instance' => 'elisicon-track',
         'class_instance' => 'elisicon-class',
+        'widgetsettings' => 'elisicon-dashboard',
     );
 
     // Prefix each token.

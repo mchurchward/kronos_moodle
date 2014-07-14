@@ -92,7 +92,8 @@ class block_elisdashboard extends block_base {
         // Generate the widget's html (including hidden close button for expanded widgets), add to the block's content.
         $contentattrs = [
             'id' => 'elisdashboard_'.$this->instance->id,
-            'class' => 'eliswidget '.$widget->get_component()
+            'class' => 'eliswidget '.$widget->get_component(),
+            'data-id' => $this->instance->id,
         ];
         $closebuttonattrs = ['onclick' => 'block_elisdashboard_unexpand(\''.$this->instance->id.'\')', 'class' => 'closebutton'];
         $closebutton = \html_writer::tag('span', 'X', $closebuttonattrs);

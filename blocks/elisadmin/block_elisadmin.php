@@ -113,7 +113,7 @@ class block_elisadmin extends block_base {
 
         //if we are not on a PM page, disable the expansion of
         //entities in the curr admin tree (logic in curriculum/index.php)
-        if (!is_a($PAGE, 'pm_page') && $PAGE->pagetype != 'admin-setting-local_elisprogram_settings') {
+        if (!is_a($PAGE, 'pm_page') && strpos($PAGE->pagetype, 'admin-setting-local_elisprogram_settings') !== 0) {
             unset($USER->currentitypath);
         }
 
@@ -257,16 +257,6 @@ class block_elisadmin extends block_base {
                 new menuitem('manageclasses', new menuitempage('pmclasspage'), null, '',
                              block_elisadmin_get_item_css_class('manageclasses')),
 
-                //Learning Plan
-                new menuitem('crscat', null, 'root', get_string('learningplan', 'local_elisprogram'),
-                             block_elisadmin_get_item_css_class('crscat', true)),
-                new menuitem('currentcourses', new menuitempage('coursecatalogpage', '', array('action' => 'current')), null, '',
-                             block_elisadmin_get_item_css_class('currentcourses')),
-                new menuitem('availablecourses', new menuitempage('coursecatalogpage', '', array('action' => 'available')), null, '',
-                             block_elisadmin_get_item_css_class('availablecourses')),
-                new menuitem('waitlist', new menuitempage('coursecatalogpage', '', array('action' => 'waitlist')), null,
-                             get_string('waitlistcourses', 'local_elisprogram'), block_elisadmin_get_item_css_class('waitlist')),
-
                 //Reports
                 new menuitem('rept', null, 'root', get_string('reports', 'local_elisprogram'), block_elisadmin_get_item_css_class('rept', true))
 
@@ -311,6 +301,21 @@ class block_elisadmin extends block_base {
         //$pages[] = new menuitem('dataimport', new menuitempage('dataimportpage', 'elis_ip/elis_ip_page.php', array('section' => 'admn')), null, '', block_elisadmin_get_item_css_class('integrationpoint'));
         $pages[] = new menuitem('defaultcls', new menuitempage('configclsdefaultpage', '', array('section' => 'admn')), null, '', block_elisadmin_get_item_css_class('defaultcls'));
         $pages[] = new menuitem('defaultcrs', new menuitempage('configcrsdefaultpage', '', array('section' => 'admn')), null, '', block_elisadmin_get_item_css_class('defaultcrs'));
+
+        // Widget settings.
+        if (has_capability('local/elisprogram:config', $syscontext)) {
+            $widgetsettingsstr = get_string('menu_item_widgetsettings', 'block_elisadmin');
+            $widgetsettingscss = block_elisadmin_get_item_css_class('widgetsettings', true);
+            $pages[] = new \menuitem('widgetsettings', null, 'admn', $widgetsettingsstr, $widgetsettingscss);
+            foreach (\core_plugin_manager::instance()->get_plugins_of_type('eliswidget') as $plugin) {
+                $widgetsettingsurl = (string)$plugin->get_settings_url();
+                if (!empty($widgetsettingsurl)) {
+                    $widgetsettingspage = new \menuitempage('url_page', 'lib/menuitem.class.php', $widgetsettingsurl);
+                    $widgetpagename = 'widgetsettings_'.$plugin->name;
+                    $pages[] = new \menuitem($widgetpagename, $widgetsettingspage, 'widgetsettings', $plugin->displayname, $widgetsettingscss);
+                }
+            }
+        }
 
         //turn all pages that have no children into leaf nodes
         menuitemlisting::flag_leaf_nodes($pages);
