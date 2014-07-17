@@ -82,57 +82,61 @@ $addontypes = array(
 
 $filters = array('<!-- dropdown menu links -->');
 foreach ($addontypes as $type) {
-    $filters[] = '<li><a href="#">'.get_string("filter_{$type}", 'block_rlagent').'</a></li>';
+    $filters[] = '<li data-filter-mode="type" data-filter-refine="'.$type.'"><a href="#">'.get_string("filter_{$type}", 'block_rlagent').'</a></li>';
 }
 $filters[] = '<li class="divider"></li>';
-$filters[] = '<li><a href="#">'.get_string("filter_installed", 'block_rlagent').'</a></li>';
-$filters[] = '<li><a href="#">'.get_string("filter_not_installed", 'block_rlagent').'</a></li>';
+$filters[] = '<li data-filter-mode="status" data-filter-refine="installed"><a href="#">'.get_string("filter_installed", 'block_rlagent').'</a></li>';
+$filters[] = '<li data-filter-mode="status" data-filter-refine="notinstalled"><a href="#">'.get_string("filter_not_installed", 'block_rlagent').'</a></li>';
+$filters[] = '<li data-filter-mode="status" data-filter-refine="upgradeable"><a href="#">'.get_string("filter_upgradeable", 'block_rlagent').'</a></li>';
 $filters[] = '<li class="divider"></li>';
 
 $filterhtml = implode("\n", $filters);
 
 // Sort bar
 $sortbar = '
-    <div class="sort-by row-fluid row ">
-        <div class="input-prepend input-append span6">
-            <div class="btn-group select-filters">
-                <button id="btn-select-filter" class="btn dropdown-toggle" data-toggle="dropdown">'.
-                    $addfilters
-                    .'<span class="caret"></span>
+    <div id="filter-placeholder"></div>
+    <div id="filter-form" class="filter-form filter-position-relative">
+        <div class="sort-by row-fluid row ">
+            <div class="input-prepend input-append span6">
+                <div class="btn-group select-filters">
+                    <button id="btn-select-filter" class="btn dropdown-toggle" data-toggle="dropdown">'.
+                        $addfilters
+                        .'<span class="caret"></span>
+                    </button>
+                    <ul id="select-filters" class="dropdown-menu">'.
+                        $filterhtml
+                    .'</ul>
+                </div>
+                <input class="" id="plugin-filter" type="text" value="'.get_string('type_filter', 'block_rlagent').'">
+                <button id="clear-filters" class="btn">
+                    <i class="fa fa-times"></i>
+                    '.get_string('clear_filters', 'block_rlagent').'
                 </button>
-                <ul id="select-filters" class="dropdown-menu">'.
-                    $filterhtml
-                .'</ul>
             </div>
-            <input class="" id="plugin-filter" type="text" value="'.get_string('type_filter', 'block_rlagent').'">
-            <button id="clear-filters" class="btn">
-                <i class="fa fa-times"></i>
-                '.get_string('clear_filters', 'block_rlagent').'
+        </div>
+        <div id="labels-box" class="labels-box row-fluid" style="display: none;">
+            <h4>'.get_string('applied_filters', 'block_rlagent').'</h4>
+            <div id="filter-labels" class="labels">
+            </div>
+        </div>
+        <div class="view-apply-filters-box row-fluid">
+            <div id="plugin-cart" class="cart btn-group">
+                <button class="btn dropdown-toggle plugin-actions" style="width: 100%;" data-toggle="dropdown">
+                    <i class="fa fa-check-square-o"></i>
+                    '.get_string('selected_plugins_queue', 'block_rlagent').'
+                    <span class="caret"></span>
+                </button>
+                <ul id="plugin-actions" class="dropdown-menu plugin-actions">
+                    <!-- dropdown menu links -->
+                    <li class="actions">
+                    </li>
+                </ul>
+            </div>
+            <button id="go-update-plugins" class="btn btn-success">
+                <i class="fa fa-cogs"></i>
+                '.get_string('update_selected_plugins', 'block_rlagent').'
             </button>
         </div>
-    </div>
-    <div id="labels-box" class="labels-box row-fluid" style="display: none;">
-        <h4>'.get_string('applied_filters', 'block_rlagent').'</h4>
-        <div id="filter-labels" class="labels">
-        </div>
-    </div>
-    <div class="view-apply-filters-box row-fluid">
-        <div id="plugin-cart" class="cart btn-group">
-            <button class="btn dropdown-toggle plugin-actions" style="width: 100%;" data-toggle="dropdown">
-                <i class="fa fa-check-square-o"></i>
-                '.get_string('selected_plugins_queue', 'block_rlagent').'
-                <span class="caret"></span>
-            </button>
-            <ul id="plugin-actions" class="dropdown-menu plugin-actions">
-                <!-- dropdown menu links -->
-                <li class="actions">
-                </li>
-            </ul>
-        </div>
-        <button id="go-update-plugins" class="btn btn-success">
-            <i class="fa fa-cogs"></i>
-            '.get_string('update_selected_plugins', 'block_rlagent').'
-        </button>
     </div>
     <div class="plugins"></div>';
 

@@ -67,12 +67,19 @@ M.block_rlagent = {
         // Inject addon HTML into page.
         Y.log('plugin_write_addons');
         Y.Object.each(M.block_rlagent.data_addons, function($value, $key) {
-            $displayname = $value.display_name;
-            $description = $value.description;
-            $rating = $value.rating;
-            // Not yet implemented, will convey installed/not installed, etc.
-            // $status = $value.status;
+            // Y.log($value);
+            // Y.log($key);
+            $displayname = $value.display_name ? $value.display_name : 'Plugin name not available.';
+            $description = $value.description ? $value.description : 'Plugin description not available.';
+            $rating = $value.rating ? $value.rating : 0;
+            // TODO: Not yet implemented, will convey installed/not installed, etc.
+            $status = $value.status ? $value.status : 'notinstalled';
             $type = $value.type;
+            $typeclass = ' type-' + $type; // M.block_rlagent.plugin_types[$type].type;
+            $nameclass = ' name-' + String($value.name).replace(' ', '_');
+            $datakey = 'data-key="' + String($key).replace(' ', '_') + '" ';
+            $datastatus = 'data-status="' + String($status).replace(' ', '_') + '" ';
+            // $statusclass = ' status-' + $value.status; // TODO: Use once status is included in object.
 
             // This will have to be updated when we start sending the plugin status.
             $buttonmarkup = '<button type="button" class="btn btn-install btn-primary" data-toggle="modal" data-target="#manage_install_modal">';
@@ -108,7 +115,7 @@ M.block_rlagent = {
             $itemmarkup += '</div>';
             $itemmarkup += '</li></ul>';
 
-            $html = '<div class="plugin well type-' + M.block_rlagent.plugin_types[$type].type + '">';
+            $html = '<div class="plugin well' + $typeclass + $nameclass + '" ' + $datakey + $datastatus + '>';
             $html += '<div class="choose">';
             $html += $buttonmarkup;
             $html += $ratingmarkup;
@@ -118,7 +125,7 @@ M.block_rlagent = {
 
             $html += '</div>';
 
-            Y.one('.plugin-select .plugins').insert($html, 'after');
+            Y.one('.plugin-select .plugins').insert($html);
             // Init rate plugins *after* the plugins are printed to the page.
             M.block_rlagent.plugin_rate_plugins();
         });
@@ -159,13 +166,18 @@ M.block_rlagent = {
         M.block_rlagent.plugin_input_filter();
         M.block_rlagent.plugin_dropdown_visibility();
         M.block_rlagent.plugin_fetch_addons();
+        M.block_rlagent.plugin_filter_scroll();
     },
 
     plugin_manage_dropdown: function() {
         Y.log('plugin_manage_dropdown');
     },
 
-    plugin_add_filter: function($filterstring) {
+    plugin_capitalise_firstletter: function(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    },
+
+    plugin_add_filter: function($filterstring, $mode, $refine) {
         // Called when a filter is added by any means.
         // If filters list not displayed, display it.
         $labelsbox = Y.one('#labels-box');
@@ -180,9 +192,10 @@ M.block_rlagent = {
         Y.Array.each($filterlist, function(value) {
             $labelarr.push(value.trim());
         });
+        $prefix = M.block_rlagent.plugin_capitalise_firstletter($mode) + ' | ';
         // If the filter is not yet displayed, display it.
-        if ($labelarr.indexOf($filterstring) <= -1) {
-            $labelmarkup = '<span class="badge">'+$filterstring+'<i class="fa fa-times" alt="Remove Filter"></i></span>';
+        if ($labelarr.indexOf($prefix + $filterstring) <= -1) {
+            $labelmarkup = '<span class="badge" data-filter-mode="' + $mode +'" data-filter-refine="' + $refine + '">' + $prefix + $filterstring + '<i class="fa fa-times" alt="Remove Filter"></i></span>';
             if ($filters.length >= 1) {
                 // If there are other filters, add after the last one.
                 $item = $filters.item($filterlist.length -1).insert($labelmarkup, 'after');
@@ -206,7 +219,11 @@ M.block_rlagent = {
             $target = Y.one(e.currentTarget);
             // Capture the content of the li.
             $label = $target.one('a').get('text');
-            M.block_rlagent.plugin_add_filter($label);
+            $mode = $target.getAttribute('data-filter-mode');
+            Y.log('$mode = '+$mode);
+            $refine = $target.getAttribute('data-filter-refine');
+            Y.log('$refine = '+$refine);
+            M.block_rlagent.plugin_add_filter($label, $mode, $refine);
         });
     },
 
@@ -256,7 +273,7 @@ M.block_rlagent = {
         function enter_key_press () {
             $filter = Y.one('input#plugin-filter').get('value');
             if ($filter.length >= 1) {
-                M.block_rlagent.plugin_add_filter($filter);
+                M.block_rlagent.plugin_add_filter($filter, 'string', $filter);
                 $input.set('value', '');
             }
             M.block_rlagent.plugin_show_filterblock();
@@ -294,6 +311,8 @@ M.block_rlagent = {
         // If there are no filters, hide the filter block.
         if (Y.all('#filter-labels span.badge').size() <= 0) {
             Y.one('#labels-box').hide(true);
+            // Also re-display all plugins.
+            Y.all('.plugins .plugin.well').show(true);
         }
     },
 
@@ -302,6 +321,7 @@ M.block_rlagent = {
         $removebutton = Y.all('#filter-labels i.fa-times');
         $removebutton.on('click', function(e) {
             $target = e.target.get('parentNode').remove(true);
+            M.block_rlagent.plugin_filter_plugins();
             M.block_rlagent.plugin_hide_filterblock();
         });
     },
@@ -309,6 +329,7 @@ M.block_rlagent = {
     plugin_rate_plugins: function() {
         Y.all('.rate-plugin .fa-star-o, .rate-plugin .fa-star').on('click', function(e) {
             $target = Y.one(e.target);
+            Y.log($target);
 
             // Get full set of clicked star plus siblings.
             $starset = $target.get('parentNode').get('children').filter('.fa');
@@ -351,7 +372,192 @@ M.block_rlagent = {
 
     plugin_filter_plugins: function() {
         // Filter plugins based on selected filters
-        // Y.log('plugin_filter_plugins');
+        Y.log('plugin_filter_plugins');
+        // Hide addons.
+        Y.all('.plugins .plugin.well').hide(true);
+        // Get all of the displayed filters.
+        $filters = Y.all('#filter-labels span.badge');
+        // Retrieve and sort the filters, in order to treat them one by one.
+        $typefilters = [];
+        $filters.filter('[data-filter-mode="type"]').each(function(node) {
+            var $refine = Y.one(node).getAttribute('data-filter-refine');
+            var $refinenum; // TODO: This variable should be unnecessary once type is a string.
+            // This Object.each() shouldn't be necessary once type is a string.
+            Y.Object.each(M.block_rlagent.plugin_types, function($value, $key) {
+                // If the object type matches the refine variable, we save the value key.
+                if ($value.type === $refine) {
+                    $refinenum = $key;
+                }
+            });
+            $typefilters.push($refine);
+            $typefilters.push($refinenum); // TODO: Remove once type numbers are replaced with strings.
+        });
+        $statusfilters = [];
+        $filters.filter('[data-filter-mode="status"]').each(function(node) {
+            $refine = Y.one(node).getAttribute('data-filter-refine');
+            $statusfilters.push($refine);
+        });
+        $stringfilters = [];
+        $filters.filter('[data-filter-mode="string"]').each(function(node) {
+            $refine = Y.one(node).getAttribute('data-filter-refine');
+            $stringfilters.push($refine);
+        });
+        // Addons object to manipulate.
+        $addons = JSON.parse(JSON.stringify(M.block_rlagent.data_addons));
+        Y.Object.each($addons, function($addonvalue, $addonkey) {
+            $addonvalue.filtered = false;
+        });
+        Y.log('Start filtering');
+        Y.log($addons);
+
+        function filter_type() {
+            // If there are no type filters, move on to the
+            // next set of filters.
+            if ($typefilters.length <= 0) {
+                filter_status();
+                return false;
+            }
+            var $hide;
+            // Additive filtering. If match, add to object.
+            Y.Object.each($addons, function($addonvalue, $addonkey) {
+                $hide = true;
+                Y.Array.each($typefilters, function($typevalue, $typeindex) {
+                    if ($addonvalue.type === $typevalue) {
+                        $hide = false;
+                    }
+                });
+                Y.log("Type filter for "+$addonkey+": "+$hide);
+                if ($hide) {
+                    $addonvalue.filtered = true;
+                }
+            });
+            filter_status();
+        }
+
+        function filter_status() {
+            // TODO: Refine and test once status is available.
+            Y.log('filter_status()');
+            Y.log($addons);
+            Y.log('statusfilters length: '+$statusfilters.length);
+            Y.log($statusfilters);
+            if ($statusfilters.length <= 0) {
+                Y.log('statusfilters is empty, moving on to next.');
+                filter_string();
+                return false;
+            }
+            // Now remove plugins matching status from type object.
+            var $hide;
+            Y.Object.each($addons, function($addonvalue, $addonkey) {
+                Y.log('filter_status() looping through ');
+                $hide = true;
+                Y.Array.each($statusfilters, function($typevalue, $typeindex) {
+                    Y.log('$typevalue: '+$typevalue);
+                    Y.log('$typeindex: '+$typeindex);
+                    if (($typevalue === 'installed') && $addonvalue.installed) {
+                        Y.log('type matches = '+$typevalue);
+                        $hide = false;
+                    } else if (($typevalue === 'notinstalled') && !$addonvalue.installed) {
+                        Y.log('type matches = '+$typevalue);
+                        $hide = false;
+                    } else if (($typevalue === 'upgradeable') && $addonvalue.installed && $addonvalue.upgradeable) {
+                        Y.log('type matches = '+$typevalue);
+                        $hide = false;
+                    }
+                });
+                Y.log("Status filter for "+$addonkey+": "+$hide);
+                if ($hide) {
+                    $addonvalue.filtered = true;
+                }
+            });
+            filter_string();
+        }
+
+        function filter_string() {
+            // Now subtract plugins not matching string from $addonsshow.
+            // Y.log('filter_string()');
+            // Now remove all plugins not matching string from status object.
+            var $hide;
+            Y.Object.each($addons, function($addonvalue, $addonkey) {
+                // Establish the lowercase strings to search.
+                $heading = String($addonvalue.display_name).toLowerCase();
+                $description = String($addonvalue.description).toLowerCase();
+                $name = String($addonkey).toLowerCase();
+                // For each string, test for matches.
+                $hide = false;
+                Y.Array.each($stringfilters, function($stringvalue, $stringindex) {
+                    // Get lowercaps value of string
+                    $stringlowcaps = $stringvalue.toLowerCase();
+                    // Determine whether each contains the search string.
+                    $isinheading = $heading.indexOf($stringlowcaps);
+                    $isindesc = $description.indexOf($stringlowcaps);
+                    $isinname = $name.indexOf($stringlowcaps);
+
+                    // Delete from $addsonsstringfiltered if no match.
+                    if (($isinheading < 0) && ($isindesc < 0) && ($isinname < 0)) {
+                        // Y.log('string does not match, deleting.');
+                        $hide = true;
+                    } else {
+                        // Y.log('string matches.');
+                    }
+                });
+                Y.log("String filter for "+$addonkey+": "+$hide);
+                if ($hide) {
+                    $addonvalue.filtered = true;
+                }
+            });
+        }
+
+        filter_type();
+
+        Y.log('done filtering.');
+        Y.log($addons);
+
+        Y.Object.each($addons, function(value, key) {
+            Y.log("Reviewing "+key);
+            // Show addons not filtered out.
+            $key = String(key).replace(' ', '_')
+            $selector = '.plugin[data-key="' + $key + '"]';
+            var $obj = Y.one($selector);
+            // This truthiness check is to ignore errors in JSON object.
+            if ($obj && !value.filtered) {
+                Y.log("Showing "+key);
+                // Show addon.
+                $obj.show(true);
+            }
+        });
+    },
+
+    plugin_filter_scroll: function() {
+        // My recommendation is that we not implement this functionality
+        // at all. It will be nearly impossible to accommodate every possible
+        // theme design. It is an inelegant modification to an otherwise elegant
+        // and responsive interface. If the filters are working well, the user
+        // should not need to scroll in the first place. This functionality
+        // will interfere with responsiveness in all but the best-maintained code.
+        // Simpler, IMHO, will turn out, in this case, to have been better. -AG
+
+        // Y.log('plugin_filter_scroll');
+        // $filterform = Y.one('#filter-form');
+        // $placeholder = Y.one('#filter-placeholder');
+        // var $filterformwidth;
+        // var $filterformheight;
+        // var $filterformY;
+
+        // // Set height and width of $paceholder same as $filterform.
+        // YUI().use('node', function(Y) {
+        //     $filterformwidth = $filterform.getStyle('width');
+        //     Y.log('$filterformwidth = '+$filterformwidth);
+        //     $filterformheight = $filterform.getStyle('height');
+        //     Y.log('$filterformheight = '+$filterformheight);
+        //     $filterformY = $filterform.getY();
+        //     Y.log('$filterformY = '+$filterformY);
+        // });
+
+        // $placeholder.setStyle('width', $filterformwidth);
+        // $placeholder.setStyle('height', $filterformheight);
+
+        // $filterform.setStyle('width', $filterformwidth);
+        // $filterform.setStyle('position', 'fixed');
     },
 
     init: function() {

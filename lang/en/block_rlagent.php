@@ -62,6 +62,7 @@ $string['filter_qtype'] = 'Question Type';
 $string['filter_repository'] = 'Repository';
 $string['filter_theme'] = 'Theme';
 $string['filter_tinymce'] = 'TinyMCE';
+$string['filter_upgradeable'] = 'Upgradeable';
 $string['disabled'] = 'The RL Update Manager block has been manually disabled, no updates will occur until the block is enabled.';
 $string['disabledesc'] = 'Disabling automatic updates will prevent the automatic application of bug fixes and security updates.';
 $string['error'] = 'Error';
