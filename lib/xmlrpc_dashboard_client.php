@@ -54,7 +54,7 @@ class block_rlagent_xmlrpc_dashboard_client {
      * Get the list of addons from the Dashboard
      */
     public function get_addon_data() {
-        $branch = $this->get_branch_number();
+        $branch = block_rlagent_get_branch_number();
         // Bitmask for all (UI will filter).
         $level = 7;
         // Requirement: Never display private modules in the web interface.
@@ -63,22 +63,6 @@ class block_rlagent_xmlrpc_dashboard_client {
 
         $response = $this->send_request('get_moodle_plugins', $data);
         return $response;
-    }
-
-    /**
-     * Figure out the proper branch number
-     *
-     * @return int The branch number
-     */
-    protected function get_branch_number() {
-        global $CFG;
-
-        // Figure out the branch number.
-        $matches = array();
-        preg_match('/(\d+)\.(\d+)./', $CFG->release, $matches);
-        $branch = $matches[1].$matches[2];
-
-        return $branch;
     }
 
     /**
@@ -115,7 +99,6 @@ class block_rlagent_xmlrpc_dashboard_client {
      */
     public function rate_addon($addon, $rating) {
         global $CFG, $USER;
-        $branch = $this->get_branch_number();
         $data = array('plugin_name' => $addon, 'url' => $CFG->wwwroot, 'user_id' => $USER->id, 'rating' => $rating);
 
         $response = $this->send_request('rate_moodle_plugin', $data);

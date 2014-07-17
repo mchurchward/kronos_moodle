@@ -24,7 +24,7 @@
 $dir = dirname(__FILE__);
 require_once($dir.'/../../config.php');
 require_once($dir.'/lib.php');
-require_once($dir.'/lib/xmlrpc_dashboard_client.php');
+require_once($dir.'/lib/data_cache.php');
 
 require_login(SITEID);
 if (!has_capability('moodle/site:config', context_system::instance())) {
@@ -38,6 +38,7 @@ if (!array_key_exists($type, $types)) {
     print_error('Unknown type');
 }
 
-$list = block_rlagent_get_data($type);
+$cache = new block_rlagent_data_cache();
+$data = $cache->get_data($type);
 
-print(json_encode($list));
+print(json_encode($data['data']));

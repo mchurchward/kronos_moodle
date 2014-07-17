@@ -15,26 +15,23 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Accessory functions for RL Agent block.
+ * Remote Learner Update Manager - library test
  *
  * @package   block_rlagent
- * @copyright 2014 Amy Groshek for Remote-Learner.net
+ * @copyright 2014 Remote Learner Inc http://www.remote-learner.net
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+require_once(dirname(__FILE__).'/../lib.php');
+
 defined('MOODLE_INTERNAL') || die();
 
-/**
- * Figure out the proper branch number
- *
- * @return int The branch number
- */
-function block_rlagent_get_branch_number() {
-    global $CFG;
-
-    // Figure out the branch number.
-    $matches = array();
-    preg_match('/(\d+)\.(\d+)./', $CFG->release, $matches);
-    $branch = $matches[1].$matches[2];
-
-    return $branch;
+class block_rlagent_lib_testcase extends advanced_testcase {
+    /**
+     * Test the get_branch_number function
+     */
+    public function test_get_branch_number() {
+        global $CFG;
+        $branch = block_rlagent_get_branch_number();
+        $this->assertEquals($CFG->branch, $branch);
+    }
 }

@@ -48,6 +48,10 @@ if (($addons['result'] == 'OK') && (array_key_exists($addon, $addons['data']))) 
         $row->plugin = $addon;
         $row->rating = $rating;
         $DB->insert_record('block_rlagent_rating', $row);
+
+        // Update cache
+        $addons['data'][$addon]['myrating'] = $rating;
+        $cache->update_data('addonlist', $addons);
     }
 } else if ($addons['result'] == 'OK') {
     $result = array('result' => 'Failed', 'error' => get_string('unknown_addon', 'block_rlagent'));

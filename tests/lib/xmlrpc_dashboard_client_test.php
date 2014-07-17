@@ -15,19 +15,22 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Remote Learner Update Manager - Plugin data provider page
+ * Remote Learner Update Manager - XMLRPC Client test
  *
  * @package   block_rlagent
  * @copyright 2014 Remote Learner Inc http://www.remote-learner.net
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-require_once(dirname(__FILE__).'/../lib/xmlrpc_dashboard_client.php');
+$dir = dirname(__FILE__);
+require_once($dir.'/../../lib.php');
+require_once($dir.'/../../lib/xmlrpc_dashboard_client.php');
 
 defined('MOODLE_INTERNAL') || die();
 
 class block_rlagent_xmlrpc_dashboard_client_testcase extends advanced_testcase {
     /** @var object The test version of the dashboard client */
     private $client;
+
     /**
      * Do common setup tasks
      *
@@ -35,8 +38,8 @@ class block_rlagent_xmlrpc_dashboard_client_testcase extends advanced_testcase {
      */
     public function setUp() {
         $client = $this->getMockBuilder('block_rlagent_xmlrpc_dashboard_client')
-                        ->setMethods(array('get_webservices_config', 'send_request'))
-                        ->getMock();
+                       ->setMethods(array('get_webservices_config', 'send_request'))
+                       ->getMock();
         $client->expects($this->any())
                ->method('get_webservices_config')
                ->will($this->returnValue(true));
@@ -47,11 +50,17 @@ class block_rlagent_xmlrpc_dashboard_client_testcase extends advanced_testcase {
         $this->client = $client;
     }
 
+    /**
+     * Test the get_addon_data method
+     */
     public function test_get_addon_data() {
         $result = $this->client->get_addon_data();
         $this->assertEquals('10-4 Good Buddy', $result);
     }
 
+    /**
+     * Test the get_group_data method
+     */
     public function test_get_group_data() {
         $result = $this->client->get_group_data();
         $this->assertEquals('10-4 Good Buddy', $result);
