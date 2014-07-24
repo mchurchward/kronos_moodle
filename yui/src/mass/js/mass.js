@@ -69,15 +69,23 @@ M.block_rlagent = {
             // Y.log($key);
             $displayname = $value.display_name ? $value.display_name : 'Plugin name not available.';
             $description = $value.description ? $value.description : 'Plugin description not available.';
+            $myrating = $value.myrating ? $value.myrating : 0;
             $rating = $value.rating ? $value.rating : 0;
             // TODO: Not yet implemented, will convey installed/not installed, etc.
-            $status = $value.status ? $value.status : 'notinstalled';
-            $type = $value.type;
+            // $status = $value.status ? $value.status : 'notinstalled';
+            $installed = $value.installed ? $value.installed : false;
+            $upgradeable = $value.upgradeable ? $value.upgradeable : false;
+            $cached = $value.cached ? $value.cached : false;
+            $type = $value.type ? $value.type : '1';
+
             $typeclass = ' type-' + $type; // M.block_rlagent.plugin_types[$type].type;
             $nameclass = ' name-' + String($value.name).replace(' ', '_');
             $datakey = 'data-key="' + String($key).replace(' ', '_') + '" ';
-            $datastatus = 'data-status="' + String($status).replace(' ', '_') + '" ';
-            // $statusclass = ' status-' + $value.status; // TODO: Use once status is included in object.
+            // $datastatus = 'data-status="' + String($status).replace(' ', '_') + '" ';
+            $datainstalled = 'data-installed="' + String($installed).replace(' ', '_') + '" ';
+            $dataupgradeable = 'data-upgradeable="' + String($upgradeable).replace(' ', '_') + '" ';
+            $datacached = 'data-cached="' + String($cached).replace(' ', '_') + '" ';
+            $datatype = 'data-type="' + String($type).replace(' ', '_') + '" ';
 
             // This will have to be updated when we start sending the plugin status.
             $buttonmarkup = '<button type="button" class="btn btn-install btn-primary" data-toggle="modal" data-target="#manage_install_modal">';
@@ -104,16 +112,19 @@ M.block_rlagent = {
             $itemmarkup += '<p>' + $description + '</p>';
             $itemmarkup += '<div class="rate-plugin">';
             $itemmarkup += '<p><strong>Add or update your rating</strong> for this plugin.</p>';
-            $itemmarkup += '<i class="fa fa-star-o" title="1 star"></i>';
-            $itemmarkup += '<i class="fa fa-star-o" title="2 stars"></i>';
-            $itemmarkup += '<i class="fa fa-star-o" title="3 stars"></i>';
-            $itemmarkup += '<i class="fa fa-star-o" title="4 stars"></i>';
-            $itemmarkup += '<i class="fa fa-star-o" title="5 stars"></i>';
+            for (i = 1; i < 6; i++) {
+                if (i <= $myrating) {
+                    $itemmarkup += '<i class="fa fa-star" title="'+i+' stars"></i>';
+                } else {
+                    $itemmarkup += '<i class="fa fa-star-o" title="'+i+' stars"></i>';
+                }
+            }
             $itemmarkup += '</div>';
             $itemmarkup += '</div>';
             $itemmarkup += '</li></ul>';
 
-            $html = '<div class="plugin well' + $typeclass + $nameclass + '" ' + $datakey + $datastatus + '>';
+            $html = '<div class="plugin well' + $typeclass + $nameclass + '" ' +
+                $datakey + $datainstalled + $dataupgradeable + $datacached + $datatype + '>';
             $html += '<div class="choose">';
             $html += $buttonmarkup;
             $html += $ratingmarkup;
@@ -324,48 +335,107 @@ M.block_rlagent = {
         });
     },
 
+    plugin_rate_node: null,
+
     plugin_rate_plugins: function() {
-        Y.all('.rate-plugin .fa-star-o, .rate-plugin .fa-star').on('click', function(e) {
-            $target = Y.one(e.target);
-            Y.log($target);
 
-            // Get full set of clicked star plus siblings.
-            $starset = $target.get('parentNode').get('children').filter('.fa');
+        // var $node = null;
 
-            // Get star index.
-            $clickedindex = $starset.indexOf($target);
+        function starclick(e) {
+            // Y.log('starclick function');
+            e.preventDefault();
+            $this = e.target;
 
-            // Fill star and all stars of index below it.
-            $fillstars = $starset.slice(0, $clickedindex + 1);
+            // Required because for whatever reason the click event is calling the callback
+            // function hundreds of times for each click.
+            if (!M.block_rlagent.plugin_rate_node || $this !== M.block_rlagent.plugin_rate_node) {
+                // If no existing node, or $this is a new node, start over.
+                Y.log('M.block_rlagent.plugin_rate_node is null');
+                // Y.log($this);
+                // Y.log(M.block_rlagent.plugin_rate_node);
+                M.block_rlagent.plugin_rate_node = $this;
+                // Y.log('M.block_rlagent.plugin_rate_node after saved $this into it:');
+                // Y.log(M.block_rlagent.plugin_rate_node);
 
-            // Empty all stars with index above it.
-            $emptystars = $starset.slice($clickedindex + 1, $starset.size() + 1);
+                // Get full set of clicked star plus siblings.
+                $starset = M.block_rlagent.plugin_rate_node.get('parentNode').get('children').filter('.fa');
 
-            // Rating is 1-based: 1-5.
-            $rating = $clickedindex + 1;
+                // Get star index.
+                $clickedindex = $starset.indexOf(M.block_rlagent.plugin_rate_node);
 
-            $starset.each(function($star) {
-                // Remove existing classes if present.
-                if($star.hasClass('fa-star-o')) {
-                    $star.removeClass('fa-star-o');
-                }
-                if($star.hasClass('fa-star')) {
-                    $star.removeClass('fa-star');
-                }
+                // Fill star and all stars of index below it.
+                $fillstars = $starset.slice(0, $clickedindex + 1);
 
-                // Apply appropriate classes and call send rating.
-                if ($starset.indexOf($star) === $starset.size() - 1) {
-                    $emptystars.addClass('fa-star-o');
-                    $fillstars.addClass('fa-star');
-                    M.block_rlagent.plugin_send_rating($rating);
-                }
-            });
-        });
+                // Empty all stars with index above it.
+                $emptystars = $starset.slice($clickedindex + 1, $starset.size() + 1);
+
+                // Rating is 1-based: 1-5.
+                var $rating = $clickedindex + 1;
+                // Get the addon object key to send with rating call.
+                var $addon = M.block_rlagent.plugin_rate_node.ancestor('.plugin.well').getAttribute('data-key'); // Get addon name.
+
+                $starset.each(function($star) {
+                    // Remove existing classes if present.
+                    if($star.hasClass('fa-star-o')) {
+                        $star.removeClass('fa-star-o');
+                    }
+                    if($star.hasClass('fa-star')) {
+                        $star.removeClass('fa-star');
+                    }
+
+                    // Apply appropriate classes and call send rating.
+                    if ($starset.indexOf($star) === $starset.size() - 1) {
+                        $emptystars.addClass('fa-star-o');
+                        $fillstars.addClass('fa-star');
+                        M.block_rlagent.plugin_send_rating($addon, $rating);
+                    }
+                });
+            } else {
+                // If node has already been acted upon, exit.
+                Y.log('Conditions not met. M.block_rlagent.plugin_rate_node not null or matches existing e.target.');
+                return false;
+            }
+        }
+
+        Y.one('.plugins').delegate('click', starclick, '.rate-plugin .fa-star-o, .rate-plugin .fa-star');
     },
 
-    plugin_send_rating: function($rating) {
-        Y.log('plugin_send_rating()');
-        // TODO: AJAX to send rating.
+    plugin_send_rating: function($addon, $rating) {
+        // Y.log('plugin_send_rating()');
+        Y.log('addon = ' + $addon);
+        Y.log('rating = ' + $rating);
+
+        // AJAX to send rating.
+        YUI().use("io-base", function(Y) {
+            var url = M.cfg.wwwroot + '/blocks/rlagent/massrate.php';
+            var cfg = {
+                method: 'POST',
+                data: 'addon=' + $addon + '&rating=' + $rating,
+                on: {
+                    complete: function(id, o) {
+                        Y.log('Ratings complete.');
+                    },
+                    success: function(id, o) {
+                        Y.log('success');
+                        var $response = null;
+                        YUI().use('json-parse', function (Y) {
+                            try {
+                                $response = Y.JSON.parse(o.responseText);
+                            }
+                            catch (e) {
+                                Y.log("Parsing failed.");
+                            }
+                        });
+                        Y.log('$response = ');
+                        Y.log($response);
+                    },
+                    failure: function(id, o) {
+                        Y.log('Ratings failure.');
+                    }
+                }
+            };
+            $addons = Y.io(url, cfg);
+        });
     },
 
     plugin_filter_plugins: function() {
