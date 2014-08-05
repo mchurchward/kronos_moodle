@@ -44,24 +44,20 @@ function block_rlagent_get_branch_number() {
  *
  * @return Boolean True if > 7 days since last sandbox update.
  */
-function needs_update() {
+function block_rlagent_needs_update() {
     global $CFG;
     $currenttime = time();
 
-    $timename = 'refreshtime';
-    $timepath = $CFG->dataroot.'/manager/';
-    $timefile = $timepath.$timename;
-
-    $lastrefresh = @file_get_contents($timefile);
-
-    if ($lastrefresh === FALSE) {
-        $lastrefresh = 0;
+    $path = $CFG->dataroot.'/manager/refreshtime';
+    $lastrefresh = 0;
+    if (file_exists($path) && is_readable($path)) {
+        $lastrefresh = intval(file_get_contents($path));
     }
 
-    $date_diff = $currenttime - $lastrefresh;
-    $day = 7* 24 * 60 * 60;
+    $diff = $currenttime - $lastrefresh;
+    $delay = 7* 24 * 60 * 60;
 
-    if ($date_diff <= $day) {
+    if ($diff > $delay) {
         return false;
     } else {
         return true;

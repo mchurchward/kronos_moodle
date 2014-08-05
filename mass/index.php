@@ -21,8 +21,8 @@
  * @copyright 2014 Remote Learner Inc http://www.remote-learner.net
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-require_once(dirname(__FILE__).'/../../config.php');
-require_once(dirname(__FILE__).'/lib.php');
+require_once(dirname(__FILE__).'/../../../config.php');
+require_once(dirname(__FILE__).'/../lib.php');
 
 require_login(SITEID);
 global $USER;
@@ -43,6 +43,19 @@ $PAGE->requires->css('/blocks/rlagent/css/bootstrap.css');
 
 $PAGE->requires->yui_module('moodle-block_rlagent-mass', 'M.block_rlagent.init');
 
+$strings = array(
+        'add', 'add_or_update_rating_bold', 'add_or_update_rating_normal', 'ajax_request_failed',
+        'average_rating', 'dependencies', 'dependency_will_be_added', 'failure', 'no_dependencies',
+        'plugin_description_not_available', 'plugin_name_not_available', 'plugins_will_be_added',
+        'plugins_will_be_removed', 'plugins_will_be_updated', 'preparing_actions', 'remove',
+        'remove_action', 'remove_filter', 'success',
+        'title_auth', 'title_block', 'title_enrol', 'title_filter', 'title_format',
+        'title_gradeexport', 'title_local', 'title_module', 'title_plagiarism', 'title_qtype',
+        'title_repository', 'title_theme', 'title_tinymce',
+        'to_be_added', 'to_be_removed', 'to_be_updated', 'update'
+);
+$PAGE->requires->strings_for_js($strings, 'block_rlagent');
+
 // Determine whether debug is enabled.
 $debug = $CFG->debugdisplay;
 
@@ -52,8 +65,7 @@ if (!has_capability('moodle/site:config', context_system::instance())) {
 
 // Eventually we need a way to check whether the staging site's data
 // is up to date with the production site. For now, a boolean.
-// $value = rand(0,1) == 1;
-$datacurrent = needs_update();
+$datacurrent = block_rlagent_needs_update();
 if ($datacurrent) {
     $displayupdate = ' style="display: none;"';
     $displayplugins = '';
@@ -82,12 +94,12 @@ $addontypes = array(
 
 $filters = array('<!-- dropdown menu links -->');
 foreach ($addontypes as $type) {
-    $filters[] = '<li data-filter-mode="type" data-filter-refine="'.$type.'"><a href="#">'.get_string("filter_{$type}", 'block_rlagent').'</a></li>';
+    $filters[] = '<li data-filter-mode="type" data-filter-refine="'.$type.'"><a href="#">'.get_string("title_{$type}", 'block_rlagent').'</a></li>';
 }
 $filters[] = '<li class="divider"></li>';
-$filters[] = '<li data-filter-mode="status" data-filter-refine="installed"><a href="#">'.get_string("filter_installed", 'block_rlagent').'</a></li>';
-$filters[] = '<li data-filter-mode="status" data-filter-refine="notinstalled"><a href="#">'.get_string("filter_not_installed", 'block_rlagent').'</a></li>';
-$filters[] = '<li data-filter-mode="status" data-filter-refine="upgradeable"><a href="#">'.get_string("filter_upgradeable", 'block_rlagent').'</a></li>';
+$filters[] = '<li data-filter-mode="status" data-filter-refine="installed"><a href="#">'.get_string("title_installed", 'block_rlagent').'</a></li>';
+$filters[] = '<li data-filter-mode="status" data-filter-refine="notinstalled"><a href="#">'.get_string("title_not_installed", 'block_rlagent').'</a></li>';
+$filters[] = '<li data-filter-mode="status" data-filter-refine="upgradeable"><a href="#">'.get_string("title_upgradeable", 'block_rlagent').'</a></li>';
 $filters[] = '<li class="divider"></li>';
 
 $filterhtml = implode("\n", $filters);
@@ -121,18 +133,16 @@ $sortbar = '
         </div>
         <div class="view-apply-filters-box row-fluid">
             <div id="plugin-cart" class="cart btn-group">
-                <button class="btn dropdown-toggle plugin-actions" style="width: 100%;" data-toggle="dropdown">
+                <button class="btn dropdown-toggle plugin-actions disabled" style="width: 100%;" data-toggle="dropdown">
                     <i class="fa fa-check-square-o"></i>
                     '.get_string('selected_plugins_queue', 'block_rlagent').'
                     <span class="caret"></span>
                 </button>
                 <ul id="plugin-actions" class="dropdown-menu plugin-actions">
                     <!-- dropdown menu links -->
-                    <li class="actions">
-                    </li>
                 </ul>
             </div>
-            <button id="go-update-plugins" class="btn btn-success">
+            <button id="go-update-plugins" class="btn btn-success disabled">
                 <i class="fa fa-cogs"></i>
                 '.get_string('update_selected_plugins', 'block_rlagent').'
             </button>
@@ -143,29 +153,8 @@ $sortbar = '
 $pluginselect = "<div class=\"plugin-select\"{$displayplugins}>{$sortbar}</div>";
 print($pluginselect);
 
-
-$pluginicons = '
-    <div class="plugin-icon">
-        <i class="fa fa-key">auth</i><br />
-        <i class="fa fa-square-o">block</i><br />
-        <i class="fa fa-group">enrol</i><br />
-        <i class="fa fa-filter">filter</i><br />
-        <i class="fa fa-columns">format</i><br />
-        <i class="fa fa-download">gradeexport</i><br />
-        <i class="fa fa-home">local</i><br />
-        <i class="fa fa-rocket">module</i><br />
-        <i class="fa fa-eye">plagiarism</i><br />
-        <i class="fa fa-check-square-o">qtype</i><br />
-        <i class="fa fa-folder-open">repository</i><br />
-        <i class="fa fa-picture-o">theme</i><br />
-        <i class="fa fa-text-height">tinymce</i><br />
-    </div>
-';
-
-// print($pluginicons);
-
 $modal = '
-  <div class="modal fade" id="manage_install_modal" tabindex="-1" role="dialog" aria-labelledby="installModalLabel" aria-hidden="true">
+  <div class="modal fade" id="manage_actions_modal" tabindex="-1" role="dialog" aria-labelledby="installModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -182,7 +171,7 @@ $modal = '
     </div>
   </div>';
 
-// print($modal);
+print($modal);
 
 
 // Print footer.

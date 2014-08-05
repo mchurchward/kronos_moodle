@@ -128,7 +128,7 @@ class block_rlagent extends block_base {
         }
 
         $br = html_writer::empty_tag('br');
-        $mass = new moodle_url('/blocks/rlagent/mass.php');
+        $mass = new moodle_url('/blocks/rlagent/mass/');
         $text = $OUTPUT->action_link($mass, get_string('manageaddon', $this->blockname)).$br.$br;
 
         $select = 'status = 0 AND scheduleddate >= '. time();

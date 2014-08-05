@@ -22,10 +22,10 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 $dir = dirname(__FILE__);
-require_once($dir.'/../../config.php');
-require_once($dir.'/lib.php');
-require_once($dir.'/lib/xmlrpc_dashboard_client.php');
-require_once($dir.'/lib/data_cache.php');
+require_once($dir.'/../../../config.php');
+require_once($dir.'/../lib.php');
+require_once($dir.'/../lib/xmlrpc_dashboard_client.php');
+require_once($dir.'/../lib/data_cache.php');
 
 require_login(SITEID);
 global $USER;
