@@ -328,7 +328,9 @@ class block_elisadmin extends block_base {
         $this->content->text = $tree->convert_to_markup();
         $this->content->footer = '';
 
-        $PAGE->requires->yui_module('moodle-local_elisprogram-menuitem', 'M.local_elisprogram.init_menuitem', array($tree->get_js_object(), $CFG->httpswwwroot), null, true);
+        if ($this->is_empty() !== true) {
+            $PAGE->requires->yui_module('moodle-local_elisprogram-menuitem', 'M.local_elisprogram.init_menuitem', array($tree->get_js_object(), $CFG->httpswwwroot), null, true);
+        }
         return $this->content;
     }
 
