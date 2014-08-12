@@ -72,6 +72,11 @@ class block_rlagent_renderer extends plugin_renderer_base {
         $content .= html_writer::start_tag('div', array('class' => 'site-update-spinner', 'style' => 'display: none;'));
         $content .= html_writer::tag('h4', get_string('updatingdata', 'block_rlagent'));
         $content .= html_writer::tag('i', '', array('class' => 'fa fa-spinner fa-spin fa-2x'));
+        $content .= html_writer::tag('div', get_string('update_continue', 'block_rlagent'), array('class' => 'instr-continue', 'style' => 'display:none;'));
+        $content .= html_writer::start_tag('button', array('id' => 'afterupdate', 'class' => 'btn btn-success', 'type' => 'button', 'style' => 'display:none;'));
+        $content .= html_writer::tag('i', '', array('class' => 'fa fa-check-circle-o'));
+        $content .= get_string('continue', 'block_rlagent');
+        $content .= html_writer::end_tag('button');
         $content .= html_writer::end_tag('div');
 
         // Close container div.
@@ -79,60 +84,4 @@ class block_rlagent_renderer extends plugin_renderer_base {
 
         return $content;
     }
-
-
-    /*
-     * Output the markup for the filter controls.
-     *
-     * @param  array $reinoptions Options passed to the format_text(), which displays the widget
-     * @param  array $urlparams HTML attributes for <a> tag which opens pop-up with widget markup
-     * @return string HTML fragment
-     */
-
-    public function print_filter_controls() {
-        global $CFG;
-    }
-
-
-
-    //     /**
-    //  * Output the markup for the accordion widget in the debug interface.
-    //  *
-    //  * @param  array $reinoptions Options passed to the format_text(), which displays the widget
-    //  * @param  array $urlparams HTML attributes for <a> tag which opens pop-up with widget markup
-    //  * @return string HTML fragment
-    //  */
-    // public function print_debug_accordion($reinoptions, $urlparams) {
-    //     global $CFG;
-
-    //     // Print header.
-    //     $content = html_writer::tag('h2', get_string('accordiontitle', 'filter_rein'));
-    //     // Print view.
-    //     $content .= html_writer::tag('div', get_string('accordiondesc', 'filter_rein'), array('class' => 'desc'));
-    //     // Print instructions.
-    //     $content .= html_writer::tag('h3', get_string('widgetinstr', 'filter_rein'));
-    //     $content .= html_writer::tag('div', get_string('accordioninstr', 'filter_rein'), array('class' => 'instr'));
-    //     // Print Should Look Like header.
-    //     $content .= html_writer::tag('h3', get_string('widgetshouldlook', 'filter_rein'), array('class' => 'shouldlook'));
-    //     // Print preview image.
-    //     $imgparams = array(
-    //         'src' => $CFG->wwwroot.'/filter/rein/pix/demo/accordion.png',
-    //         'class' => 'shouldlook',
-    //         'width' => '800',
-    //         'height' => '320'
-    //     );
-    //     $content .= html_writer::tag('img', '', $imgparams);
-    //     // Print Live preview header.
-    //     $content .= html_writer::tag('h3', get_string('widgetview', 'filter_rein'));
-    //     // Print Widget.
-    //     $getmarkup = file_get_contents(dirname(__FILE__).'/markup/accordion.php');
-    //     $content .= format_text($getmarkup, $format = FORMAT_HTML, $options = $reinoptions, $courseid_do_not_use = null);
-    //     // Print link to markup.
-    //     $urlparams['href'] = $CFG->wwwroot.'/filter/rein/markup/returntext.php?markup=accordion';
-    //     $content .= html_writer::tag('a', get_string('accordionviewmarkup', 'filter_rein'), $urlparams);
-
-    //     return $content;
-    // }
-
-
-}
+ }

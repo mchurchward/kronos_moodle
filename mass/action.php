@@ -57,13 +57,19 @@ foreach ($actions as $action) {
         list($type, $name) = explode('_', $item, 2);
         $skip = false;
         if (empty($name)) {
-            $messages[] = "Action: $action - unrecognizable addon name: $item.  Skipping.";
+            $action = new stdClass();
+            $action->action = $action;
+            $action->subject = $item;
+            $messages[] = get_string('error_unparseable_name', 'block_rlagent', $action);
             $skip = true;
         } else if (!array_key_exists($type, $types)) {
-            $messages[] = "Unknown addon type: {$type} for addon $item.  Skipping.";
+            $addon = new stdClass();
+            $addon->name = $item;
+            $addon->type = $type;
+            $messages[] = get_string('error_unknown_addon_type', 'block_rlagent', $addon);
             $skip = true;
         } else if (!array_key_exists($item, $list['data'])) {
-            $messages[] = "Unknown addon: {$item}.  Skipping.";
+            $messages[] = get_string('error_unknown_addon', 'block_rlagent', $item);
             $skip = true;
         }
         if ($skip) {
@@ -79,7 +85,7 @@ foreach ($addons['remove'] as $name => $remove) {
     $list = core_component::get_plugin_list($remove['type']);
     if (!array_key_exists($remove['name'], $list)) {
         unset($addons['remove'][$name]);
-        $messages[] = "Addon $name is not present.  Skipping removal";
+        $messages[] = get_string('error_remove_notinstalled', 'block_rlagent', $name);
         $skipped['remove'][$name] = $name;
     }
 }
@@ -90,7 +96,7 @@ foreach ($addons['add'] as $name => $add) {
     $skip = false;
     if (array_key_exists($add['name'], $list) && !array_key_exists($name, $addons['remove'])) {
         unset($addons['add'][$name]);
-        $messages[] = "Addon $name is already installed.  Skipping addition.";
+        $messages[] = get_string('error_add_installed', 'block_rlagent', $name);
         $skipped['add'][$name] = $name;
     }
 }
@@ -100,13 +106,13 @@ foreach ($addons['update'] as $name => $update) {
     $list = core_component::get_plugin_list($update['type']);
     $skip = false;
     if (array_key_exists($name, $addons['add'])) {
-        $messages[] = "A new version of $name will be added, no further update possible.  Skipping update.";
+        $messages[] = get_string('error_update_added', 'block_rlagent', $name);
         $skip = true;
     } else if (array_key_exists($name, $addons['remove'])) {
-        $messages[] = "The $name addon will be removed and thus can't be updated.  Skipping update.";
+        $messages[] = get_string('error_update_removed'. 'block_rlagent', $name);
         $skip = true;
     } else if (!array_key_exists($update['name'], $list)) {
-        $messages[] = "Addon $name is not installed and thus can't be updated.  Skipping update.";
+        $messages[] = get_string('error_update_not_installed', 'block_rlagent', $name);
         $skip = true;
     }
     if ($skip) {
@@ -126,27 +132,9 @@ foreach ($addons as $action => $items) {
 }
 
 if (count($contents) > 1) {
-    $path = $CFG->dataroot.'/manager/addons/commands';
-    if (!file_exists($path) && !mkdir($path, 0770, true)) {
-        $messages[] = "Unable to create dispatch directory: $path";
-    } else {
-        // Write to a tempfile to make requests atomic.
-        $tmpfile = tempnam(sys_get_temp_dir(), 'addon_');
-        $file = $path.'/'.basename($tmpfile);
-        if (file_put_contents($tmpfile, implode("\n", $contents))) {
-            if (copy($tmpfile, $file)) {
-                if (!unlink($tmpfile)) {
-                    $messages[] = 'Unable to delete command file from temporary directory.';
-                }
-            } else {
-                $messages[] = 'Unable to copy command file to dispatch directory.';
-            }
-        } else {
-            $messages[] = 'Unable to write commands to temporary file location.';
-        }
-    }
+    $errors = block_rlagent_write_incron_commands($contents, 'addon_', $CFG->dataroot.'/manager/addons/commands');
+    $messages = array_merge($messages, $errors);
 }
-
 
 $return = json_encode($messages);
 print($return);

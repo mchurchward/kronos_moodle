@@ -39,6 +39,26 @@ function block_rlagent_get_branch_number() {
     return $branch;
 }
 
+/**
+ * Get an ini value from the global.ini file
+ *
+ * Needs vfsStream for unit testing.
+ *
+ * @param string $field The field to return
+ * @param string $segment The segment to return the field from
+ * @return string The field value
+ */
+function block_rlagent_get_ini_value($field, $segment) {
+    $inifile = '/mnt/data/config/global.ini';
+    if (file_exists($inifile) && is_readible($inifile)) {
+        $ini = parse_ini_file($inifile, true);
+        if ((false !== $ini) && isset($ini[$segment][$field])) {
+            return $ini[$segment][$field];
+        }
+    }
+    return false;
+}
+
 /*
  * If more than 24 hours have elapsed since last sandbox update, return true.
  *
@@ -46,20 +66,62 @@ function block_rlagent_get_branch_number() {
  */
 function block_rlagent_needs_update() {
     global $CFG;
-    $currenttime = time();
 
-    $path = $CFG->dataroot.'/manager/refreshtime';
-    $lastrefresh = 0;
-    if (file_exists($path) && is_readable($path)) {
-        $lastrefresh = intval(file_get_contents($path));
+    // Check if this is a sandbox site
+    $sandbox = false;
+    $sitename = basename($CFG->dirroot);
+    if (preg_match('/^moodle_sand([0-9]*|)$/', $sitename)) {
+        $sandbox = true;
+    } else if (block_rlagent_get_ini_value('refresh_source', $sitename) !== false) {
+        $sandbox = true;
     }
 
-    $diff = $currenttime - $lastrefresh;
-    $delay = 7* 24 * 60 * 60;
+    // If it's a sandbox check how long since the last refresh.
+    if ($sandbox) {
+        $lastrefresh = 0;
+        $path = $CFG->dataroot.'/manager/refreshtime';
+        if (file_exists($path) && is_readable($path)) {
+            $lastrefresh = intval(file_get_contents($path));
+        }
 
-    if ($diff > $delay) {
-        return false;
+        // Check if the last refresh was more than 7 days ago (7 x 24 x 60 x 60 = 604800).
+        if ((time() - $lastrefresh) > 604800) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Write commands to an incron file.
+ *
+ * Needs vfsStream for unit testing.
+ *
+ * @param array $commands The commands to write to the command file
+ * @param string $prefix The filename prefix to use for the command file
+ * @param string $path The directory to write the command file to.
+ */
+function block_rlagent_write_incron_commands($commands, $prefix, $path) {
+    $messages = array();
+
+    if (!file_exists($path) && !mkdir($path, 0770, true)) {
+        $messages[] = get_string('error_unable_to_create_dispatch_dir', 'block_rlagent', $path);
     } else {
-        return true;
+        // Write to a tempfile to make requests atomic.
+        $tmpfile = tempnam(sys_get_temp_dir(), $prefix);
+        $file = $path.'/'.basename($tmpfile);
+        if (file_put_contents($tmpfile, implode("\n", $commands))) {
+            if (copy($tmpfile, $file)) {
+                if (!unlink($tmpfile)) {
+                    $messages[] = get_string('error_unable_to_delete_temp_command_file', 'block_rlagent');
+                }
+            } else {
+                $messages[] = get_string('error_unable_to_copy_command', 'block_rlagent');
+            }
+        } else {
+            $messages[] = get_string('error_unable_to_write_temp_command_file', 'block_rlagent');
+        }
     }
+
+    return $messages;
 }

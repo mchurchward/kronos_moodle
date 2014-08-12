@@ -44,12 +44,12 @@ $PAGE->requires->css('/blocks/rlagent/css/bootstrap.css');
 $PAGE->requires->yui_module('moodle-block_rlagent-mass', 'M.block_rlagent.init');
 
 $strings = array(
-        'add', 'add_or_update_rating_bold', 'add_or_update_rating_normal', 'ajax_request_failed',
-        'average_rating', 'dependencies', 'dependency_will_be_added', 'failure', 'no_dependencies',
+        'actions_completed_success', 'actions_completed_failure', 'actions_in_progress', 'add',
+        'add_or_update_rating_bold', 'add_or_update_rating_normal', 'ajax_request_failed', 'average_rating', 'cancel',
+        'close', 'confirm', 'dependencies', 'dependency_will_be_added', 'failure', 'no_dependencies',
         'plugin_description_not_available', 'plugin_name_not_available', 'plugins_will_be_added',
-        'plugins_will_be_removed', 'plugins_will_be_updated', 'preparing_actions', 'remove',
-        'remove_action', 'remove_filter', 'success',
-        'title_auth', 'title_block', 'title_enrol', 'title_filter', 'title_format',
+        'plugins_will_be_removed', 'plugins_will_be_updated', 'preparing_actions', 'remove', 'remove_action',
+        'remove_filter', 'success', 'title_auth', 'title_block', 'title_enrol', 'title_filter', 'title_format',
         'title_gradeexport', 'title_local', 'title_module', 'title_plagiarism', 'title_qtype',
         'title_repository', 'title_theme', 'title_tinymce',
         'to_be_added', 'to_be_removed', 'to_be_updated', 'update'
@@ -63,26 +63,19 @@ if (!has_capability('moodle/site:config', context_system::instance())) {
     print_error('siteadminonly');
 }
 
-// Eventually we need a way to check whether the staging site's data
-// is up to date with the production site. For now, a boolean.
-$datacurrent = block_rlagent_needs_update();
-if ($datacurrent) {
-    $displayupdate = ' style="display: none;"';
-    $displayplugins = '';
-} else {
-    $displayupdate = '';
-    $displayplugins = ' style="display: none;"';
-}
-
 // Print header.
 print($OUTPUT->header($pagetitle));
 
 // Get filter renderers.
 $output = $PAGE->get_renderer('block_rlagent');
 
-// Print debug introduction.
-if (!$datacurrent) {
-  echo $output->print_update_available($USER);
+// Eventually we need a way to check whether the staging site's data
+// is up to date with the production site. For now, a boolean.
+$stale = block_rlagent_needs_update();
+$displayplugins = '';
+if ($stale) {
+    echo $output->print_update_available($USER);
+    $displayplugins = ' style="display: none;"';
 }
 
 $addfilters = get_string('btn_addfilters', 'block_rlagent');
@@ -99,7 +92,7 @@ foreach ($addontypes as $type) {
 $filters[] = '<li class="divider"></li>';
 $filters[] = '<li data-filter-mode="status" data-filter-refine="installed"><a href="#">'.get_string("title_installed", 'block_rlagent').'</a></li>';
 $filters[] = '<li data-filter-mode="status" data-filter-refine="notinstalled"><a href="#">'.get_string("title_not_installed", 'block_rlagent').'</a></li>';
-$filters[] = '<li data-filter-mode="status" data-filter-refine="upgradeable"><a href="#">'.get_string("title_upgradeable", 'block_rlagent').'</a></li>';
+$filters[] = '<li data-filter-mode="status" data-filter-refine="updateable"><a href="#">'.get_string("title_updateable", 'block_rlagent').'</a></li>';
 $filters[] = '<li class="divider"></li>';
 
 $filterhtml = implode("\n", $filters);
@@ -146,6 +139,10 @@ $sortbar = '
                 <i class="fa fa-cogs"></i>
                 '.get_string('update_selected_plugins', 'block_rlagent').'
             </button>
+            <div id="trust-filter-box" class="checkbox pull-right">
+                <input id="trust-filter" type="checkbox" value="1" checked="checked"/>
+                '.get_string('trusted_addons_only', 'block_rlagent').'
+            </div>
         </div>
     </div>
     <div class="plugins"></div>';
