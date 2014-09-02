@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+require_once(dirname(__FILE__).'/../lib.php');
 
 /**
  * Post install function for RL Update Manager block
@@ -37,4 +38,5 @@ function xmldb_block_rlagent_install() {
     $block_instance_record->defaultweight = 1;
     $DB->insert_record('block_instances', $block_instance_record);
 
+    block_rlagent_create_directories();
 }

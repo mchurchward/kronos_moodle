@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+require_once(dirname(__FILE__).'/../lib.php');
 
 /**
  * Post install function for RL Update Manager block
@@ -43,6 +44,8 @@ function xmldb_block_rlagent_upgrade() {
         if (!$dbman->table_exists($table)) {
             $dbman->create_table($table);
         }
+
+        block_rlagent_create_directories();
 
         // RL Agent savepoint reached.
         upgrade_block_savepoint(true, 2014010901, 'rlagent');

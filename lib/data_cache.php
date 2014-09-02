@@ -173,7 +173,7 @@ class block_rlagent_data_cache {
         if (is_array($response)) {
             if (array_key_exists(0, $response) && array_key_exists('result', $response[0])) {
                 // Future improved format
-                $this->data = $response[0];
+                $this->data = ksort($response[0]);
 
             } else {
                 // Current broken format

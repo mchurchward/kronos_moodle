@@ -24,6 +24,21 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
+ * Create the command directories for incron to monitor.
+ */
+function block_rlagent_create_directories() {
+    global $CFG;
+
+    $dirs = array($CFG->dataroot.'/manager/addons/commands', $CFG->dataroot.'/manager/refresh/commands');
+
+    foreach ($dirs as $dir) {
+        if (!file_exists($dir)) {
+            mkdir($dir, 0770, true);
+        }
+    }
+}
+
+/**
  * Figure out the proper branch number
  *
  * @return int The branch number
