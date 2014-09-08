@@ -1063,8 +1063,11 @@ class core_files_renderer extends plugin_renderer_base {
         $searchinput = html_writer::label(get_string('searchrepo', 'repository'),
             'reposearch', false, array('class' => 'accesshide'));
         $prompttag = (core_useragent::is_ie() && !core_useragent::check_browser_version('MSIE', '10.0')) ? 'value' : 'placeholder';
+        $searchlang = get_string_manager()->string_exists('searchforfilesinrepository', 'repository_elisfiles')
+                ? get_string('searchforfilesinrepository', 'repository_elisfiles')
+                : get_string('search', 'repository');
         $searchinput .= html_writer::empty_tag('input', array('type' => 'text',
-            'id' => 'reposearch', 'name' => 's', $prompttag => get_string('searchforfilesinrepository', 'repository_elisfiles')));
+            'id' => 'reposearch', 'name' => 's', $prompttag => $searchlang));
         $str = html_writer::tag('div', $searchinput, array('class' => "fp-def-search"));
 
         return $str;
