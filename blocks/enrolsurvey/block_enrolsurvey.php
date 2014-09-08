@@ -25,6 +25,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+require_once($CFG->dirroot.'/local/elisprogram/lib/setup.php');
 require_once($CFG->dirroot.'/blocks/enrolsurvey/lib.php');
 require_once($CFG->dirroot.'/local/elisprogram/lib/deprecatedlib.php'); // cm_get_crlmuserid()
 
