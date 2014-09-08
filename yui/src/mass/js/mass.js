@@ -432,9 +432,11 @@ M.block_rlagent = {
 
                 // For every installed plugin, if it depends on the removed plugin also remove it.
                 Y.Object.each(M.block_rlagent.data_addons, function($rvalue, $rkey) {
-                    if ($rvalue.dependencies[$key]) {
-                        M.block_rlagent.data_actions.remove[$dkey] = $dkey;
-                        $dependency = {'source': $key, 'target': $dkey};
+                    Y.log($rvalue);
+                    Y.log($rkey);
+                    if ((typeof $rvalue.dependencies != 'undefined') && ($rvalue.dependencies[$key])) {
+                        M.block_rlagent.data_actions.remove[$rkey] = $rkey;
+                        $dependency = {'source': $key, 'target': $rkey};
                         $report += '<ul>'+M.util.get_string('dependency_will_be_removed', 'block_rlagent', $dependency);
                     }
                 });
@@ -476,72 +478,94 @@ M.block_rlagent = {
              * @param boolean $success Whether the action dispatching script reported success.
              * @param array $messages A list of messages to be printed with the result message.
              */
-            function finish_modal($success, $messages) {
+            function finish_modal(success, messages) {
                 Y.log('finish_modal');
-                Y.log($success);
-                var $result;
-                if ($success) {
-                    $result = 'success';
+                Y.log(success);
+                var result;
+                if (success) {
+                    result = 'success';
                 } else {
-                    $result = 'failure';
+                    result = 'failure';
                 }
-                var $length = $messages.length;
-                var $msg = '';
-                for (var $i = 0; $i < $length; $i += 1) {
-                    $msg += '<li>'+$messages[$i]+"</li>\n";
+                var length = messages.length;
+                var msg = '';
+                if (length > 0) {
+                    for (var i = 0; i < length; i += 1) {
+                        msg += '<li>'+messages[i]+"</li>\n";
+                    }
+                    msg = '<ul>'+msg+"</ul>\n";
                 }
 
-                $msg = '<h4>'+M.util.get_string($result, 'block_rlagent')+"</h4>\n"+
-                       '<ul>'+M.util.get_string('actions_completed_'+$result, 'block_rlagent')+"</ul>\n"+
-                       '<ul>'+$msg+"</ul>\n";
-                Y.one('#action-results').insert($msg, 'before');
+                length = configs.length;
+                var warn = '';
+                if (length > 0) {
+                    for (var i = 0; i < length; i += 1) {
+                        warn += '<li>'+configs[i]+"</li>\n";
+                    }
+                    warn = '<ul>'+M.util.get_string('plugins_require_configuration', 'block_rlagent')+"</ul>\n"+
+                           '<ul>'+warn+"</ul>\n"+
+                           '<ul>'+M.util.get_string('plugins_need_help', 'block_rlagent')+"</ul>\n";
+                }
+
+                msg = '<h4>'+M.util.get_string(result, 'block_rlagent')+"</h4>\n"+
+                      '<ul>'+M.util.get_string('actions_completed_'+result, 'block_rlagent')+"</ul>\n"+
+                      msg+warn;
+                Y.one('#action-results').insert(msg, 'before');
                 // Hide the spinner.
                 Y.one('#modal-content .fa-spinner').hide();
                 // Enable the close button.
-                button = Y.one('#manage-actions-modal button');
-                button.set('disabled', false);
+                $button = Y.one('#manage-actions-modal button');
+                $button.set('disabled', false);
                 // Don't know why this isn't done automatically.  YUI bug?
-                button.removeClass('yui3-button-disabled');
+                $button.removeClass('yui3-button-disabled');
             }
 
             // Formulate AJAX request, make request, and write results to modal.
             // Build the query string sent in POST request.
-            var $data = '';
+            var data = '';
+            var configs = [];
 
             // Loop through all add actions.
-            Y.Object.each(M.block_rlagent.data_actions.add, function($value, $key) {
-                if ($data.length > 0) {
-                    $data += '&';
+            Y.log('Loop through add actions.');
+            Y.Object.each(M.block_rlagent.data_actions.add, function(value, key) {
+                Y.log(key+' -> '+value);
+                if (data.length > 0) {
+                    data += '&';
                 }
-                $data += 'add[]='+$key;
+                data += 'add[]='+key;
+
+                // Check for GAO+ (5) plugins
+                if (5 === M.block_rlagent.data_addons[key].source) {
+                    configs[configs.length] = key;
+                }
             });
 
             // Loop through all update actions.
-            Y.Object.each(M.block_rlagent.data_actions.update, function($value, $key) {
-                Y.log('Loop through update actions.');
-                if ($data.length > 0) {
-                    $data += '&';
+            Y.log('Loop through update actions.');
+            Y.Object.each(M.block_rlagent.data_actions.update, function(value, key) {
+                if (data.length > 0) {
+                    data += '&';
                 }
-                $data += 'update[]='+$key;
+                data += 'update[]='+key;
             });
 
             // Loop through all remove actions.
-            Y.Object.each(M.block_rlagent.data_actions.remove, function($value, $key) {
-                Y.log('Loop through remove actions.');
-                if ($data.length > 0) {
-                    $data += '&';
+            Y.log('Loop through remove actions.');
+            Y.Object.each(M.block_rlagent.data_actions.remove, function(value, key) {
+                if (data.length > 0) {
+                    data += '&';
                 }
-                $data += 'remove[]=' + $key;
+                data += 'remove[]='+key;
             });
 
-            Y.log('$data = ' + $data);
+            Y.log('data = ' + data);
 
             // AJAX to send actions.
             YUI().use("io-base", function(Y) {
                 var url = M.cfg.wwwroot+'/blocks/rlagent/mass/action.php';
                 var cfg = {
                     method: 'POST',
-                    data: $data,
+                    data: data,
                     on: {
                         success: function(id, o) {
                             Y.log('do_actions success');
@@ -791,6 +815,7 @@ M.block_rlagent = {
             $myrating = $value.myrating ? $value.myrating : 0;
             $rating = $value.rating ? $value.rating : 0;
             $installed = $value.installed ? $value.installed : false;
+            $paid = $value.paid ? $value.paid : false;
             $updateable = $value.upgradeable ? $value.upgradeable : false;
             $cached = $value.cached ? $value.cached : false;
             $type = $value.type ? $value.type : '1';
@@ -803,33 +828,42 @@ M.block_rlagent = {
             $datatype = 'data-type="'+String($type).replace(' ', '_')+'" ';
 
             // Install button options.
-            $installstring = M.util.get_string('add', 'block_rlagent');
-            $installclass = ' btn-install btn-success';
-            $installicon = 'fa fa-plus';
-            $installdataaction = ' data-action="add"';
+            installstring = M.util.get_string('add', 'block_rlagent');
+            installclass = ' btn-install btn-success';
+            installicon = 'fa fa-plus';
+            installdataaction = ' data-action="add"';
+            blocktype = 'button';
+            buttonclass = 'btn btn-block';
             if ($installed) {
                 // If plugin is installed, show "Remove".
-                $installstring = M.util.get_string('remove', 'block_rlagent');
-                $installclass = ' btn-remove btn-danger';
-                $installicon = 'fa fa-times';
-                $installdataaction = 'data-action="remove"';
+                installstring = M.util.get_string('remove', 'block_rlagent');
+                installclass = ' btn-remove btn-danger';
+                installicon = 'fa fa-times';
+                installdataaction = 'data-action="remove"';
+            } else if ($paid) {
+                installstring = M.util.get_string('for_pricing', 'block_rlagent');
+                installclass = '';
+                installicon = '';
+                installdataaction = '';
+                blocktype = 'div';
+                buttonclass = 'text-center';
             }
 
             // Update button options.
-            $updatedisabled = 'display:none;';
+            updatedisabled = 'display:none;';
             // If plugin is not updateable,
             if ($updateable) {
-                $updatedisabled = '';
+                updatedisabled = '';
             }
 
             // This will have to be updated when we start sending the plugin status.
-            $buttonmarkup = '<button type="button" class="btn btn-block'+$installclass+'"'+$installdataaction+'>';
-            $buttonmarkup += '<i class="'+$installicon+'"></i>';
-            $buttonmarkup += $installstring;
-            $buttonmarkup += '</button>';
+            $buttonmarkup = '<'+blocktype+' type="button" class="'+buttonclass+installclass+'"'+installdataaction+'>';
+            $buttonmarkup += '<i class="'+installicon+'"></i>';
+            $buttonmarkup += installstring;
+            $buttonmarkup += '</'+blocktype+'>';
 
             // Update button markup.
-            $upbuttonmarkup = '<button type="button" style="'+$updatedisabled+'"'+
+            $upbuttonmarkup = '<button type="button" style="'+updatedisabled+'"'+
                               ' class="btn btn-block btn-update btn-primary" data-action="update">';
             $upbuttonmarkup += '<i class="fa fa-level-up"></i>';
             $upbuttonmarkup += M.util.get_string('update', 'block_rlagent');

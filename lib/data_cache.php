@@ -107,7 +107,9 @@ class block_rlagent_data_cache {
                         $addon['installed'] = true;
                         $addon['versiondisk'] = $moodle->versiondisk;
                         $addon['versiondb'] = $moodle->versiondb;
-                        $addon['dependencies'] = $moodle->dependencies;
+                        if (!empty($moodle->dependencies)) {
+                            $addon['dependencies'] = $moodle->dependencies;
+                        }
                         if (!empty($moodle->release)) {
                             $addon['release'] = $moodle->release;
                         }
@@ -136,11 +138,27 @@ class block_rlagent_data_cache {
     protected function get_rlcache_data($type) {
         switch ($type) {
             case 'addonlist':
+                $software = block_rlagent_get_ini_value('deliverable_software', 'deliverables');
+                $elis = false;
+                if (strtolower($software) == 'elis') {
+                    $elis = true;
+                }
+
+                $pay = array();
+                // Turtles all the way down.
+                $cache = new block_rlagent_data_cache();
+                $groups = $cache->get_data('grouplist');
+                unset($cache);
+                if (is_array($groups) && is_array($groups['data']) && is_array($groups['data']['elis'])) {
+                    $pay = array_fill_keys($groups['data']['elis']['plugins'], 1);
+                }
+
                 foreach ($this->data['data'] as $name => $addon) {
                     $cached = $this->rlcache->get_addon_data($name);
                     $addon['cached'] = false;
                     $addon['upgradeable'] = false;
                     $addon['cache'] = array();
+                    $addon['paid'] = false;
                     if (!empty($cached->version)) {
                         $addon['cached'] = true;
                         $addon['cache']['dependencies'] = array();
@@ -151,6 +169,9 @@ class block_rlagent_data_cache {
                         if (($addon['installed'] == true) && ($addon['versiondisk'] < $cached->version)) {
                             $addon['upgradeable'] = true;
                         }
+                    }
+                    if (array_key_exists($name, $pay)) {
+                        $addon['paid'] = true;
                     }
                     $this->data['data'][$name] = $addon;
                 }

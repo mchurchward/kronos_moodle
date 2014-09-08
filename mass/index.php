@@ -45,14 +45,15 @@ $PAGE->requires->yui_module('moodle-block_rlagent-mass', 'M.block_rlagent.init')
 
 $strings = array(
         'actions_completed_success', 'actions_completed_failure', 'actions_in_progress', 'add',
-        'add_or_update_rating_bold', 'add_or_update_rating_normal', 'ajax_request_failed', 'average_rating', 'cancel',
-        'close', 'confirm', 'dependencies', 'dependency_will_be_added', 'failure', 'no_dependencies',
-        'plugin_description_not_available', 'plugin_name_not_available', 'plugins_will_be_added',
-        'plugins_will_be_removed', 'plugins_will_be_updated', 'preparing_actions', 'remove', 'remove_action',
-        'remove_filter', 'success', 'title_auth', 'title_block', 'title_enrol', 'title_filter', 'title_format',
-        'title_gradeexport', 'title_local', 'title_module', 'title_plagiarism', 'title_qtype',
-        'title_repository', 'title_theme', 'title_tinymce',
-        'to_be_added', 'to_be_removed', 'to_be_updated', 'update'
+        'add_or_update_rating_bold', 'add_or_update_rating_normal', 'ajax_request_failed',
+        'average_rating', 'cancel', 'close', 'confirm', 'dependencies', 'dependency_will_be_added',
+        'dependency_will_be_removed', 'failure', 'for_pricing', 'no_dependencies', 'plugin_description_not_available',
+        'plugin_name_not_available', 'plugins_need_help', 'plugins_require_configuration',
+        'plugins_will_be_added', 'plugins_will_be_removed', 'plugins_will_be_updated',
+        'preparing_actions', 'remove', 'remove_action', 'remove_filter', 'success', 'title_auth',
+        'title_block', 'title_enrol', 'title_filter', 'title_format', 'title_gradeexport',
+        'title_local', 'title_module', 'title_plagiarism', 'title_qtype', 'title_repository',
+        'title_theme', 'title_tinymce', 'to_be_added', 'to_be_removed', 'to_be_updated', 'update',
 );
 $PAGE->requires->strings_for_js($strings, 'block_rlagent');
 
