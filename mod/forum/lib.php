@@ -143,7 +143,7 @@ function forum_instance_created($context, $forum) {
     if ($forum->forcesubscribe == FORUM_INITIALSUBSCRIBE) {
         $users = forum_get_potential_subscribers($context, 0, 'u.id, u.email');
         foreach ($users as $user) {
-            forum_subscribe($user->id, $forum->id);
+            forum_subscribe($user->id, $forum->id, $context);
         }
     }
 }
@@ -241,7 +241,7 @@ function forum_update_instance($forum, $mform) {
     if (($forum->forcesubscribe == FORUM_INITIALSUBSCRIBE) && ($oldforum->forcesubscribe <> $forum->forcesubscribe)) {
         $users = forum_get_potential_subscribers($modcontext, 0, 'u.id, u.email', '');
         foreach ($users as $user) {
-            forum_subscribe($user->id, $forum->id);
+            forum_subscribe($user->id, $forum->id, $modcontext);
         }
     }
 
@@ -443,18 +443,15 @@ function forum_cron_minimise_user_record(stdClass $user) {
 }
 
 /**
- * Function to be run periodically according to the moodle cron
- * Finds all posts that have yet to be mailed out, and mails them
- * out to all subscribers
+ * Function to be run periodically according to the scheduled task.
  *
- * @global object
- * @global object
- * @global object
- * @uses CONTEXT_MODULE
- * @uses CONTEXT_COURSE
- * @uses SITEID
- * @uses FORMAT_PLAIN
- * @return void
+ * Finds all posts that have yet to be mailed out, and mails them
+ * out to all subscribers as well as other maintance tasks.
+ *
+ * NOTE: Since 2.7.2 this function is run by scheduled task rather
+ * than standard cron.
+ *
+ * @todo MDL-44734 The function will be split up into seperate tasks.
  */
 function forum_cron() {
     global $CFG, $USER, $DB;
@@ -1359,10 +1356,68 @@ function forum_user_complete($course, $user, $mod, $forum) {
     }
 }
 
+/**
+ * Filters the forum discussions according to groups membership and config.
+ *
+ * @since  Moodle 2.8, 2.7.1, 2.6.4
+ * @param  array $discussions Discussions with new posts array
+ * @return array Forums with the number of new posts
+ */
+function forum_filter_user_groups_discussions($discussions) {
 
+    // Group the remaining discussions posts by their forumid.
+    $filteredforums = array();
 
+    // Discard not visible groups.
+    foreach ($discussions as $discussion) {
 
+        // Course data is already cached.
+        $instances = get_fast_modinfo($discussion->course)->get_instances();
+        $forum = $instances['forum'][$discussion->forum];
 
+        // Continue if the user should not see this discussion.
+        if (!forum_is_user_group_discussion($forum, $discussion->groupid)) {
+            continue;
+        }
+
+        // Grouping results by forum.
+        if (empty($filteredforums[$forum->instance])) {
+            $filteredforums[$forum->instance] = new stdClass();
+            $filteredforums[$forum->instance]->id = $forum->id;
+            $filteredforums[$forum->instance]->count = 0;
+        }
+        $filteredforums[$forum->instance]->count += $discussion->count;
+
+    }
+
+    return $filteredforums;
+}
+
+/**
+ * Returns whether the discussion group is visible by the current user or not.
+ *
+ * @since Moodle 2.8, 2.7.1, 2.6.4
+ * @param cm_info $cm The discussion course module
+ * @param int $discussiongroupid The discussion groupid
+ * @return bool
+ */
+function forum_is_user_group_discussion(cm_info $cm, $discussiongroupid) {
+
+    if ($discussiongroupid == -1 || $cm->effectivegroupmode != SEPARATEGROUPS) {
+        return true;
+    }
+
+    if (isguestuser()) {
+        return false;
+    }
+
+    if (has_capability('moodle/site:accessallgroups', context_module::instance($cm->id)) ||
+            in_array($discussiongroupid, $cm->get_modinfo()->get_groups($cm->groupingid))) {
+        return true;
+    }
+
+    return false;
+}
 
 /**
  * @global object
@@ -1402,17 +1457,20 @@ function forum_print_overview($courses,&$htmlarray) {
     $params[] = $USER->id;
     $coursessql = implode(' OR ', $coursessqls);
 
-    $sql = "SELECT f.id, COUNT(*) as count "
+    $sql = "SELECT d.id, d.forum, f.course, d.groupid, COUNT(*) as count "
                 .'FROM {forum} f '
-                .'JOIN {forum_discussions} d ON d.forum  = f.id '
+                .'JOIN {forum_discussions} d ON d.forum = f.id '
                 .'JOIN {forum_posts} p ON p.discussion = d.id '
                 ."WHERE ($coursessql) "
                 .'AND p.userid != ? '
-                .'GROUP BY f.id';
+                .'GROUP BY d.id, d.forum, f.course, d.groupid';
 
-    if (!$new = $DB->get_records_sql($sql, $params)) {
-        $new = array(); // avoid warnings
+    // Avoid warnings.
+    if (!$discussions = $DB->get_records_sql($sql, $params)) {
+        $discussions = array();
     }
+
+    $forumsnewposts = forum_filter_user_groups_discussions($discussions);
 
     // also get all forum tracking stuff ONCE.
     $trackingforums = array();
@@ -1460,7 +1518,7 @@ function forum_print_overview($courses,&$htmlarray) {
         $unread = array();
     }
 
-    if (empty($unread) and empty($new)) {
+    if (empty($unread) and empty($forumsnewposts)) {
         return;
     }
 
@@ -1472,8 +1530,8 @@ function forum_print_overview($courses,&$htmlarray) {
         $thisunread = 0;
         $showunread = false;
         // either we have something from logs, or trackposts, or nothing.
-        if (array_key_exists($forum->id, $new) && !empty($new[$forum->id])) {
-            $count = $new[$forum->id]->count;
+        if (array_key_exists($forum->id, $forumsnewposts) && !empty($forumsnewposts[$forum->id])) {
+            $count = $forumsnewposts[$forum->id]->count;
         }
         if (array_key_exists($forum->id,$unread)) {
             $thisunread = $unread[$forum->id]->count;
@@ -1562,25 +1620,11 @@ function forum_print_recent_activity($course, $viewfullnames, $timestart) {
             }
         }
 
-        $groupmode = groups_get_activity_groupmode($cm, $course);
-
-        if ($groupmode) {
-            if ($post->groupid == -1 or $groupmode == VISIBLEGROUPS or has_capability('moodle/site:accessallgroups', $context)) {
-                // oki (Open discussions have groupid -1)
-            } else {
-                // separate mode
-                if (isguestuser()) {
-                    // shortcut
-                    continue;
-                }
-
-                if (!in_array($post->groupid, $modinfo->get_groups($cm->groupingid))) {
-                    continue;
-                }
-            }
+        // Check that the user can see the discussion.
+        if (forum_is_user_group_discussion($cm, $post->groupid)) {
+            $printposts[] = $post;
         }
 
-        $printposts[] = $post;
     }
     unset($posts);
 
@@ -3839,12 +3883,18 @@ function forum_print_discussion_header(&$post, $forum, $group=-1, $datestring=""
 
     echo '<td class="lastpost">';
     $usedate = (empty($post->timemodified)) ? $post->modified : $post->timemodified;  // Just in case
-    $parenturl = (empty($post->lastpostid)) ? '' : '&amp;parent='.$post->lastpostid;
+    $parenturl = '';
     $usermodified = new stdClass();
     $usermodified->id = $post->usermodified;
     $usermodified = username_load_fields_from_object($usermodified, $post, 'um');
-    echo '<a href="'.$CFG->wwwroot.'/user/view.php?id='.$post->usermodified.'&amp;course='.$forum->course.'">'.
-         fullname($usermodified).'</a><br />';
+
+    // Show link to last poster and their post if user can see them.
+    if ($canviewparticipants) {
+        echo '<a href="'.$CFG->wwwroot.'/user/view.php?id='.$post->usermodified.'&amp;course='.$forum->course.'">'.
+             fullname($usermodified).'</a><br />';
+        $parenturl = (empty($post->lastpostid)) ? '' : '&amp;parent='.$post->lastpostid;
+    }
+
     echo '<a href="'.$CFG->wwwroot.'/mod/forum/discuss.php?d='.$post->discussion.$parenturl.'">'.
           userdate($usedate, $datestring).'</a>';
     echo "</td>\n";
@@ -4819,12 +4869,12 @@ function forum_get_optional_subscribed_forums() {
 /**
  * Adds user to the subscriber list
  *
- * @global object
  * @param int $userid
  * @param int $forumid
+ * @param context_module|null $context Module context, may be omitted if not known or if called for the current module set in page.
  */
-function forum_subscribe($userid, $forumid) {
-    global $DB;
+function forum_subscribe($userid, $forumid, $context = null) {
+    global $DB, $PAGE;
 
     if ($DB->record_exists("forum_subscriptions", array("userid"=>$userid, "forum"=>$forumid))) {
         return true;
@@ -4836,9 +4886,18 @@ function forum_subscribe($userid, $forumid) {
 
     $result = $DB->insert_record("forum_subscriptions", $sub);
 
-    $cm = get_coursemodule_from_instance('forum', $forumid);
+    if (!$context) {
+        // Find out forum context. First try to take current page context to save on DB query.
+        if ($PAGE->cm && $PAGE->cm->modname === 'forum' && $PAGE->cm->instance == $forumid
+                && $PAGE->context->contextlevel == CONTEXT_MODULE && $PAGE->context->instanceid == $PAGE->cm->id) {
+            $context = $PAGE->context;
+        } else {
+            $cm = get_coursemodule_from_instance('forum', $forumid);
+            $context = context_module::instance($cm->id);
+        }
+    }
     $params = array(
-        'context' => context_module::instance($cm->id),
+        'context' => $context,
         'objectid' => $result,
         'relateduserid' => $userid,
         'other' => array('forumid' => $forumid),
@@ -4853,21 +4912,30 @@ function forum_subscribe($userid, $forumid) {
 /**
  * Removes user from the subscriber list
  *
- * @global object
  * @param int $userid
  * @param int $forumid
+ * @param context_module|null $context Module context, may be omitted if not known or if called for the current module set in page.
  */
-function forum_unsubscribe($userid, $forumid) {
-    global $DB;
+function forum_unsubscribe($userid, $forumid, $context = null) {
+    global $DB, $PAGE;
 
     $DB->delete_records('forum_digests', array('userid' => $userid, 'forum' => $forumid));
 
     if ($forumsubscription = $DB->get_record('forum_subscriptions', array('userid' => $userid, 'forum' => $forumid))) {
         $DB->delete_records('forum_subscriptions', array('id' => $forumsubscription->id));
 
-        $cm = get_coursemodule_from_instance('forum', $forumid);
+        if (!$context) {
+            // Find out forum context. First try to take current page context to save on DB query.
+            if ($PAGE->cm && $PAGE->cm->modname === 'forum' && $PAGE->cm->instance == $forumid
+                    && $PAGE->context->contextlevel == CONTEXT_MODULE && $PAGE->context->instanceid == $PAGE->cm->id) {
+                $context = $PAGE->context;
+            } else {
+                $cm = get_coursemodule_from_instance('forum', $forumid);
+                $context = context_module::instance($cm->id);
+            }
+        }
         $params = array(
-            'context' => context_module::instance($cm->id),
+            'context' => $context,
             'objectid' => $forumsubscription->id,
             'relateduserid' => $userid,
             'other' => array('forumid' => $forumid),
@@ -5622,15 +5690,17 @@ function forum_print_latest_discussions($course, $forum, $maxdiscussions=-1, $di
         echo '</form>';
         echo "</div>\n";
 
-    } else if (isguestuser() or !isloggedin() or $forum->type == 'news') {
+    } else if (isguestuser() or !isloggedin() or $forum->type == 'news' or
+        $forum->type == 'qanda' and !has_capability('mod/forum:addquestion', $context) or
+        $forum->type != 'qanda' and !has_capability('mod/forum:startdiscussion', $context)) {
         // no button and no info
 
-    } else if ($groupmode and has_capability('mod/forum:startdiscussion', $context)) {
+    } else if ($groupmode and !has_capability('moodle/site:accessallgroups', $context)) {
         // inform users why they can not post new discussion
-        if ($currentgroup) {
-            echo $OUTPUT->notification(get_string('cannotadddiscussion', 'forum'));
-        } else {
+        if (!$currentgroup) {
             echo $OUTPUT->notification(get_string('cannotadddiscussionall', 'forum'));
+        } else if (!groups_is_member($currentgroup)) {
+            echo $OUTPUT->notification(get_string('cannotadddiscussion', 'forum'));
         }
     }
 
@@ -5720,6 +5790,11 @@ function forum_print_latest_discussions($course, $forum, $maxdiscussions=-1, $di
     }
 
     foreach ($discussions as $discussion) {
+        if ($forum->type == 'qanda' && !has_capability('mod/forum:viewqandawithoutposting', $context) &&
+            !forum_user_has_posted($forum->id, $discussion->discussion, $USER->id)) {
+            $canviewparticipants = false;
+        }
+
         if (!empty($replies[$discussion->discussion])) {
             $discussion->replies = $replies[$discussion->discussion]->replies;
             $discussion->lastpostid = $replies[$discussion->discussion]->lastpostid;

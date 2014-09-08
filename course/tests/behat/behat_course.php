@@ -122,9 +122,7 @@ class behat_course extends behat_base {
     public function i_go_to_the_courses_management_page() {
         return array(
             new Given('I am on homepage'),
-            new Given('I expand "' . get_string('administrationsite') . '" node'),
-            new Given('I expand "' . get_string('courses', 'admin') . '" node'),
-            new Given('I follow "' . get_string('coursemgmt', 'admin') . '"')
+            new Given('I navigate to "' . get_string('coursemgmt', 'admin') . '" node in "' . get_string('administrationsite') . ' > ' . get_string('courses', 'admin') . '"')
         );
     }
 
@@ -699,12 +697,12 @@ class behat_course extends behat_base {
      * @return Given[]
      */
     public function i_delete_activity($activityname) {
-
-        $deletestring = get_string('delete');
-
-        $steps = array(
-            new Given('I click on "' . $this->escape($deletestring) . '" "link" in the "' . $this->escape($activityname) . '" activity')
-        );
+        $steps = array();
+        $activity = $this->escape($activityname);
+        if ($this->running_javascript()) {
+            $steps[] = new Given('I open "' . $activity . '" actions menu');
+        }
+        $steps[] = new Given('I click on "' . get_string('delete') . '" "link" in the "' . $activity . '" activity');
 
         // JS enabled.
         // Not using chain steps here because the exceptions catcher have problems detecting

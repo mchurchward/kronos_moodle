@@ -42,8 +42,12 @@ $chooselog   = optional_param('chooselog', false, PARAM_BOOL);
 $logformat   = optional_param('download', '', PARAM_ALPHA);
 $logreader      = optional_param('logreader', '', PARAM_COMPONENT); // Reader which will be used for displaying logs.
 $edulevel    = optional_param('edulevel', -1, PARAM_INT); // Educational level.
+$hostcourse  = optional_param('host_course', null, PARAM_INT); // MNet Course ID.
 
 $params = array();
+if ($id !== 0) {
+    $params['id'] = $id;
+}
 if ($group !== 0) {
     $params['group'] = $group;
 }
@@ -131,8 +135,6 @@ if ($PAGE->user_allowed_editing() && $adminediting != -1) {
     $USER->editing = $adminediting;
 }
 
-\core\session\manager::write_close();
-
 if (empty($course) || ($course->id == $SITE->id)) {
     admin_externalpage_setup('reportlog', '', null, '', array('pagelayout' => 'report'));
     $PAGE->set_title($SITE->shortname .': '. $strlogs);
@@ -159,6 +161,10 @@ if (empty($readers)) {
             $userinfo = get_string('allparticipants');
             $dateinfo = get_string('alldays');
 
+            if ($hostcourse) {
+                echo $OUTPUT->notification(get_string('mnetlogwarning', 'report_log'));
+            }
+
             if ($user) {
                 $u = $DB->get_record('user', array('id' => $user, 'deleted' => 0), '*', MUST_EXIST);
                 $userinfo = fullname($u, has_capability('moodle/site:viewfullnames', $context));
@@ -171,12 +177,16 @@ if (empty($readers)) {
             }
             echo $output->render($reportlog);
         } else {
+            \core\session\manager::write_close();
             $reportlog->download();
             exit();
         }
     } else {
         echo $output->header();
         echo $output->heading(get_string('chooselogs') .':');
+        if ($hostcourse) {
+            echo $OUTPUT->notification(get_string('mnetlogwarning', 'report_log'));
+        }
         echo $output->render($reportlog);
     }
 }
