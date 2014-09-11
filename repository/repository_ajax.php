@@ -291,10 +291,14 @@ switch ($action) {
                 // {@link repository::copy_to_area()}.
                 $fileinfo = $repo->copy_to_area($reference, $record, $maxbytes, $areamaxbytes);
 
-                // RL EDIT: BJB130215 - ELIS Files (alfresco)
-                $decodedsrc = unserialize(base64_decode($source));
+                // RL EDIT: BJB140918, BJB130215 - ELIS Files (alfresco)
                 // error_log("repository_ajax.php::download (IV): saveas_path = {$saveas_path}, toelisfiles = {$toelisfiles}");
                 if ($toelisfiles) {
+                    try {
+                        $decodedsrc = @unserialize(base64_decode($reference));
+                    } catch (Exception $e) {
+                        $decodedsrc = null;
+                    }
                     // Copying to ELIS Files (Alfresco repo)
                     $fpsrc = null;
                     $tempfname = false;
@@ -331,8 +335,6 @@ switch ($action) {
                         $err->error = get_string('cannotdownload', 'repository');
                         die(json_encode($err));
                     }
-                } else { // TBD ??? is the following even required ???
-                    $fileinfo = $repo->copy_to_area($source, $record, $maxbytes);
                 }
                 // End RL EDIT
                 ajax_check_captured_output();
