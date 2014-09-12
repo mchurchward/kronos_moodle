@@ -46,15 +46,22 @@ class block_rlagent_addon_cache_client {
             $current = getcwd();
 
             if (chdir($path)) {
+                $bare = true;
+                exec("git rev-parse --is-bare-repository | grep false", $output, $bare);
+                if (!$bare) {
+                    // If it's not-bare we need to look at the version file from the remote repository because the local
+                    // version could be modified or badly out-of-date.
+                    $origin = 'origin/';
+                }
                 $notexists = true;
                 // Check if the reference repository has a version file (tinymce plugins don't).
-                exec("git ls-tree origin/$branch | grep version.php", $output, $notexists);
+                exec("git rev-parse --verify {$origin}{$branch}", $output, $notexists);
                 if (!$notexists) {
                     // We aren't allowed to modify the reference version so we need to get the file contents
                     // and evaluate them, since the repository might not be on the right branch or commit.
                     $file = array();
-                    exec("git cat-file blob origin/$branch:version.php", $file);
-                    $file = str_replace('<?php', '', implode("\n", $file));
+                    exec("git cat-file blob {$origin}{$branch}:version.php", $file);
+                    $file = str_ireplace('<?php', '', implode("\n", $file));
                     eval($file);
                     chdir($current);
                 }
