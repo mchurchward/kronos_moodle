@@ -22,7 +22,7 @@ require_once(dirname(__FILE__).'/../lib.php');
  * @copyright  2014 Remote Learner Inc http://www.remote-learner.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-function xmldb_block_rlagent_upgrade() {
+function xmldb_block_rlagent_upgrade($oldversion, $block) {
     global $DB;
     $dbman = $DB->get_manager(); // Loads ddl manager and xmldb classes.
 
@@ -50,4 +50,6 @@ function xmldb_block_rlagent_upgrade() {
         // RL Agent savepoint reached.
         upgrade_block_savepoint(true, 2014010901, 'rlagent');
     }
+
+    return true;
 }
