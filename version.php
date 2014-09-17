@@ -22,8 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$plugin->version   = 2014070200;
+$plugin->version   = 2014070201;
 $plugin->requires  = 2014051200;
 $plugin->component = 'block_rlagent';
 $plugin->cron      = 300;
-$plugin->release   = '2.7.1.0';
+$plugin->release   = '2.7.1.1';
