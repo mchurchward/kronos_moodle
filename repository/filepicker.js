@@ -629,7 +629,7 @@ M.core_filepicker.init = function(Y, options) {
                             if (args.action != 'upload' && data.allowcaching) {
                                 scope.cached_responses[params] = data;
                             }
-                            // RL EDIT: BJB130215
+                            // RL EDIT: BJB140922, BJB130215
                             if (data && data.parentpath) {
                                 // Set the parent path in the provider scope (i.e. the caller)
                                 scope.set_parentpath(data.parentpath);
@@ -675,19 +675,22 @@ M.core_filepicker.init = function(Y, options) {
                 params['existingfilepath'] = data.existingfile.filepath;
                 params['newfilename'] = data.newfile.filename;
                 params['newfilepath'] = data.newfile.filepath;
-                // RL EDIT: BJB130215
-                // duplicate info for elis files
-                params['duplicateelisfiles'] = data.duplicateelisfiles;
-                params['duplicateuuid'] = data.duplicateuuid;
                 // duplicate info for temp file
                 params['overwrite'] = true;
+                // RL EDIT BJB140922
                 if (data.duplicateelisfiles !== undefined) {
+                    // duplicate info for elis files
+                    params['duplicateelisfiles'] = data.duplicateelisfiles;
+                    params['duplicateuuid'] = data.duplicateuuid;
                     params['duplicatefilemetapath'] = data.duplicatefilemeta.filepath;
                     params['duplicatefilemetasize'] = data.duplicatefilemeta.size;
                     params['duplicatefilemetatype'] = data.duplicatefilemeta.type;
                     params['duplicatefilemetaname'] = data.duplicatefilemeta.name;
                     // pass encoded Alfresco save path
                     params['savepath'] = data.existingfile.filepath;
+                    if (data.duplicaterepo_id === undefined) {
+                        data.duplicaterepo_id = this.active_repo.id;
+                    }
                 } else {
                     params['duplicateelisfiles'] = false;
                     params['duplicateuuid'] = false;
@@ -702,7 +705,6 @@ M.core_filepicker.init = function(Y, options) {
                     'path': '',
                     'client_id': this.options.client_id,
                     'repository_id': data.duplicaterepo_id, // RL EDIT
-                    // ^^^TBD: this doesn't appear to be set if data.duplicateelisfiles !== undefined (?)
                     'callback': function(id, o, args) {
                         scope.hide();
                         if (scope.options.editor_target && scope.options.env == 'editor') {
@@ -1512,19 +1514,22 @@ M.core_filepicker.init = function(Y, options) {
             this.show_recent_repository();
 
             // RL EDIT - close the advanced search dialog when the file picker closes
-            var title_bars = Y.all('.yui3-widget-hd');
-            for (var i = 0; i < title_bars.size(); i++) {
+            var titlebars = Y.all('.yui3-widget-hd');
+            for (var i = 0; i < titlebars.size(); i++) {
                 // Find close buttons belonging to title bars
-                var title_bar = title_bars.item(i);
-                var close_button = title_bar.one('.yui3-button-close');
-                var display = close_button.getStyle('display');
+                var titlebar;
+                var closebutton;
+                if (!(titlebar = titlebars.item(i)) || !(closebutton = titlebar.one('.yui3-button-close'))) {
+                    continue;
+                }
+                var display = closebutton.getStyle('display');
                 if (display != 'none') {
                     // This is the main title bar, so add a handler to close the
                     // advanced search dialog when this is clicked
-                    close_button.on('click', function(e) {
-                        var search_dialog = Y.one('#fp-search-dlg');
-                        if (search_dialog != null) {
-                            search_dialog.one('.container-close').simulate('click');
+                    closebutton.on('click', function(e) {
+                        var searchdialog = Y.one('#fp-search-dlg');
+                        if (searchdialog != null) {
+                            searchdialog.one('.container-close').simulate('click');
                         }
                     });
                 }
@@ -1548,11 +1553,11 @@ M.core_filepicker.init = function(Y, options) {
             this.filepath = data.path?data.path:null;
 
             // RL EDIT
-            this.filelist = data.list?data.list:null; // elis_files: filelist
-            this.parentuuid = data.thisuuid?data.thisuuid:'';  // elis_files: current parent of the folder we are viewing
-            this.detailcols = data.detailcols?data.detailcols:null; // elis_files: configurable columns - N/A for 2.3
-            this.locations = data.locations?data.locations:null; // elis_files: used for the Jump menu
-            // this.objecttag = data.object?data.object:null;
+            this.filelist = data.list ? data.list : null; // elis_files: filelist
+            this.parentuuid = data.thisuuid ? data.thisuuid : '';  // elis_files: current parent of the folder we are viewing
+            this.detailcols = data.detailcols ? data.detailcols : null; // elis_files: configurable columns - N/A for 2.3
+            this.locations = data.locations ? data.locations : null; // elis_files: used for the Jump menu
+            // this.objecttag = data.object ? data.object : null;
             // ^^^TBD - why was this line removed ???
             // End RL EDIT
 
@@ -1793,7 +1798,7 @@ M.core_filepicker.init = function(Y, options) {
                 scope.parse_repository_options(obj);
                 scope.view_files();
             }
-            scope.set_jumpto_state(scope.filepath); // RL EDIT
+            scope.set_jumpto_state(scope.filepath); // RL EDIT: BJB140922
         },
         list: function(args) {
             if (!args) {
@@ -2018,15 +2023,17 @@ M.core_filepicker.init = function(Y, options) {
             e.preventDefault();
             // RL EDIT: ELIS-7143
             var srchstr = Y.one('input[name="s"]');
-            //alert('setup_toolbar:search = \''+ srchstr.get('value') + '\'');
-
-            // RL edit: only search if text or category selected
-            var have_search_criteria = categoryids != null || srchstr.get('value').length;
-            if (!this.active_repo.nosearch && have_search_criteria) {
-                // RL edit: close the dialog whenever a search happens
-                var search_dialog = Y.one('#fp-search-dlg');
-                if (search_dialog != null) {
-                    search_dialog.one('.container-close').simulate('click');
+            var havesearchcriteria = false;
+            if (srchstr) {
+                // alert('setup_toolbar:search = \''+ srchstr.get('value') + '\'');
+                // RL edit: only search if text or category selected
+                havesearchcriteria = categoryids != null || srchstr.get('value').length;
+            }
+            if (!this.active_repo.nosearch && havesearchcriteria) {
+                // RL EDIT: close the dialog whenever a search happens
+                var searchdialog = Y.one('#fp-search-dlg');
+                if (searchdialog != null) {
+                    searchdialog.one('.container-close').simulate('click');
                 }
                 // End of RL edit
 
@@ -2335,17 +2342,18 @@ M.core_filepicker.init = function(Y, options) {
             // Handling for the button that runs the search
             if (r.executesearch) {
                 // Obtain the right element
-                var searchbutton = Y.one('.fp-tb-executesearch').one('img');
+                var searchbutton;
+                if (searchbutton = Y.one('.fp-tb-executesearch').one('img')) {
+                    // Remove stale event handlers
+                    searchbutton.purge(false, 'click');
 
-                // Remove stale event handlers
-                searchbutton.purge(false, 'click');
-
-                // When the button is clicked, hide the advanced search dialog
-                searchbutton.on('click', function(e) {
-                    // Run the search, refreshing the contents of the filepicker's listing
-                    scope.execute_search(e);
-                    scope.execute_search(e);
-                });
+                    // When the button is clicked, hide the advanced search dialog
+                    searchbutton.on('click', function(e) {
+                        // Run the search, refreshing the contents of the filepicker's listing
+                        scope.execute_search(e);
+                        scope.execute_search(e);
+                     });
+                }
             }
 
             this.print_jump(); // 'Jump to..' menu

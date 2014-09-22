@@ -26,7 +26,13 @@
 require('../config.php');
 require_once("$CFG->dirroot/user/files_form.php");
 require_once("$CFG->dirroot/repository/lib.php");
-require_once($CFG->dirroot.'/repository/elisfiles/lib/lib.php'); // RL EDIT
+// RL EDIT: BJB140922
+$haselisfiles = false;
+if (file_exists($CFG->dirroot.'/repository/elisfiles/lib/lib.php')) {
+    require_once($CFG->dirroot.'/repository/elisfiles/lib/lib.php');
+    $haselisfiles = true;
+}
+// End RL EDIT
 
 require_login();
 if (isguestuser()) {
@@ -36,7 +42,6 @@ if (isguestuser()) {
 // RL EDIT
 $returnurl = optional_param('returnurl', '', PARAM_URL); // was: PARAM_LOCALURL
 $courseid = optional_param('courseid', SITEID, PARAM_INT); // ELIS-7127
-$returnbutton = true;
 // End RL EDIT
 
 if (empty($returnurl)) {
@@ -55,11 +60,15 @@ $PAGE->set_title($title);
 $PAGE->set_heading($title);
 $PAGE->set_pagelayout('mydashboard');
 $PAGE->set_pagetype('user-files');
-// RL EDIT: BJB130215 - need this module for the rendering of the ELIS Files advanced search UI
-// $PAGE->requires->yui_module(array('yui2-layout', 'yui2-container', 'yui2-dragdrop'), 'TBD_init_function');
 
-// Obtain the UUID for the default browsing location
-$currentpath = elis_files_get_current_path_for_course($courseid, true);
+// RL EDIT: BJB140922, BJB130215 - need this module for the rendering of the ELIS Files advanced search UI
+$currentpath = '/';
+if ($haselisfiles) {
+    // $PAGE->requires->yui_module(array('yui2-layout', 'yui2-container', 'yui2-dragdrop'), 'TBD_init_function');
+
+    // Obtain the UUID for the default browsing location
+    $currentpath = elis_files_get_current_path_for_course($courseid, true);
+}
 // End RL EDIT
 
 $maxbytes = $CFG->userquota;

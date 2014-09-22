@@ -51,9 +51,9 @@ $saveas_path   = optional_param('savepath', '/', PARAM_PATH);   // save as file 
 $search_text   = optional_param('s', '', PARAM_CLEANHTML);
 $linkexternal  = optional_param('linkexternal', '', PARAM_ALPHA);
 $usefilereference  = optional_param('usefilereference', false, PARAM_BOOL);
-//RL EDIT: BJB130215
+// RL EDIT: BJB130215
 $overwriteexisting = optional_param('overwrite', false, PARAM_BOOL);
-$categories        = optional_param_array('categories', NULL, PARAM_RAW); // this parameter specifies an array of categories to filter on
+$categories        = optional_param_array('categories', null, PARAM_RAW); // this parameter specifies an array of categories to filter on
 // End RL EDIT
 list($context, $course, $cm) = get_context_info_array($contextid);
 require_login($course, false, $cm, false, true);
@@ -137,11 +137,13 @@ switch ($action) {
         echo json_encode($search_form);
         break;
     case 'search':
-        // RL EDIT: BJB130215
+        // RL EDIT: BJB140922, BJB130215
         // Perform the search, filtering on categories and search text
         $search_result = repository::prepare_listing($repo->search($search_text, (int)$page, $categories));
-        $search_result['advancedsearch'] = true;
-        $search_result['executesearch'] = true;
+        if (get_class($repo) == 'repository_elisfiles') {
+            $search_result['advancedsearch'] = true;
+            $search_result['executesearch'] = true;
+        }
         // End RL EDIT
         $search_result['repo_id'] = $repo_id;
         $search_result['issearchresult'] = true;
@@ -331,8 +333,6 @@ switch ($action) {
                         $err->error = get_string('cannotdownload', 'repository');
                         die(json_encode($err));
                     }
-                } else { // TBD ??? is the following even required ???
-                    $fileinfo = $repo->copy_to_area($source, $record, $maxbytes);
                 }
                 // End RL EDIT
                 ajax_check_captured_output();

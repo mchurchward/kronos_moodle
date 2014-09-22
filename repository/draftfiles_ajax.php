@@ -35,7 +35,7 @@ require_once($CFG->dirroot.'/repository/lib.php');
 
 // RL EDIT
 $has_elisfiles = false;
-if (file_exists($CFG->dirroot.'/repository/elisfiles/')) {
+if (file_exists($CFG->dirroot.'/repository/elisfiles/lib.php')) {
     $has_elisfiles = true;
     require_once($CFG->dirroot.'/repository/elisfiles/lib.php');
     require_once($CFG->dirroot.'/repository/elisfiles/lib/lib.php');
