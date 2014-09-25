@@ -88,7 +88,10 @@ function elis_files_userset_deleted($eventdata) {
  */
 function elis_files_role_unassigned($ra) {
     global $DB;
-    $ra = $DB->get_record('role_assignments', array('id' => $ra->other['id']));
+
+    if (method_exists($ra, 'trigger')) { // from new event API
+        $ra = $DB->get_record('role_assignments', array('id' => $ra->other['id']));
+    }
 
     // Only proceed here if we have valid userid,contextid & the Alfresco plug-in is actually enabled.
     if (empty($ra->userid) || empty($ra->contextid) ||

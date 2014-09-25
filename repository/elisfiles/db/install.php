@@ -250,6 +250,9 @@ function xmldb_repository_elisfiles_install() {
     unset_all_config_for_plugin('elis_files');
     unset_all_config_for_plugin('repository_elis_files');
 
+    // Remove left-over event handlers.
+    $DB->delete_records('events_handlers', array('component' => 'repository_elis_files'));
+
     // Update repository table
     $sql = 'UPDATE {repository} SET type = "elisfiles" WHERE type = "elis_files"';
     $DB->execute($sql);

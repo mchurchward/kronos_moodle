@@ -24,6 +24,13 @@
  */
 
 function xmldb_repository_elisfiles_upgrade($oldversion = 0) {
+    global $DB;
     $result = true;
+
+    if ($result && $oldversion < 2014082501) {
+        $DB->delete_records('events_handlers', array('component' => 'repository_elis_files'));
+        upgrade_plugin_savepoint($result, 2014082501, 'repository', 'elisfiles');
+    }
+
     return $result;
 }
