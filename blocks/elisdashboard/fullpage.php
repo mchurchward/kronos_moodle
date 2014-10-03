@@ -69,6 +69,14 @@ if (!empty($instance)) {
     $PAGE->set_title($widget->get_name());
     $PAGE->set_heading($widget->get_name());
 
+    // Add required head JS files.
+    $requiredjs = $widget->get_js_dependencies_head();
+    if (!empty($requiredjs)) {
+        foreach ($requiredjs as $file) {
+            $PAGE->requires->js($file, true);
+        }
+    }
+
     // Add required JS files.
     $requiredjs = $widget->get_js_dependencies();
     if (!empty($requiredjs)) {

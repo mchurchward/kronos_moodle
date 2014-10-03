@@ -71,6 +71,14 @@ class block_elisdashboard extends block_base {
         // Initialize settings.
         $widget->set_settings($this->config);
 
+        // Add required head JS files.
+        $requiredjs = $widget->get_js_dependencies_head();
+        if (!empty($requiredjs)) {
+            foreach ($requiredjs as $file) {
+                $PAGE->requires->js($file, true);
+            }
+        }
+
         // Add required JS files.
         $requiredjs = $widget->get_js_dependencies();
         $requiredjs[] = new \moodle_url('/blocks/elisdashboard/js/expand.js');
