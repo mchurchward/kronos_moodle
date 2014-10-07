@@ -40,7 +40,6 @@
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="usersetid"/>
-        <KEY NAME="usersetid" TYPE="foreign" FIELDS="usersetid" REFTABLE="crlm_cluster" REFFIELDS="id" PREVIOUS="primary"/>
       </KEYS>
       <INDEXES>
         <INDEX NAME="usersetid-uuid" UNIQUE="true" FIELDS="usersetid, uuid"/>
