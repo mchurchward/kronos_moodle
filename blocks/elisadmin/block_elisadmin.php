@@ -166,27 +166,32 @@ class block_elisadmin extends block_base {
         /*****************************************
          * Curricula
          *****************************************/
-        if(!empty(elis::$config->local_elisprogram->display_curricula_at_top_level)) {
+        if (!empty(elis::$config->local_elisprogram->display_curricula_at_top_level)) {
+            // We have to track the number of programs that are added to the tree.
+            $programcount = 0;
+            // We also have to track the number of records that don't get filtered.
+            $validprogramcount = 0;
             $managecurricula_css_class = block_elisadmin_get_item_css_class('managecurricula');
             $curriculum_css_class = block_elisadmin_get_item_css_class('curriculum_instance');
 
             require_once elispm::file('curriculumpage.class.php');
-            $num_records = curriculum_count_records('', '', curriculumpage::get_contexts('local/elisprogram:program_view'));
+            // Get the records from the db, do not limit by number to display, we'll take care of that below.
+            $curricula = $DB->get_recordset(curriculum::TABLE, null, 'priority ASC, name ASC', '*');
 
-            $curricula = $DB->get_recordset(curriculum::TABLE, null, 'priority ASC, name ASC', '*', 0, $num_block_icons);
-            foreach($curricula as $curriculum) {
+            // Iterate through each record and make it a menu item.
+            foreach ($curricula as $curriculum) {
                 $params = array('id'     => $curriculum->id,
                                 'action' => 'view');
 
-                //count associated courses
+                // Count associated courses.
                 $course_filter = array('contexts' => coursepage::get_contexts('local/elisprogram:course_view'));
                 $course_count = curriculumcourse_count_records($curriculum->id, '', '', $course_filter);
 
-                //count associated tracks
+                // Count associated tracks.
                 $track_contexts = trackpage::get_contexts('local/elisprogram:track_view');
                 $track_count = track_count_records('', '', $curriculum->id, 0, $track_contexts);
 
-                //count associated clusters
+                // Count associated clusters.
                 $cluster_filter = array('contexts' => usersetpage::get_contexts('local/elisprogram:userset_view'));
                 $cluster_count = clustercurriculum::count_clusters($curriculum->id, 0, $cluster_filter);
 
@@ -194,12 +199,27 @@ class block_elisadmin extends block_base {
                           empty($track_count) &&
                           empty($cluster_count);
 
-                $cm_entity_pages[] = block_elisadmin_get_menu_item('curriculum', $curriculum, 'root', $managecurricula_css_class, 0, $curriculum->id, $params, $isLeaf);
+                // Get the menu item.
+                $thismenuitem = block_elisadmin_get_menu_item('curriculum', $curriculum, 'root', $managecurricula_css_class, 0, $curriculum->id, $params, $isLeaf);
+                // Increment our record count.
+                $programcount++;
+
+                // Make sure this menu item is allowed to be seen by the user.
+                if ($thismenuitem->page->page_instance->can_do()) {
+                    // Increment the number of valid menu items.
+                    $validprogramcount++;
+                    // Make sure that we have room for another program item in the menu tree.
+                    if ($validprogramcount <= $num_block_icons) {
+                        // If so, then add this menu item to the array of menu items.
+                        $cm_entity_pages[] = $thismenuitem;
+                    }
+                }
             }
             unset($curricula);
-
-            if($num_block_icons < $num_records) {
-                $cm_entity_pages[] = block_elisadmin_get_menu_summary_item('curriculum', $curriculum_css_class, $num_records - $num_block_icons);
+            // After building the program menu tree see if we have more valid records than we have room.
+            if ($num_block_icons < $validprogramcount) {
+                // If so, then we need to add a "X - More Programs" Link to the list.
+                $cm_entity_pages[] = block_elisadmin_get_menu_summary_item('curriculum', $curriculum_css_class, $validprogramcount - $num_block_icons);
             }
         }
 
