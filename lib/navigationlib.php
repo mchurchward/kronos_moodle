@@ -3867,30 +3867,32 @@ class settings_navigation extends navigation_node {
 
         }
 
-        // RL EDIT: BJB130215
-        $systemcontext = get_system_context();
-        $systemcapabilities = array(
-            'repository/elisfiles:viewsitecontent',
-            'repository/elisfiles:createsitecontent',
-        );
+        // RL EDIT: BJB140922, BJB130215
+        if (file_exists($CFG->dirroot.'/repository/elisfiles/lib.php')) {
+            $systemcontext = get_system_context();
+            $systemcapabilities = array(
+                    'repository/elisfiles:viewsitecontent',
+                    'repository/elisfiles:createsitecontent',
+            );
 
-        $coursecapabilities = array(
-            'repository/elisfiles:viewcoursecontent',
-            'repository/elisfiles:createcoursecontent',
-        );
+            $coursecapabilities = array(
+                    'repository/elisfiles:viewcoursecontent',
+                    'repository/elisfiles:createcoursecontent',
+            );
 
-        // ELIS files
-        if (has_capability('repository/elisfiles:view', $coursecontext) &&
-            (has_any_capability($systemcapabilities, $systemcontext) || has_any_capability($coursecapabilities, $coursecontext))) {
-            require_once($CFG->dirroot.'/repository/lib.php');
-            require_once($CFG->dirroot.'/repository/elisfiles/lib.php');
-            if (repository_elisfiles::is_repo_visible('elisfiles')) {
-                $url = new moodle_url('/repository/filemanager.php', array(
-                           'course' => $course->id,
-                           'ctx_id' => $coursecontext->id,
-                           'sesskey' => sesskey()));
-                $coursenode->add(get_string('pluginname', 'repository_elisfiles'), $url, self::TYPE_SETTING, null, 'elisfiles',
-                                 new pix_icon('i/files', ''));
+            // ELIS files
+            if (has_capability('repository/elisfiles:view', $coursecontext) &&
+                    (has_any_capability($systemcapabilities, $systemcontext) || has_any_capability($coursecapabilities, $coursecontext))) {
+                require_once($CFG->dirroot.'/repository/lib.php');
+                require_once($CFG->dirroot.'/repository/elisfiles/lib.php');
+                if (repository_elisfiles::is_repo_visible('elisfiles')) {
+                    $url = new moodle_url('/repository/filemanager.php', array(
+                               'course' => $course->id,
+                               'ctx_id' => $coursecontext->id,
+                               'sesskey' => sesskey()));
+                    $coursenode->add(get_string('pluginname', 'repository_elisfiles'), $url, self::TYPE_SETTING, null, 'elisfiles',
+                            new pix_icon('i/files', ''));
+                }
             }
         }
         // End RL EDIT

@@ -511,6 +511,19 @@ M.core_filepicker.show = function(Y, options) {
     if (!M.core_filepicker.instances[options.client_id]) {
         M.core_filepicker.init(Y, options);
     }
+
+    // RL EDIT: Remove the listener(s) added for fm jumpto
+    var YAHOO = Y.YUI2;
+    var listeners = YAHOO.util.Event.getListeners(document);
+    for (var i in listeners) {
+        // var_dump('M.core_filepicker.show::listeners['+i+'] = ', listeners[i]);
+        if (listeners[i].scope == 'Button fmlocationbutton' || listeners[i].scope == 'MenuManager') {
+            // console.log('M.core_filepicker.show::Removing listener: ' +listeners[i].scope);
+            YAHOO.util.Event.removeListener(document, 'mousedown', listeners[i].fn);
+        }
+    }
+    // End: RL EDIT
+
     M.core_filepicker.instances[options.client_id].show();
 };
 
@@ -629,7 +642,7 @@ M.core_filepicker.init = function(Y, options) {
                             if (args.action != 'upload' && data.allowcaching) {
                                 scope.cached_responses[params] = data;
                             }
-                            // RL EDIT: BJB130215
+                            // RL EDIT: BJB140922, BJB130215
                             if (data && data.parentpath) {
                                 // Set the parent path in the provider scope (i.e. the caller)
                                 scope.set_parentpath(data.parentpath);
@@ -675,19 +688,22 @@ M.core_filepicker.init = function(Y, options) {
                 params['existingfilepath'] = data.existingfile.filepath;
                 params['newfilename'] = data.newfile.filename;
                 params['newfilepath'] = data.newfile.filepath;
-                // RL EDIT: BJB130215
-                // duplicate info for elis files
-                params['duplicateelisfiles'] = data.duplicateelisfiles;
-                params['duplicateuuid'] = data.duplicateuuid;
                 // duplicate info for temp file
                 params['overwrite'] = true;
+                // RL EDIT BJB140922
                 if (data.duplicateelisfiles !== undefined) {
+                    // duplicate info for elis files
+                    params['duplicateelisfiles'] = data.duplicateelisfiles;
+                    params['duplicateuuid'] = data.duplicateuuid;
                     params['duplicatefilemetapath'] = data.duplicatefilemeta.filepath;
                     params['duplicatefilemetasize'] = data.duplicatefilemeta.size;
                     params['duplicatefilemetatype'] = data.duplicatefilemeta.type;
                     params['duplicatefilemetaname'] = data.duplicatefilemeta.name;
                     // pass encoded Alfresco save path
                     params['savepath'] = data.existingfile.filepath;
+                    if (data.duplicaterepo_id === undefined) {
+                        data.duplicaterepo_id = this.active_repo.id;
+                    }
                 } else {
                     params['duplicateelisfiles'] = false;
                     params['duplicateuuid'] = false;
@@ -702,7 +718,6 @@ M.core_filepicker.init = function(Y, options) {
                     'path': '',
                     'client_id': this.options.client_id,
                     'repository_id': data.duplicaterepo_id, // RL EDIT
-                    // ^^^TBD: this doesn't appear to be set if data.duplicateelisfiles !== undefined (?)
                     'callback': function(id, o, args) {
                         scope.hide();
                         if (scope.options.editor_target && scope.options.env == 'editor') {
@@ -1512,19 +1527,18 @@ M.core_filepicker.init = function(Y, options) {
             this.show_recent_repository();
 
             // RL EDIT - close the advanced search dialog when the file picker closes
-            var title_bars = Y.all('.yui3-widget-hd');
-            for (var i = 0; i < title_bars.size(); i++) {
+            var titlebars = Y.all('.yui3-widget-hd');
+            for (var i = 0; i < titlebars.size(); i++) {
                 // Find close buttons belonging to title bars
-                var title_bar = title_bars.item(i);
-                var close_button = title_bar.one('.yui3-button-close');
-                var display = close_button.getStyle('display');
-                if (display != 'none') {
+                var titlebar = titlebars.item(i);
+                var closebutton;
+                if (titlebar && (closebutton = titlebar.one('.closebutton')) && closebutton.getStyle('display') != 'none') {
                     // This is the main title bar, so add a handler to close the
                     // advanced search dialog when this is clicked
-                    close_button.on('click', function(e) {
-                        var search_dialog = Y.one('#fp-search-dlg');
-                        if (search_dialog != null) {
-                            search_dialog.one('.container-close').simulate('click');
+                    closebutton.on('click', function(e) {
+                        var searchdialog = Y.one('#fp-search-dlg');
+                        if (searchdialog != null) {
+                            searchdialog.one('.container-close').simulate('click');
                         }
                     });
                 }
@@ -1548,11 +1562,11 @@ M.core_filepicker.init = function(Y, options) {
             this.filepath = data.path?data.path:null;
 
             // RL EDIT
-            this.filelist = data.list?data.list:null; // elis_files: filelist
-            this.parentuuid = data.thisuuid?data.thisuuid:'';  // elis_files: current parent of the folder we are viewing
-            this.detailcols = data.detailcols?data.detailcols:null; // elis_files: configurable columns - N/A for 2.3
-            this.locations = data.locations?data.locations:null; // elis_files: used for the Jump menu
-            // this.objecttag = data.object?data.object:null;
+            this.filelist = data.list ? data.list : null; // elis_files: filelist
+            this.parentuuid = data.thisuuid ? data.thisuuid : '';  // elis_files: current parent of the folder we are viewing
+            this.detailcols = data.detailcols ? data.detailcols : null; // elis_files: configurable columns - N/A for 2.3
+            this.locations = data.locations ? data.locations : null; // elis_files: used for the Jump menu
+            // this.objecttag = data.object ? data.object : null;
             // ^^^TBD - why was this line removed ???
             // End RL EDIT
 
@@ -1793,7 +1807,7 @@ M.core_filepicker.init = function(Y, options) {
                 scope.parse_repository_options(obj);
                 scope.view_files();
             }
-            scope.set_jumpto_state(scope.filepath); // RL EDIT
+            scope.set_jumpto_state(scope.filepath); // RL EDIT: BJB140922
         },
         list: function(args) {
             if (!args) {
@@ -2018,15 +2032,17 @@ M.core_filepicker.init = function(Y, options) {
             e.preventDefault();
             // RL EDIT: ELIS-7143
             var srchstr = Y.one('input[name="s"]');
-            //alert('setup_toolbar:search = \''+ srchstr.get('value') + '\'');
-
-            // RL edit: only search if text or category selected
-            var have_search_criteria = categoryids != null || srchstr.get('value').length;
-            if (!this.active_repo.nosearch && have_search_criteria) {
-                // RL edit: close the dialog whenever a search happens
-                var search_dialog = Y.one('#fp-search-dlg');
-                if (search_dialog != null) {
-                    search_dialog.one('.container-close').simulate('click');
+            var havesearchcriteria = false;
+            if (srchstr) {
+                // alert('setup_toolbar:search = \''+ srchstr.get('value') + '\'');
+                // RL edit: only search if text or category selected
+                havesearchcriteria = categoryids != null || srchstr.get('value').length;
+            }
+            if (!this.active_repo.nosearch && havesearchcriteria) {
+                // RL EDIT: close the dialog whenever a search happens
+                var searchdialog = Y.one('#fp-search-dlg');
+                if (searchdialog != null) {
+                    searchdialog.one('.container-close').simulate('click');
                 }
                 // End of RL edit
 
@@ -2335,17 +2351,18 @@ M.core_filepicker.init = function(Y, options) {
             // Handling for the button that runs the search
             if (r.executesearch) {
                 // Obtain the right element
-                var searchbutton = Y.one('.fp-tb-executesearch').one('img');
+                var searchbutton;
+                if (searchbutton = Y.one('.fp-tb-executesearch').one('img')) {
+                    // Remove stale event handlers
+                    searchbutton.purge(false, 'click');
 
-                // Remove stale event handlers
-                searchbutton.purge(false, 'click');
-
-                // When the button is clicked, hide the advanced search dialog
-                searchbutton.on('click', function(e) {
-                    // Run the search, refreshing the contents of the filepicker's listing
-                    scope.execute_search(e);
-                    scope.execute_search(e);
-                });
+                    // When the button is clicked, hide the advanced search dialog
+                    searchbutton.on('click', function(e) {
+                        // Run the search, refreshing the contents of the filepicker's listing
+                        scope.execute_search(e);
+                        scope.execute_search(e);
+                     });
+                }
             }
 
             this.print_jump(); // 'Jump to..' menu
@@ -2435,19 +2452,22 @@ M.core_filepicker.init = function(Y, options) {
                 locationbutton.hide();
             }
         },
-        setup_jumpmenu_event : function(event, location_button) {
+        setup_jumpmenu_event : function(event, scope) {
+            // console.log('[FP]setup_jumpmenu_event');
             var YAHOO = Y.YUI2; // ELIS-8291/ELIS-7858 - BJB130219
-            var outterfound = false;
+            // var_dump('[FP]:setup_jumpmenu_event: event = ', event);
             var fpcallback = function(e) {
-                var jmpmenu = location_button.getMenu();
+                // console.log('setup_jumpmenu_event::fpcallback');
+                // var_dump('fpcallback: event = ', e);
                 var target = YAHOO.util.Event.getTarget(e)
-                //var_dump('fp::setup_jumpmenu_event:fpcallback: target = ', target);
+                // var_dump('fpcallback: target = ', target);
                 var menuitems;
                 var found = false;
+                var i;
                 if (target.id &&
                     (menuitems = YAHOO.util.Dom.getElementsByClassName('yuimenuitemlabel'))) {
                     // Determine if what is being clicked is an yui menu item
-                    for (var i = 0; i < menuitems.length; i++) {
+                    for (i = 0; i < menuitems.length; i++) {
                         if (menuitems[i].id == target.id) {
                             found = true;
                             break;
@@ -2455,22 +2475,33 @@ M.core_filepicker.init = function(Y, options) {
                     }
                 }
                 // Hide the menu only if we clicked outside of it
-                if (!found) {
-                    jmpmenu.hide();
+                if (!found && scope.location_button) {
+                    // var_dump('fpcallback:hiding location_button = ', [] /* scope.location_button */);
+                    scope.location_button.getMenu().hide();
                 }
-                YAHOO.util.Event.removeListener(document, 'mousedown', fpcallback);
+
+                // Remove the listener(s) added
+                var listeners = YAHOO.util.Event.getListeners(document);
+                for (i in listeners) {
+                    // var_dump('fpcallback::listeners['+i+'] = ', listeners[i]);
+                    if (listeners[i].scope == 'Button locationbutton' || listeners[i].scope == 'MenuManager') {
+                        // console.log('(fpcallback)Removing listener:' +listeners[i].scope);
+                        YAHOO.util.Event.removeListener(document, 'mousedown', listeners[i].fn);
+                    }
+                }
+                // console.log('fpcallback: exit');
             };
 
             var listeners = YAHOO.util.Event.getListeners(document, 'mousedown');
             for (var j in listeners) {
-                if (listeners[j].fn == fpcallback) {
-                    outterfound = true;
-                    break;
+                // var_dump('(fpcallback)listeners['+j+'] = ', listeners[j]);
+                if (listeners[j].scope == 'Button locationbutton') {
+                    // console.log('Removing old document::mousedown listener');
+                    YAHOO.util.Event.removeListener(document, 'mousedown', listeners[j].fn);
                 }
             }
-            if (!outterfound) {
-                YAHOO.util.Event.addListener(document, 'mousedown', fpcallback);
-            }
+            YAHOO.util.Event.addListener(document, 'mousedown', fpcallback);
+            // console.log('[FP]setup_jumpmenu_event: exit');
         },
         jumpto_item_keypressed: function(e, f_args) {
             var YAHOO = Y.YUI2; // ELIS-8291/ELIS-7858 - BJB130219
@@ -2480,6 +2511,7 @@ M.core_filepicker.init = function(Y, options) {
             if (key == 9 && (e.shiftKey == shift ||
                              (shift ^ (scope.lastkey != 16)))) {
                 // Tab[+shift?] key pressed
+                // var_dump('(FP)jumpto_item_keypressed: hiding location_button = ', [] /* scope.location_button */);
                 scope.location_button.getMenu().hide();
             }
             scope.lastkey = key;
@@ -2511,6 +2543,7 @@ M.core_filepicker.init = function(Y, options) {
                 return;
             }
 
+            // var_dump('FP created this.location_button = ', [] /* this.location_button */);
             // Make the jump button look not look like a button
             this.location_button.setStyle("border", "none");
             this.location_button.setStyle("background", "none");
@@ -2520,8 +2553,9 @@ M.core_filepicker.init = function(Y, options) {
                 children[0].style.borderStyle = 'none';
             }
 
-            YAHOO.util.Event.addListener('locationbutton-button', 'click', this.setup_jumpmenu_event, this.location_button);
+            YAHOO.util.Event.addListener('locationbutton-button', 'click', this.setup_jumpmenu_event, this);
 
+            // console.log('(FP)update_location_menu: before getMenu().show()...hide()');
             this.location_button.getMenu().show(); // required to update DOM
             YAHOO.widget.Module.forceDocumentRedraw(); // required to update DOM
             this.location_button.getMenu().hide(); // required!
