@@ -511,6 +511,19 @@ M.core_filepicker.show = function(Y, options) {
     if (!M.core_filepicker.instances[options.client_id]) {
         M.core_filepicker.init(Y, options);
     }
+
+    // RL EDIT: Remove the listener(s) added for fm jumpto
+    var YAHOO = Y.YUI2;
+    var listeners = YAHOO.util.Event.getListeners(document);
+    for (var i in listeners) {
+        // var_dump('M.core_filepicker.show::listeners['+i+'] = ', listeners[i]);
+        if (listeners[i].scope == 'Button fmlocationbutton' || listeners[i].scope == 'MenuManager') {
+            // console.log('M.core_filepicker.show::Removing listener: ' +listeners[i].scope);
+            YAHOO.util.Event.removeListener(document, 'mousedown', listeners[i].fn);
+        }
+    }
+    // End: RL EDIT
+
     M.core_filepicker.instances[options.client_id].show();
 };
 
@@ -1517,13 +1530,9 @@ M.core_filepicker.init = function(Y, options) {
             var titlebars = Y.all('.yui3-widget-hd');
             for (var i = 0; i < titlebars.size(); i++) {
                 // Find close buttons belonging to title bars
-                var titlebar;
+                var titlebar = titlebars.item(i);
                 var closebutton;
-                if (!(titlebar = titlebars.item(i)) || !(closebutton = titlebar.one('.yui3-button-close'))) {
-                    continue;
-                }
-                var display = closebutton.getStyle('display');
-                if (display != 'none') {
+                if (titlebar && (closebutton = titlebar.one('.closebutton')) && closebutton.getStyle('display') != 'none') {
                     // This is the main title bar, so add a handler to close the
                     // advanced search dialog when this is clicked
                     closebutton.on('click', function(e) {
@@ -2443,19 +2452,22 @@ M.core_filepicker.init = function(Y, options) {
                 locationbutton.hide();
             }
         },
-        setup_jumpmenu_event : function(event, location_button) {
+        setup_jumpmenu_event : function(event, scope) {
+            // console.log('[FP]setup_jumpmenu_event');
             var YAHOO = Y.YUI2; // ELIS-8291/ELIS-7858 - BJB130219
-            var outterfound = false;
+            // var_dump('[FP]:setup_jumpmenu_event: event = ', event);
             var fpcallback = function(e) {
-                var jmpmenu = location_button.getMenu();
+                // console.log('setup_jumpmenu_event::fpcallback');
+                // var_dump('fpcallback: event = ', e);
                 var target = YAHOO.util.Event.getTarget(e)
-                //var_dump('fp::setup_jumpmenu_event:fpcallback: target = ', target);
+                // var_dump('fpcallback: target = ', target);
                 var menuitems;
                 var found = false;
+                var i;
                 if (target.id &&
                     (menuitems = YAHOO.util.Dom.getElementsByClassName('yuimenuitemlabel'))) {
                     // Determine if what is being clicked is an yui menu item
-                    for (var i = 0; i < menuitems.length; i++) {
+                    for (i = 0; i < menuitems.length; i++) {
                         if (menuitems[i].id == target.id) {
                             found = true;
                             break;
@@ -2463,22 +2475,33 @@ M.core_filepicker.init = function(Y, options) {
                     }
                 }
                 // Hide the menu only if we clicked outside of it
-                if (!found) {
-                    jmpmenu.hide();
+                if (!found && scope.location_button) {
+                    // var_dump('fpcallback:hiding location_button = ', [] /* scope.location_button */);
+                    scope.location_button.getMenu().hide();
                 }
-                YAHOO.util.Event.removeListener(document, 'mousedown', fpcallback);
+
+                // Remove the listener(s) added
+                var listeners = YAHOO.util.Event.getListeners(document);
+                for (i in listeners) {
+                    // var_dump('fpcallback::listeners['+i+'] = ', listeners[i]);
+                    if (listeners[i].scope == 'Button locationbutton' || listeners[i].scope == 'MenuManager') {
+                        // console.log('(fpcallback)Removing listener:' +listeners[i].scope);
+                        YAHOO.util.Event.removeListener(document, 'mousedown', listeners[i].fn);
+                    }
+                }
+                // console.log('fpcallback: exit');
             };
 
             var listeners = YAHOO.util.Event.getListeners(document, 'mousedown');
             for (var j in listeners) {
-                if (listeners[j].fn == fpcallback) {
-                    outterfound = true;
-                    break;
+                // var_dump('(fpcallback)listeners['+j+'] = ', listeners[j]);
+                if (listeners[j].scope == 'Button locationbutton') {
+                    // console.log('Removing old document::mousedown listener');
+                    YAHOO.util.Event.removeListener(document, 'mousedown', listeners[j].fn);
                 }
             }
-            if (!outterfound) {
-                YAHOO.util.Event.addListener(document, 'mousedown', fpcallback);
-            }
+            YAHOO.util.Event.addListener(document, 'mousedown', fpcallback);
+            // console.log('[FP]setup_jumpmenu_event: exit');
         },
         jumpto_item_keypressed: function(e, f_args) {
             var YAHOO = Y.YUI2; // ELIS-8291/ELIS-7858 - BJB130219
@@ -2488,6 +2511,7 @@ M.core_filepicker.init = function(Y, options) {
             if (key == 9 && (e.shiftKey == shift ||
                              (shift ^ (scope.lastkey != 16)))) {
                 // Tab[+shift?] key pressed
+                // var_dump('(FP)jumpto_item_keypressed: hiding location_button = ', [] /* scope.location_button */);
                 scope.location_button.getMenu().hide();
             }
             scope.lastkey = key;
@@ -2519,6 +2543,7 @@ M.core_filepicker.init = function(Y, options) {
                 return;
             }
 
+            // var_dump('FP created this.location_button = ', [] /* this.location_button */);
             // Make the jump button look not look like a button
             this.location_button.setStyle("border", "none");
             this.location_button.setStyle("background", "none");
@@ -2528,8 +2553,9 @@ M.core_filepicker.init = function(Y, options) {
                 children[0].style.borderStyle = 'none';
             }
 
-            YAHOO.util.Event.addListener('locationbutton-button', 'click', this.setup_jumpmenu_event, this.location_button);
+            YAHOO.util.Event.addListener('locationbutton-button', 'click', this.setup_jumpmenu_event, this);
 
+            // console.log('(FP)update_location_menu: before getMenu().show()...hide()');
             this.location_button.getMenu().show(); // required to update DOM
             YAHOO.widget.Module.forceDocumentRedraw(); // required to update DOM
             this.location_button.getMenu().hide(); // required!
