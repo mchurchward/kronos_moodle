@@ -1,8 +1,0 @@
-<webscript>
-  <shortname>Set Permissions</shortname>
-  <description>Set the permissions on a node for a given user.</description>
-  <url>/moodle/setpermissions/{uuid}</url>
-  <format default="xml" />
-  <authentication>user</authentication>
-  <transaction>required</transaction>
-</webscript>
