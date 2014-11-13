@@ -41,7 +41,7 @@ $PAGE->set_pagetype('elis-dashboard');
 $PAGE->blocks->add_region('content');
 $USER->editing = false;
 
-$params = ['id' => $instanceid, 'blockname' => 'elisdashboard', 'parentcontextid' => $usercontext->id];
+$params = ['id' => $instanceid, 'blockname' => 'elisdashboard'];
 $instance = $DB->get_record('block_instances', $params);
 if (!empty($instance)) {
 
