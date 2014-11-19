@@ -969,6 +969,11 @@ class repository_elisfiles extends repository {
     public static function type_config_form($mform, $classname = 'repository') {
         global $DB, $CFG, $SESSION, $OUTPUT;
 
+        // ELIS-8722: Display warning if auth_elisfilessso not enabled
+        if (!is_enabled_auth('elisfilessso')) {
+            $mform->addElement('html', get_string('elisfilessso_warning', 'repository_elisfiles'));
+        }
+
         parent::type_config_form($mform, $classname);
 
         $mform->addElement('text', 'server_host', get_string('serverurl', 'repository_elisfiles'), array('size' => '40'));

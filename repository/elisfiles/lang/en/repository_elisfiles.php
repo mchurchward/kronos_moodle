@@ -159,6 +159,7 @@ $string['elis_files_server_port'] = 'The port that your Alfresco server is runni
 $string['elis_files_server_settings'] = 'Alfresco server settings';
 $string['elis_files_server_username'] = 'The username to login to the Alfresco server with.';
 $string['elis_files_url'] = 'Alfresco URL';
+$string['elisfilessso_warning'] = '<table border="1" class="errorbox"><tr><td><b>Warning</b> - Authentication plugin: <b>ELIS Files SSO (auth_elisfilesso)</b> has not been enabled and must be to create Users\' Alfresco accounts upon login.<br/>Click <a href="settings.php?section=manageauths">here</a> to enable it.</td></tr></table>';
 $string['errorcouldnotcreatedirectory'] = 'Error: could not create directory {$a}';
 $string['errordirectorynameexists'] = 'Error: directory {$a} already exists';
 $string['errorftpinvalidport'] = 'Error: Could not establish a FTP connection to {$a}';
