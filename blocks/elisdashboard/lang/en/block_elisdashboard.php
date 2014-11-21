@@ -24,6 +24,8 @@
  */
 
 $string['blockname'] = 'ELIS Dashboard';
+$string['elisdashboard:addinstance'] = 'Add a new ELIS Dashboard block';
+$string['elisdashboard:myaddinstance'] = 'Add a new ELIS Dashboard block to My home';
 $string['pluginname'] = 'ELIS Dashboard';
 $string['instance_not_found'] = 'Could not find an ELIS Dashboard instance with that ID';
 $string['widget_not_found'] = 'Could not find the ELIS widget - are they installed?';
