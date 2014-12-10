@@ -2972,6 +2972,30 @@ abstract class repository implements cacheable_object {
         if (!empty($out)) {
             echo "<style>\n{$out}</style>";
         }
+
+        // Require jQuery
+        if (!$headerprinted) {
+            $page->requires->jquery();
+            $page->requires->jquery_plugin('ui');
+            $page->requires->jquery_plugin('ui-css');
+        } else if (file_exists($CFG->dirroot.'/local/eliscore/lib/page.class.php')) {
+            require_once($CFG->dirroot.'/local/eliscore/lib/page.class.php');
+            if (class_exists('elis_pg_reqs_manager')) {
+                $pgreqmanager = new elis_pg_reqs_manager();
+                $pgreqmanager->jquery();
+                $pgreqmanager->jquery_plugin('ui');
+                $pgreqmanager->jquery_plugin('ui-css');
+                echo $pgreqmanager->get_jquery_headcode();
+            }
+        }
+    }
+
+    /**
+     * A static method to return Remote-Learner version of rlmoodle.alfresco.git.
+     * @return float The Remote-Learner version of rlmoodle.alfresco.git.
+     */
+    public static function get_rl_version() {
+        return 2014082502;
     }
     // End RL EDIT
 
