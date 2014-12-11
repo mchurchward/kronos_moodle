@@ -69,6 +69,10 @@ if (!empty($instance)) {
     $PAGE->set_title($widget->get_name());
     $PAGE->set_heading($widget->get_name());
 
+    $PAGE->requires->jquery();
+    $PAGE->requires->jquery_plugin('ui');
+    $PAGE->requires->jquery_plugin('ui-css');
+
     // Add required head JS files.
     $requiredjs = $widget->get_js_dependencies_head();
     if (!empty($requiredjs)) {

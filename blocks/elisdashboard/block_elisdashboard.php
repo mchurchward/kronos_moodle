@@ -71,6 +71,10 @@ class block_elisdashboard extends block_base {
         // Initialize settings.
         $widget->set_settings($this->config);
 
+        $PAGE->requires->jquery();
+        $PAGE->requires->jquery_plugin('ui');
+        $PAGE->requires->jquery_plugin('ui-css');
+
         // Add required head JS files.
         $requiredjs = $widget->get_js_dependencies_head();
         if (!empty($requiredjs)) {

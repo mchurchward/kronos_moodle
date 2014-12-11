@@ -23,7 +23,7 @@
  * @package    repository_elisfiles
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (C) 2008-2013 Remote-Learner.net Inc (http://www.remote-learner.net)
+ * @copyright  (C) 2008-2014 Remote-Learner.net Inc (http://www.remote-learner.net)
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -83,9 +83,6 @@ class repository_elisfiles extends repository {
         $this->config = get_config('elisfiles');
         $this->current_node = null;
 
-        // jQuery files required for file picker - just for this repository
-        $PAGE->requires->js('/repository/elisfiles/js/jquery-1.6.2.min.js');
-        $PAGE->requires->js('/repository/elisfiles/js/jquery-ui-1.8.16.custom.min.js');
         $PAGE->requires->js('/repository/elisfiles/js/fileuploader.js');
         $PAGE->requires->js('/repository/elisfiles/lib/HTML_TreeMenu-1.2.0/TreeMenu.js', true);
     }
