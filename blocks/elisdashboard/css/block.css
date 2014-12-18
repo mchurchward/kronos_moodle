@@ -27,3 +27,5 @@
     padding: 3rem; }
   .block_elisdashboard.block_elisdashboard_expanded .expandlinks {
     display: none; }
+.block_elisdashboard.block_elisdashboard_expanded .block_action {
+  margin-right: 35px; }
