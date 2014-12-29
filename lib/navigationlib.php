@@ -3861,7 +3861,7 @@ class settings_navigation extends navigation_node {
 
         // RL EDIT: BJB140922, BJB130215
         if (file_exists($CFG->dirroot.'/repository/elisfiles/lib.php')) {
-            $systemcontext = get_system_context();
+            $systemcontext = context_system::instance();
             $systemcapabilities = array(
                     'repository/elisfiles:viewsitecontent',
                     'repository/elisfiles:createsitecontent',
