@@ -2942,31 +2942,27 @@ abstract class repository implements cacheable_object {
             return;
         }
         $init = true;
-        $req_css = array(
-                '/lib/yuilib/3.13.0/panel/assets/panel-core.css',
-                '/lib/yuilib/3.13.0/panel/assets/skins/night/panel-skin.css',
-                '/lib/yuilib/3.13.0/panel/assets/skins/night/panel.css',
-                '/lib/yuilib/3.13.0/panel/assets/skins/sam/panel.css',
-                '/lib/yuilib/3.13.0/panel/assets/skins/sam/panel-skin.css',
-                '/lib/yuilib/3.13.0/panel/assets/skins/sam/panel.css',
-                '/lib/yuilib/3.13.0/assets/skin/sam/skin.css'
-        );
-
         if (empty($page)) {
             $page = $PAGE;
         }
         $out = '';
-        $headerprinted = $page->headerprinted; // not reliable!
-        foreach ($req_css as $css) {
-            if (!$headerprinted) {
-                try {
-                    $page->requires->css($css);
-                } catch (Exception $e) {
-                    $headerprinted = true;
+        $pgreqmanager = null;
+        if (file_exists($CFG->dirroot.'/local/eliscore/lib/page.class.php')) {
+            require_once($CFG->dirroot.'/local/eliscore/lib/page.class.php');
+            if (class_exists('elis_pg_reqs_manager')) {
+                $pgreqmanager = new elis_pg_reqs_manager();
+                $reqcss = array(
+                        'panel/assets/panel-core.css',
+                        'panel/assets/skins/night/panel-skin.css',
+                        'panel/assets/skins/night/panel.css',
+                        'panel/assets/skins/sam/panel.css',
+                        'panel/assets/skins/sam/panel-skin.css',
+                        'assets/skin/sam/skin.css'
+                );
+                $pgreqmanager = new elis_pg_reqs_manager();
+                foreach ($reqcss as $css) {
+                    $out .= $pgreqmanager->yui_css_style($page, $css);
                 }
-            }
-            if ($headerprinted) {
-                $out .= "@import url(\"{$CFG->wwwroot}{$css}\");\n";
             }
         }
         if (!empty($out)) {
@@ -2974,19 +2970,8 @@ abstract class repository implements cacheable_object {
         }
 
         // Require jQuery
-        if (!$headerprinted) {
-            $page->requires->jquery();
-            $page->requires->jquery_plugin('ui');
-            $page->requires->jquery_plugin('ui-css');
-        } else if (file_exists($CFG->dirroot.'/local/eliscore/lib/page.class.php')) {
-            require_once($CFG->dirroot.'/local/eliscore/lib/page.class.php');
-            if (class_exists('elis_pg_reqs_manager')) {
-                $pgreqmanager = new elis_pg_reqs_manager();
-                $pgreqmanager->jquery();
-                $pgreqmanager->jquery_plugin('ui');
-                $pgreqmanager->jquery_plugin('ui-css');
-                echo $pgreqmanager->get_jquery_headcode();
-            }
+        if (!is_null($pgreqmanager)) {
+            $pgreqmanager->jquery_plugins(array('jquery', 'ui', 'ui-css'), $page, true);
         }
     }
 
