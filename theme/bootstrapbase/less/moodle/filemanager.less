@@ -1309,3 +1309,40 @@ a.ygtvspacer:hover {
         text-align: right;
     }
 }
+
+/* RL: fix alignment of icons on Chrome */
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    .fp-tb-advancedsearch img {vertical-align: -150%;}
+    .fp-tb-executesearch img {vertical-align: -150%;}
+    .fp-tb-executesearch[class="fp-tb-executesearch enabled"] + .fp-tb-refresh img {vertical-align: -150%;}
+}
+
+/* RL: jump menu class for file picker */
+.fp-vb-menu-jumpto {float:left; margin-left: 80px;}
+.dir-rtl .fp-vb-menu-jumpto {float: right; margin-right: 80px;}
+.fp-vb-menu-jumpto #locationbutton-button {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 11px; color: #555;}
+.elis_files-jump-menu .yuimenuitemlabel {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 11px; color: #555;}
+.fp-menu-jumpto #fmlocationbutton-button {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 11px; color: #555;}
+.elis_fm-jumpto-menu .yuimenuitemlabel {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 11px; color: #555;}
+
+/* RL: override toolbar height for Chrome */
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    .fp-height { height: 48px; }
+}
+
+/*
+ * Drag and drop support (filemanager and filepicker form elements)
+ */
+.filepicker-filelist .filepicker-container,
+.filemanager.fm-noitems .fm-empty-container {display:block;position:absolute;top:10px;bottom:10px;left:10px;right:10px;border: 2px dashed #BBBBBB;padding-top:85px;text-align:center;}
+/* RL edit: Hide dashed file manager border if drag and drop not available */
++.dndnotsupported .filemanager.fm-noitems .fm-empty-container {border:none}
+/* End of RL edit */
+
+/* RL: override toolbar height for Chrome */
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    .fp-height { height: 48px; }
+}
+
+/* RL: Keep the select drop-down menu from extending off the modal window */
+.fp-path select { max-width: 270px}
