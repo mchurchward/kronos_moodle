@@ -70,8 +70,7 @@ function userset_groups_pm_classinstance_associated_handler($classassevent) {
     $classassociation = (object)$classassevent->other;
     $attributes = array('cls.id' => $classassociation->classid,
         'crs.id' => $classassociation->moodlecourseid);
-
-    return userset_groups_update_groups($attributes);
+    return userset_groups_update_groups($attributes) && userset_groups_program_update_groups($attributes);
 }
 
 /**
@@ -113,6 +112,7 @@ function userset_groups_pm_userset_updated_handler($clusterevent) {
     $attributes = array('clst.id' => $cluster->id);
 
     $result = userset_groups_update_groups($attributes);
+    $result = $result && userset_groups_program_update_groups($attributes);
     $result = $result && userset_groups_update_site_course($cluster->id, true);
     $result = $result && userset_groups_update_grouping_closure($cluster->id, true);
     return $result;
@@ -124,7 +124,7 @@ function userset_groups_pm_userset_updated_handler($clusterevent) {
  * @return bool Whether the association was successful
  */
 function userset_groups_pm_userset_groups_enabled_handler($event) {
-    return userset_groups_update_groups();
+    return userset_groups_update_groups() && userset_groups_program_update_groups();
 }
 
 /**
@@ -159,10 +159,26 @@ function userset_groups_role_assigned_handler($roleassevent) {
 
     //update non-site courses for that user
     $result = userset_groups_update_groups(array('mdlusr.muserid' => $roleassignment->userid));
+    $result = $result && userset_groups_program_update_groups(array('mdlusr.muserid' => $roleassignment->userid));
     //update site course for that user
     $result = $result && userset_groups_update_site_course(0, true, $roleassignment->userid);
 
     return $result;
+}
+
+
+/**
+ * Handler that gets called when a cluster gets associated with a track
+ *
+ * @param object $clustertrackassevent The event object
+ * @return boolean Whether the association was successful
+ */
+function userset_groups_pm_userset_program_associated_handler($usersetprogramassevent) {
+    $usersetprogramassociation = (object)$usersetprogramassevent->other;
+    $attributes = array('clst.id' => $usersetprogramassociation->clusterid,
+        'prog.id' => $usersetprogramassociation->curriculumid);
+
+    return userset_groups_update_groups($attributes) && userset_groups_program_update_groups($attributes);
 }
 
 /**
@@ -515,6 +531,115 @@ function userset_groups_update_groups($attributes = array()) {
 
                         //add user to group
                         userset_groups_add_member($last_group_id, $record->userid);
+                    }
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+/**
+ * This function creates Moodle groups for user(s) belonging to a User Set who enrol or are enroled into a
+ * Class Instance that is linked to a Moodle course.
+ *
+ * Possible scenarios given a User Set configured for Moodle groups:
+ * * User enrols into a Class Instance that is linked to a Moodle course
+ * * A Class Instance is linked to a Moodle course, where the Class Instances has enrolments of users belonging to a User Set.
+ * * The User Set setting is changed to enable Moodle groups and Users are already enrolled into Class Instances linked to Moodle courses.
+ * * When the global User Set - Moodle groups setting is changed.
+ *
+ * @param array $attributes Conditions to apply to the SQL query.
+ * @return boolean Returns true to satisfy event handlers.
+ */
+function userset_groups_program_update_groups($attributes = array()) {
+    global $DB;
+
+    require_once elispm::lib('data/usermoodle.class.php');
+    $enabled = get_config('elisprogram_usetgroups', 'userset_groups');
+
+    // Nothing to do if global setting is off.
+    if (!empty($enabled)) {
+
+        // Whenever we're given a cluster id, see if we can eliminate any processed in the case where the cluster does not allow synching to a group.
+        $clusterid = 0;
+        if (!empty($attributes['clst.id'])) {
+            $clusterid = $attributes['clst.id'];
+        }
+
+        // Proceed if no cluster is specified or one that allows group synching is specified.
+        if ($clusterid === 0 || userset_groups_userset_allows_groups($clusterid)) {
+
+            $condition = '';
+            $params = array();
+            if (!empty($attributes)) {
+                foreach ($attributes as $key => $value) {
+                    if (empty($condition)) {
+                        $condition = "WHERE $key = ?";
+                        $params[] = $value;
+                    } else {
+                        $condition .= " AND $key = ?";
+                        $params[] = $value;
+                    }
+                }
+            }
+
+            $sql = "SELECT DISTINCT crs.id AS courseid, clst.name AS clustername, mdlusr.muserid AS userid, clst.id AS clusterid, prog.id AS progid
+                      FROM {".pmclass::TABLE."} cls
+                      JOIN {".classmoodlecourse::TABLE."} clsmdl ON cls.id = clsmdl.classid
+                      JOIN {course} crs ON clsmdl.moodlecourseid = crs.id
+                      JOIN {".course::TABLE."} cmcrs ON cmcrs.id = cls.courseid
+                      JOIN {".curriculumcourse::TABLE."} progcrs ON progcrs.courseid = cmcrs.id
+                      JOIN {".curriculum::TABLE."} prog ON prog.id = progcrs.curriculumid
+                      JOIN {".clustercurriculum::TABLE."} clustprog ON clustprog.curriculumid = prog.id
+                      JOIN {".userset::TABLE."} clst ON clst.id = clustprog.clusterid
+                      JOIN {".clusterassignment::TABLE."} usrclst ON clst.id = usrclst.clusterid
+                      JOIN {".usermoodle::TABLE."} mdlusr ON usrclst.userid = mdlusr.cuserid
+                      JOIN {".curriculumstudent::TABLE."} progusrassign ON progusrassign.userid = mdlusr.cuserid AND progusrassign.curriculumid = prog.id
+                           {$condition}
+                  ORDER BY clst.id";
+
+            // error_log("userset_groups_update_groups()");
+            $records = $DB->get_recordset_sql($sql, $params);
+
+            if (!empty($records) && $records->valid()) {
+                // Used to track changes in clusters.
+                $lastclusterid = 0;
+                $lastgroupid = 0;
+                $lastmdlcourse = 0;
+
+                foreach ($records as $record) {
+
+                    // Make sure the cluster allows synching to groups.
+                    if (userset_groups_userset_allows_groups($record->clusterid)) {
+
+                        // If first record cluster is different from last, create / retrieve group.
+                        if ($lastclusterid === 0 || $lastclusterid !== $record->clusterid || $lastmdlcourse !== $record->courseid) {
+
+                            // Determine if group already exists.
+                            if ($DB->record_exists('groups', array('name' => $record->clustername, 'courseid' => $record->courseid))) {
+                                $sql = "SELECT *
+                                          FROM {groups} grp
+                                         WHERE name = :name
+                                               AND courseid = :courseid";
+                                $params = array('name' => $record->clustername,
+                                                'courseid' => $record->courseid);
+                                $group = $DB->get_record_sql($sql, $params, IGNORE_MULTIPLE);
+                            } else {
+                                $group = new stdClass;
+                                $group->courseid = $record->courseid;
+                                $group->name = addslashes($record->clustername);
+                                $group->id = groups_create_group($group);
+                            }
+
+                            $lastclusterid = $record->clusterid;
+                            $lastgroupid = $group->id;
+                            $lastmdlcourse = $record->courseid;
+                        }
+
+                        // Add user to group.
+                        userset_groups_add_member($lastgroupid, $record->userid);
                     }
                 }
             }
