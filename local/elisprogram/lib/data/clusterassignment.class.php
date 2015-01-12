@@ -328,6 +328,9 @@ class clusterassignment extends elis_data_object {
 
             //update course-level group assignment
             userset_groups_update_groups(array('mdlusr.cuserid' =>  $userid));
+
+            // Update course-leve groups assignment
+            userset_groups_program_update_groups(array('mdlusr.cuserid' =>  $userid));
         }
     }
 }
