@@ -50,7 +50,7 @@ function local_eliscore_cron_scheduledtask() {
 
     // Check if the maximum cron run time is overridden
     $remtime = ELIS_TASKS_CRONSECS;
-    if (isset($CFG->elistaskscronsecs) && is_int($CFG->elistaskscronsecs) && 0 < $CFG->elistaskscronsecs) {
+    if (isset($CFG->elistaskscronsecs) && is_numeric($CFG->elistaskscronsecs) && 0 < $CFG->elistaskscronsecs) {
         $remtime = $CFG->elistaskscronsecs;
     }
 
