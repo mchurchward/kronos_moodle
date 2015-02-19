@@ -54,17 +54,16 @@ class importqueuedblogger extends rlip_fslogger {
      *                       for the current time
      * @param string $filename The name of the import / export file we are
      *                         reporting on
-     * @param int $entitydescriptor A descriptor of which entity from an import file
-     *                              we are handling, if applicable
+     * @param int $line Line number in file.
      * @param boolean $success true if the operation was a success, otherwise
      *                         false
      * @return boolean true if the operation was a success, otherwise
      *                         false
      */
-    protected function log($message, $timestamp = 0, $filename = null, $entitydescriptor = null,
+    protected function log($message, $timestamp = 0, $filename = null, $line = null,
                            $success = false) {
         global $CFG, $DB;
-        $message = $this->customize_record($message, $timestamp, $filename, $entitydescriptor, $success);
+        $message = $this->customize_record($message, $timestamp, $filename, $line, $success);
 
         if (empty($timestamp)) {
             // Default to current time if time not specified.
@@ -74,7 +73,7 @@ class importqueuedblogger extends rlip_fslogger {
         $logentry = new stdClass();
         $logentry->timecreated = $timestamp;
         $logentry->message = $message;
-        $logentry->entitydescriptor = $entitydescriptor;
+        $logentry->line = $line;
         $logentry->queueid = $this->queueid;
         if (empty($filename)) {
             $filename = $this->queueid;

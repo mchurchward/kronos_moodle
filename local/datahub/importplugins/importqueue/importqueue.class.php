@@ -102,8 +102,14 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1elis {
             $DB->update_record('dhimport_importqueue', $record);
             return $result;
         }
-        // Queued import has been compelted.
-        $record->status = 1;
+        // Queued import has been completed.
+        $count = $DB->count_records('dhimport_importqueuelog', array('queueid' => $record->id, 'status' => 0));
+        if ($count) {
+            // There is errors.
+            $record->status = 2;
+        } else {
+            $record->status = 1;
+        }
         $DB->update_record('dhimport_importqueue', $record);
         $entities = array('user', 'enrolment', 'course');
         $files = array();
