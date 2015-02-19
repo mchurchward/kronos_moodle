@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @package    local_datahub
+ * @package    local_eliscore
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @copyright  (C) 2008-2015 Remote-Learner.net Inc (http://www.remote-learner.net)
@@ -25,14 +25,23 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2014082504;
-$plugin->requires = 2014051201.00; // Requires this Moodle version
-$plugin->maturity = MATURITY_STABLE;
-$plugin->release = '2.7.5.0 (Build: 20150202)';
-$plugin->dependencies = array(
-    'local_eliscore' => 2014082503
-);
+function xmldb_local_eliscore_upgrade($oldversion = 0) {
+    global $DB, $CFG;
 
-if (file_exists($CFG->dirroot.'/local/elisprogram/lib/setup.php')) {
-    $plugin->dependencies['local_elisprogram'] = 2014082500;
+    $dbman = $DB->get_manager();
+    $result = true;
+
+    if ($result && $oldversion < 2014082503) {
+        // Update elis scheduled tasks table with new 'period' column.
+        $table = new xmldb_table('local_eliscore_sched_tasks');
+        if ($dbman->table_exists($table)) {
+            $field = new xmldb_field('period', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'blocked');
+            if (!$dbman->field_exists($table, $field)) {
+                $dbman->add_field($table, $field);
+            }
+        }
+        upgrade_plugin_savepoint($result, 2014082503, 'local', 'eliscore');
+    }
+
+    return $result;
 }
