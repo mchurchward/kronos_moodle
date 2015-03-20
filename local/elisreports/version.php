@@ -24,9 +24,13 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2014082504;
+$plugin->version = 2014082505;
 $plugin->release = '2.7.7.2 (Build: 20150504)';
 $plugin->maturity = MATURITY_STABLE;
 $plugin->dependencies = array(
-    'local_eliscore' => 2014082504
+    'local_eliscore' => 2014082506
 );
+
+if (file_exists($CFG->dirroot.'/local/elisprogram/lib/setup.php')) {
+    $plugin->dependencies['local_elisprogram'] = 2014082507;
+}

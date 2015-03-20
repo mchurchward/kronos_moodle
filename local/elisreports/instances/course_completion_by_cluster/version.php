@@ -1,7 +1,7 @@
 <?php
 /**
  * ELIS(TM): Enterprise Learning Intelligence Suite
- * Copyright (C) 2008-2014 Remote-Learner.net Inc (http://www.remote-learner.net)
+ * Copyright (C) 2008-2015 Remote-Learner.net Inc (http://www.remote-learner.net)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,10 +19,17 @@
  * @package    rlreport_course_completion_by_cluster
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (C) 2008-2014 Remote-Learner.net Inc (http://www.remote-learner.net)
+ * @copyright  (C) 2008-2015 Remote-Learner.net Inc (http://www.remote-learner.net)
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2014082500;
+$plugin->version = 2014082501;
 $plugin->release = '2.7.3.0 (Build: 20141110)';
+$plugin->dependencies = array(
+    'local_eliscore' => 2014082506
+);
+
+if (file_exists($CFG->dirroot.'/local/elisprogram/lib/setup.php')) {
+    $plugin->dependencies['local_elisprogram'] = 2014082507;
+}
