@@ -33,7 +33,6 @@ function xmldb_repository_elisfiles_install() {
     $oldversion = get_config('repository_elis_files', 'version');
     if ($oldversion !== false) {
         require_once($CFG->dirroot.'/repository/elisfiles/lib/lib.php');
-
         if ($oldversion < 2011110301) {
             $errors = false;
             $auths = elis_files_nopasswd_auths();
@@ -257,15 +256,10 @@ function xmldb_repository_elisfiles_install() {
     $sql = 'UPDATE {repository} SET type = "elisfiles" WHERE type = "elis_files"';
     $DB->execute($sql);
 
-    $rlalfresco = 0;
-    require_once($CFG->dirroot.'/repository/lib.php');
-    if (method_exists('repository', 'get_rl_version')) {
-        $rlalfresco = repository::get_rl_version();
-    }
-    if ($rlalfresco < 2014082502) {
-        global $OUTPUT;
-        echo $OUTPUT->box('The installed version of core repository is not compatible with this version of ELIS Files.<br/>Please update the core Moodle code base for this site.',
-                'errorbox');
+    if ($oldversion !== false) {
+        require_once(dirname(__FILE__).'/upgrade.php');
+        set_config('version', 2014082500, 'repository_elisfiles');
+        xmldb_repository_elisfiles_upgrade(2014082500);
     }
 
     return $result;
