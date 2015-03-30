@@ -98,6 +98,15 @@ function xmldb_local_elisprogram_upgrade($oldversion=0) {
         upgrade_plugin_savepoint($result, '2014082505', 'local', 'elisprogram');
     }
 
+    if ($result && $oldversion < 2014082505) {
+        $file = $CFG->dirroot.'/local/elisprogram/db/install.xml';
+        $tables = array('local_elisprogram_deepsight');
+        foreach ($tables as $table) {
+            $dbman->install_one_table_from_xmldb_file($file, $table);
+        }
+        upgrade_plugin_savepoint($result, '2014082505', 'local', 'elisprogram');
+    }
+
     if ($result && $oldversion < 2014082506) {
         $file = $CFG->dirroot.'/local/elisprogram/db/install.xml';
         $tablename = 'local_elisprogram_tab_defs';
