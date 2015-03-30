@@ -83,7 +83,7 @@ class deepsight_filter_searchselect extends deepsight_filter_standard {
              WHERE '.$this->choicesfield.' != ""
           GROUP BY '.$this->choicesfield.'
           ORDER BY count DESC
-             LIMIT 0,5');
+             LIMIT 0,10');
         $choicesfield = $this->choicesfield;
         foreach ($records as $record) {
             $choice = trim($record->$choicesfield);
