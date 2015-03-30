@@ -51,6 +51,7 @@ $.fn.deepsight_filter_textsearch = function(options) {
         // required options
         datatable: null,
         name: null,
+        initialvalue: '',
         // optional options
         label: 'Filter',
         css_active_class: 'active',
@@ -71,12 +72,15 @@ $.fn.deepsight_filter_textsearch = function(options) {
      * Changes the value currently being filters on.
      *
      * @param string val The value to filter on.
+     * @param boolean update If true or undefined than update the table.
      */
-    this.addval = function(val) {
+    this.addval = function(val, update) {
         if (val != main.curval) {
             opts.datatable.filter_remove(main.name);
             opts.datatable.filter_add(main.name, val);
-            opts.datatable.updatetable();
+            if (typeof update == "undefined" || typeof update !== "undefined" && update) {
+                opts.datatable.updatetable();
+            }
             main.curval = val;
         }
     }
@@ -113,6 +117,13 @@ $.fn.deepsight_filter_textsearch = function(options) {
     }
 
     /**
+     * Update the label for the filter.
+     */
+    this.updatelabel = function () {
+        main.filterui.children('span.selection').html((main.curval !== '') ? '"'+main.curval+'"' : opts.lang_any);
+    };
+
+    /**
      * Initialize filter.
      *
      * Performs the following actions:
@@ -127,12 +138,12 @@ $.fn.deepsight_filter_textsearch = function(options) {
         // render
         main.addClass(opts.css_filter_class);
 
-        var filterui = $('<button></button>');
-        filterui.addClass('filterui');
-        filterui.html('<span class="lbl">'+opts.label+': </span><span class="selection">'+opts.lang_any+'</span><input type="text"/>');
-        main.append(filterui);
+        main.filterui = $('<button></button>');
+        main.filterui.addClass('filterui');
+        main.filterui.html('<span class="lbl">'+opts.label+': </span><span class="selection">'+opts.lang_any+'</span><input type="text"/>');
+        main.append(main.filterui);
 
-        var ele_input = filterui.children('input');
+        var ele_input = main.filterui.children('input');
 
         // prevent deactivating when clicking the input box
         ele_input.click(function(e) {
@@ -141,19 +152,28 @@ $.fn.deepsight_filter_textsearch = function(options) {
 
         ele_input.keyup(function(e) {
             main.addval(ele_input.val());
-            filterui.children('span.selection').html((main.curval != '') ? '"'+main.curval+'"' : opts.lang_any);
+            main.updatelabel();
         });
+
+        if (typeof opts.initialvalue != "undefined" && typeof opts.initialvalue === "object") {
+            // Add the value to the field but don't update.
+            if (opts.initialvalue.length === 1) {
+                main.addval(opts.initialvalue[0], false);
+                ele_input.val(opts.initialvalue[0]);
+                main.updatelabel();
+            }
+        }
 
         // add remove button
         main.removebutton = $('<button>X</button>').addClass(opts.css_filterdelete_class).click(main.remove_action);
         main.append(main.removebutton);
 
         // toggle active/inactive on click
-        filterui.click(function(e) {
+        main.filterui.click(function(e) {
             e.stopPropagation();
             $.deactivate_all_filters();
-            filterui.toggleClass(opts.css_active_class);
-            filterui.find('input').focus();
+            main.filterui.toggleClass(opts.css_active_class);
+            main.filterui.find('input').focus();
             $(document).bind('click', main.update_display);
         });
     }
