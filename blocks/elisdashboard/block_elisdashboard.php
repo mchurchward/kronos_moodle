@@ -74,6 +74,7 @@ class block_elisdashboard extends block_base {
         $PAGE->requires->jquery();
         $PAGE->requires->jquery_plugin('ui');
         $PAGE->requires->jquery_plugin('ui-css');
+        $PAGE->requires->js('/local/eliscore/js/verify_jqueryui.js'); // TBD.
 
         // Add required head JS files.
         $requiredjs = $widget->get_js_dependencies_head();
