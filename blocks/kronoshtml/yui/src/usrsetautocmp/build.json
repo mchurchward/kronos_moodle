@@ -1,0 +1,10 @@
+{
+  "name": "moodle-block_kronoshtml-usrsetautocmp",
+  "builds": {
+    "moodle-block_kronoshtml-usrsetautocmp": {
+      "jsfiles": [
+        "usrsetautocmp.js"
+      ]
+    }
+  }
+}

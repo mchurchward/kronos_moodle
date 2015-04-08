@@ -1,0 +1,15 @@
+{
+  "moodle-block_kronoshtml-usrsetautocmp": {
+    "requires": [
+        "base",
+        "node",
+        "autocomplete-base",
+        "autocomplete-plugin",
+        "autocomplete-sources",
+        "autocomplete-highlighters",
+        "autocomplete-filters",
+        "array-extras",
+        "datasource-get"
+    ]
+  }
+}

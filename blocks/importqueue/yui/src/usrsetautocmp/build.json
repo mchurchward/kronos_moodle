@@ -1,0 +1,10 @@
+{
+  "name": "moodle-block_importqueue-usrsetautocmp",
+  "builds": {
+    "moodle-block_importqueue-usrsetautocmp": {
+      "jsfiles": [
+        "usrsetautocmp.js"
+      ]
+    }
+  }
+}

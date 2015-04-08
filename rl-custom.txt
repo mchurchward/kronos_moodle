@@ -1,0 +1,22 @@
+Cutom modifications for CCRMS
+
+KRONOS Custom ELIS
+When upgrading elis, KRONOS_27_STABLE needs to be rebased for each elis upgrade. Remove old ELIS files and copy ELIS file from elis_dev.git KRONOS_27_STABLE
+
+# KRONOS Virtual machine activity
+git clone ssh://git@git.remote-learner.net/moodle-mod_kronossandvm.git -b MOODLE_27_STABLE mod/kronossandvm
+
+# KRONOS HTML Block
+git clone ssh://git@git.remote-learner.net/moodle-block_kronoshtml.git -b MOODLE_27_STABLE blocks/kronoshtml
+
+# KRONOS feed web services
+git clone ssh://git@git.remote-learner.net/moodle-local_kronosfeedws.git -b MOODLE_27_STABLE local/kronosfeedws
+
+# KRONOS Training manager request block
+git clone ssh://git@git.remote-learner.net/moodle-block_kronostmrequest.git -b MOODLE_27_STABLE blocks/kronostmrequest
+
+# KRONOS Authentication Portal
+git clone ssh://git@git.remote-learner.net/moodle-auth_kronosportal.git -b MOODLE_27_STABLE auth/kronosportal
+
+# KRONOS Import queue block
+git clone ssh://git@git.remote-learner.net/moodle-block_importqueue.git -b MOODLE_27_STABLE blocks/importqueue

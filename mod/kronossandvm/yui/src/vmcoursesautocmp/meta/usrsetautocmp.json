@@ -1,0 +1,15 @@
+{
+  "moodle-mod_kronossandvm-vmcoursesautocmp": {
+    "requires": [
+        "base",
+        "node",
+        "autocomplete-base",
+        "autocomplete-plugin",
+        "autocomplete-sources",
+        "autocomplete-highlighters",
+        "autocomplete-filters",
+        "array-extras",
+        "datasource-get"
+    ]
+  }
+}

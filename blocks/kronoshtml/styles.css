@@ -1,0 +1,12 @@
+#ac_sel_uset li {
+  display: inline-block;
+  list-style: none;
+
+  /* fake inline-block for IE<8 */
+  zoom: 1;
+  *display: inline;
+}
+
+#ac_input::-webkit-input-placeholder {font-style: italic}
+#ac_input:-moz-placeholder {font-style: italic}
+#ac_input:-ms-input-placeholder {font-style: italic}

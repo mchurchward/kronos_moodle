@@ -1,0 +1,10 @@
+{
+  "name": "moodle-mod_kronossandvm-vmcoursesautocmp",
+  "builds": {
+    "moodle-mod_kronossandvm-vmcoursesautocmp": {
+      "jsfiles": [
+        "vmcoursesautocmp.js"
+      ]
+    }
+  }
+}
