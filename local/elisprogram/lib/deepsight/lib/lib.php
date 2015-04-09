@@ -981,7 +981,7 @@ class deepsight_savedsearch {
         if (!$this->canloadsearches()) {
             return array();
         }
-        $like = $DB->sql_like('name', '?');
+        $like = $DB->sql_like('name', '?', false);
         $sql = 'SELECT * FROM {local_elisprogram_deepsight} WHERE contextid = ? AND pagename = ? AND '.$like.' LIMIT 10';
         $records = $DB->get_records_sql($sql, array($this->context->id, $this->pagename, "%$query%"));
         $results = array();
@@ -1126,7 +1126,7 @@ class deepsight_savedsearch_clsttrk extends deepsight_savedsearch {
         if (!$this->canloadsearches()) {
             return array();
         }
-        $like = $DB->sql_like('name', '?');
+        $like = $DB->sql_like('name', '?', false);
         $sql = 'SELECT * FROM {local_elisprogram_deepsight} WHERE contextid = ? AND pagename = ? AND '.$like.' LIMIT 10';
         $records = $DB->get_records_sql($sql, array($this->context->id, $this->pagename, "%$query%"));
         $results = array();
@@ -1167,7 +1167,7 @@ class deepsight_savedsearch_clsttrk extends deepsight_savedsearch {
                 if (!empty($parentcontext)) {
                     // Search for parent saved parent userset searches;
                     if (!empty($query)) {
-                        $like = $DB->sql_like('name', '?');
+                        $like = $DB->sql_like('name', '?', false);
                         $sql = 'SELECT * FROM {local_elisprogram_deepsight} WHERE contextid = ? AND pagename = ? AND '.$like.' '.$orderby.' LIMIT 10';
                         $records = $DB->get_records_sql($sql, array($parentcontext, $this->pagename, "%$query%"));
                     } else {

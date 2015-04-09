@@ -239,9 +239,9 @@ class widget extends \local_elisprogram\lib\widgetbase {
      * @return array Array of URLs or \moodle_url objects to require for the widget.
      */
     public function get_css_dependencies($fullscreen = false) {
-        return [new \moodle_url('/local/elisprogram/widgets/featuredcourses/css/widget.css'),
-                new \moodle_url('/lib/jquery/ui-1.10.4/css/base/jquery-ui.min.css')
-        ];
+        return [
+                new \moodle_url('/local/elisprogram/widgets/enrolment/css/widget.css')
+               ];
     }
 
     /**
@@ -251,10 +251,7 @@ class widget extends \local_elisprogram\lib\widgetbase {
      * @return array Array of URLs or \moodle_url objects to require for the widget.
      */
     public function get_js_dependencies_head($fullscreen = false) {
-        return [
-                new \moodle_url('/local/elisprogram/lib/deepsight/js/jquery-1.9.1.min.js'),
-                new \moodle_url('/local/elisprogram/lib/deepsight/js/jquery-ui-1.10.1.custom.min.js')
-        ];
+        return [];
     }
 
     /**
@@ -272,6 +269,9 @@ class widget extends \local_elisprogram\lib\widgetbase {
                 new \moodle_url('/local/elisprogram/lib/deepsight/js/filters/deepsight_filter_date.js'),
                 new \moodle_url('/local/elisprogram/lib/deepsight/js/filters/deepsight_filter_searchselect.js'),
                 new \moodle_url('/local/elisprogram/widgets/featuredcourses/js/widget.js'),
+                new \moodle_url('/local/elisprogram/lib/deepsight/js/buttons/deepsight_tools_button.js'),
+                new \moodle_url('/local/elisprogram/lib/deepsight/js/buttons/deepsight_loadsearch_button.js'),
+                new \moodle_url('/local/elisprogram/lib/deepsight/js/buttons/deepsight_savesearch_button.js'),
         ];
     }
 }

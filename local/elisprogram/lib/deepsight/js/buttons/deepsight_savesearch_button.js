@@ -77,19 +77,19 @@
          */
         this.showsaving = function () {
             // Show saving spinner and saved message.
-            $('#deepsight_search_saving').addClass('deepsight_search_saving').css('display', 'block').html(opts.lang_search_form_saving);
+            $('#'+opts.datatable.name+'_deepsight_search_saving').addClass('deepsight_search_saving').css('display', 'block').html(opts.lang_search_form_saving);
 
-            $('#deepsight_search_saving').bind('searchsaved', function (e) {
+            $('#'+opts.datatable.name+'_deepsight_search_saving').bind('searchsaved', function (e) {
                 // Hide saving message.
                 $(this).removeClass('deepsight_search_saving').css('display', 'none');
                 // Reset save button from 'Save a copy' to 'Save'.
-                $('#deepsight_search_save').html(opts.lang_search_form_save);
+                $('#'+opts.datatable.name+'_deepsight_search_save').html(opts.lang_search_form_save);
                 // Show saved message.
                 if (opts.datatable.starting_searches.length > 1) {
-                    $('#deepsight_search_saved').css('display', 'block');
+                    $('#'+opts.datatable.name+'_deepsight_search_saved').css('display', 'block');
                 } else {
-                    $('#deepsight_search_body').css('display', 'block');
-                    if ($('#deepsight_searchsave[class*="active"]').length) {
+                    $('#'+opts.datatable.name+'_deepsight_search_body').css('display', 'block');
+                    if ($('#'+opts.datatable.name+'_deepsight_searchsave[class*="active"]').length) {
                         // Only hide dropdowns if searchsave is still active.
                         $.deactivate_all_filters();
                     }
@@ -101,17 +101,17 @@
 
                 if (opts.datatable.starting_searches.length > 1) {
                     setTimeout(function () {
-                        if ($('#deepsight_searchsave[class*="active"]').length) {
+                        if ($('#'+opts.datatable.name+'_deepsight_searchsave[class*="active"]').length) {
                             // Only hide dropdowns if searchsave is still active.
                             $.deactivate_all_filters();
                         }
-                        $('#deepsight_search_saved').css('display', 'none');
-                        $('#deepsight_search_body').show();
+                        $('#'+opts.datatable.name+'_deepsight_search_saved').css('display', 'none');
+                        $('#'+opts.datatable.name+'_deepsight_search_body').show();
                     }, 1500);
                 }
             });
 
-            $('#deepsight_search_body').hide();
+            $('#'+opts.datatable.name+'_deepsight_search_body').hide();
         };
 
         /**
@@ -142,7 +142,7 @@
             }
             main.addClass(opts.css_class);
             main.attach_dropdown({
-                focusselector: '#deepsight_search_name'
+                focusselector: '#'+opts.datatable.name+'_deepsight_search_name'
             });
             main.dropdown.addClass(opts.css_dropdown_class);
 
@@ -165,19 +165,19 @@
             }
 
             // Create drop down.
-            var html = '<div class="filter_search deepsight_search_container" id="deepsight_search_body">\n';
+            var html = '<div class="filter_search deepsight_search_container" id="'+opts.datatable.name+'_deepsight_search_body">\n';
             html += '<label for="deepsight_search_name">'+opts.lang_search_form_name+'&nbsp;&nbsp;</label><br>';
-            html += '<input type="text" id="deepsight_search_name" value="'+name+'"/>';
+            html += '<input type="text" id="'+opts.datatable.name+'_deepsight_search_name" value="'+name+'"/>';
             html += '<label for="deepsight_search_default">'+opts.lang_search_form_default+'&nbsp;&nbsp;</label>';
-            html += '<input type="checkbox" id="deepsight_search_default" value="1" '+isdefault+' /><br>';
-            html += '<button id="deepsight_search_save" class="elisicon-more deepsight_filter_generator deepsight_dropdown_activator" title="'+opts.lang_search_form_save_title+'">'+savebutton+'</button>';
-            html += '</div><div class="deepsight_search_saving" id="deepsight_search_saving">'+opts.lang_search_form_saving+'</div>';
-            html += '<div class="deepsight_search_saved" id="deepsight_search_saved">'+opts.lang_search_form_saved+'</div>';
+            html += '<input type="checkbox" id="'+opts.datatable.name+'_deepsight_search_default" value="1" '+isdefault+' /><br>';
+            html += '<button id="'+opts.datatable.name+'_deepsight_search_save" class="elisicon-more deepsight_filter_generator deepsight_dropdown_activator" title="'+opts.lang_search_form_save_title+'">'+savebutton+'</button>';
+            html += '</div><div class="deepsight_search_saving" id="'+opts.datatable.name+'_deepsight_search_saving">'+opts.lang_search_form_saving+'</div>';
+            html += '<div class="deepsight_search_saved" id="'+opts.datatable.name+'_deepsight_search_saved">'+opts.lang_search_form_saved+'</div>';
             main.dropdown
                 .addClass(opts.filter_dropdown_cssclass).html(html);
 
             // Short cut, if enter key is pressed in name input save search.
-            $('#deepsight_search_name').keyup(function (e) {
+            $('#'+opts.datatable.name+'_deepsight_search_name').keyup(function (e) {
                 if (e.keyCode === 13) {
                     opts.datatable.savesearch(opts.filterbar);
                 }
@@ -185,14 +185,14 @@
 
             // Focus on name input.
             main.dropdown.on('mouseup', function (e) {
-                $('#deepsight_search_name').focus();
+                $('#'+opts.datatable.name+'_deepsight_search_name').focus();
             });
 
             // Save action.
-            main.dropdown.find('#deepsight_search_save').click(
+            main.dropdown.find('#'+opts.datatable.name+'_deepsight_search_save').click(
                 function () {
                     if (!opts.filterbar.validatesearch()) {
-                        $('#deepsight_search_name').focus();
+                        $('#'+opts.datatable.name+'_deepsight_search_name').focus();
                         opts.datatable.render_save_error(opts.lang_search_form_name_error, 'search');
                     } else {
                         main.showsaving();

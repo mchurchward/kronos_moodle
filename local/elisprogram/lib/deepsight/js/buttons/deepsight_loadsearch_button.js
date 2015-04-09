@@ -96,7 +96,7 @@
                 opts.filterbar.add_tools_button();
                 opts.filterbar.loadfilters();
                 if (object.name !== '') {
-                    $('#' + opts.datatable.name + '_searchestitle').html('<b>' + opts.lang_search_for + '</b>: ' + object.name).show();
+                    $('#'+opts.datatable.name+'_searchestitle').html('<b>' + opts.lang_search_for + '</b>: ' + object.name).show();
                 }
                 opts.datatable.updatetable();
                 $.deactivate_all_filters();
@@ -230,7 +230,7 @@
                 isdefault;
 
             // Retrieve current search if the drop down form exists before hand.
-            temp = $('#deepsight_loadsearch_search');
+            temp = $('#'+opts.datatable.name+'_deepsight_loadsearch_search');
             if (temp.length) {
                 search = temp.val();
             }
@@ -250,16 +250,16 @@
 
             // Set search title.
             if (name !== '') {
-                $('#' + opts.datatable.name + '_searchestitle').html('<b>' + opts.lang_search_for + '</b>: ' + name).show();
+                $('#'+opts.datatable.name+'_searchestitle').html('<b>'+opts.lang_search_for+'</b>: '+name).show();
             }
 
             if (typeof opts.datatable.starting_searches[0] === "object") {
                 main.addClass(opts.css_class);
                 main.attach_dropdown({
-                    focusselector: '#deepsight_loadsearch_search'
+                    focusselector: '#'+opts.datatable.name+'_deepsight_loadsearch_search'
                 });
                 var html = '<div class="deepsight_searches_search">\n';
-                html += '<span>' + opts.lang_search + '&nbsp;&nbsp;</span><input id="deepsight_loadsearch_search" type="text" value="'+search+'"/></div>\n';
+                html += '<span>'+opts.lang_search+'&nbsp;&nbsp;</span><input id="'+opts.datatable.name+'_deepsight_loadsearch_search" type="text" value="'+search+'"/></div>\n';
                 main.dropdown.html(html);
                 main.dropdown.find('input[type="text"]').keyup(function (e) {
                     main.search($(this).val());

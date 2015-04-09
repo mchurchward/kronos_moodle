@@ -321,7 +321,7 @@ $.fn.deepsight_filter_searchselect = function(options) {
         // render
         main.addClass(opts.filter_cssclass);
 
-        main.filterui = $('<button id="filterui_'+opts.name+'"></button>').addClass('filterui');
+        main.filterui = $('<button></button>').addClass('filterui');
         var initialval = '';
         if (typeof(opts.initial_value) != 'undefined') {
             for (var i in opts.initial_value) {
