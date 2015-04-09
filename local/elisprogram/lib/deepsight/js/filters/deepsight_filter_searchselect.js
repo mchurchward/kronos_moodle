@@ -319,7 +319,7 @@ $.fn.deepsight_filter_searchselect = function(options) {
         // render
         main.addClass(opts.filter_cssclass);
 
-        main.filterui = $('<button id="filterui_'+opts.name+'"></button>').addClass('filterui');
+        main.filterui = $('<button></button>').addClass('filterui');
         main.filterui.html(opts.label+': '+opts.lang_all+' &#x25BC;');
         main.append(main.filterui);
 

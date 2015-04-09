@@ -67,12 +67,12 @@
         this.confirmdeletesearch = function () {
             var actionpanelbody = '<div class="body">'+opts.lang_search_delete_confirm+'</div>\n\
                                 <div class="actions"><i class="elisicon-confirm deepsight_search_confirm"></i><i class="elisicon-cancel deepsight_search_cancel"></i></div>',
-            actionpanel = $('#deepsight_tools_saved');
+            actionpanel = $('#'+opts.datatable.name+'_deepsight_tools_saved');
             actionpanel.html(actionpanelbody);
             actionpanel.find('i.elisicon-confirm').bind('click', main.deletesearch);
             actionpanel.find('i.elisicon-cancel').click(main.reset);
-            $('#deepsight_tools_saved').addClass('deepsight_search_confirm_body').show();
-            $('#deepsight_tools_body').hide();
+            $('#'+opts.datatable.name+'_deepsight_tools_saved').addClass('deepsight_search_confirm_body').show();
+            $('#'+opts.datatable.name+'_deepsight_tools_body').hide();
         };
 
         /**
@@ -92,19 +92,19 @@
 
             choice.click(function (e) {
                 console.log('setdefault');
-                $('#deepsight_tools_saved').html(opts.lang_search_setdefault_saved);
-                $('#deepsight_search_default').prop('checked', true);
+                $('#'+opts.datatable.name+'_deepsight_tools_saved').html(opts.lang_search_setdefault_saved);
+                $('#'+opts.datatable.name+'_deepsight_search_default').prop('checked', true);
 
                 if (!opts.filterbar.validatesearch()) {
                     // Show the save form to add name to filter.
-                    $('#deepsight_tools_saving').removeClass('deepsight_search_saving').html('');
-                    $('#deepsight_tools_saved').css('display', 'none');
-                    $('#deepsight_tools_body').show();
+                    $('#'+opts.datatable.name+'_deepsight_tools_saving').removeClass('deepsight_search_saving').html('');
+                    $('#'+opts.datatable.name+'_deepsight_tools_saved').css('display', 'none');
+                    $('#'+opts.datatable.name+'_deepsight_tools_body').show();
                     main.reset();
                     opts.datatable.render_save_error(opts.lang_search_form_name_error, 'search');
-                    $('#deepsight_searchsave').mousedown();
-                    $('#deepsight_searchsave').click();
-                    $('#deepsight_search_name').focus();
+                    $('#'+opts.datatable.name+'_deepsight_searchsave').mousedown();
+                    $('#'+opts.datatable.name+'_deepsight_searchsave').click();
+                    $('#'+opts.datatable.name+'_deepsight_search_name').focus();
                 } else {
                     main.showsaving();
                     opts.datatable.dosavesearch('save', 'tools');
@@ -135,7 +135,7 @@
          * Delete current search.
          */
         this.deletesearch = function () {
-            $('#deepsight_tools_saved')
+            $('#'+opts.datatable.name+'_deepsight_tools_saved')
                 .removeClass('deepsight_search_confirm_body')
                 .html(opts.lang_search_deleted)
                 .hide();
@@ -206,19 +206,19 @@
          */
         this.showsaving = function (id) {
             // Show saving spinner and saved message.
-            $('#deepsight_tools_saving')
+            $('#'+opts.datatable.name+'_deepsight_tools_saving')
                 .addClass('deepsight_search_saving')
                 .css('display', 'block')
                 .html(opts.lang_search_form_saving);
             // Hide tools list.
-            $('#deepsight_tools_body').hide();
-            $('#deepsight_tools_saved').hide();
+            $('#'+opts.datatable.name+'_deepsight_tools_body').hide();
+            $('#'+opts.datatable.name+'_deepsight_tools_saved').hide();
 
-            $('#deepsight_tools_saving').bind('searchsaved', function (e) {
+            $('#'+opts.datatable.name+'_deepsight_tools_saving').bind('searchsaved', function (e) {
                 // Hide saving message.
                 $(this).removeClass('deepsight_search_saving').css('display', 'none');
                 // Show saved message.
-                $('#deepsight_tools_saved').css('display', 'block');
+                $('#'+opts.datatable.name+'_deepsight_tools_saved').css('display', 'block');
                 // Hide saved message after 1500 ms.
                 setTimeout(function () {
                     if (id && !opts.datatable.findothersearch(id)) {
@@ -236,12 +236,12 @@
          * Reset
          */
         this.reset = function () {
-            if ($('#deepsight_searchtools[class*="active"]').length) {
+            if ($('#'+opts.datatable.name+'_deepsight_searchtools[class*="active"]').length) {
                 // Only hide dropdowns if searchtools is still present.
                 $.deactivate_all_filters();
             }
-            $('#deepsight_tools_saved').removeClass('deepsight_search_confirm_body').css('display', 'none');
-            $('#deepsight_tools_body').show();
+            $('#'+opts.datatable.name+'_deepsight_tools_saved').removeClass('deepsight_search_confirm_body').css('display', 'none');
+            $('#'+opts.datatable.name+'_deepsight_tools_body').show();
         };
 
         /**
@@ -268,9 +268,9 @@
 
             $.remove_dynamic_elements(cleanform);
 
-            main.dropdownbody = $('<div id="deepsight_tools_body"></div>');
-            main.dropdownsaving = $('<div id="deepsight_tools_saved" class="deepsight_search_saved">' + opts.lang_search_tools_setdefault_saved + '</div>');
-            main.dropdownsaved = $('<div id="deepsight_tools_saving" class="deepsight_search_saving">' + opts.lang_search_form_saving + '</div>');
+            main.dropdownbody = $('<div id="'+opts.datatable.name+'_deepsight_tools_body"></div>');
+            main.dropdownsaving = $('<div id="'+opts.datatable.name+'_deepsight_tools_saved" class="deepsight_search_saved">' + opts.lang_search_tools_setdefault_saved + '</div>');
+            main.dropdownsaved = $('<div id="'+opts.datatable.name+'_deepsight_tools_saving" class="deepsight_search_saving">' + opts.lang_search_form_saving + '</div>');
             main.addClass(opts.css_class);
             main.attach_dropdown();
             main.dropdown.addClass(opts.css_dropdown_class);
