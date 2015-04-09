@@ -1132,7 +1132,7 @@ $.fn.deepsight_datatable = function(options) {
                         }
                         main.sort_saved_searches();
                     }
-                    $('#deepsight_'+divid+'_saving').trigger('searchsaved');
+                    $('#'+main.name+'_deepsight_'+divid+'_saving').trigger('searchsaved');
                 } else {
                     main.render_save_error(opts.lang_search_form_save_error, divid);
                 }
@@ -1670,9 +1670,9 @@ $.fn.deepsight_datatable = function(options) {
         if (typeof (divid) == "undefined") {
             divid = 'search';
         }
-        $('#deepsight_'+divid+'_saving').removeClass('deepsight_search_saving').html('<span>'+error_message+'</span>');
-        $('#deepsight_'+divid+'_saving').addClass('deepsight_search_saving_error');
-        $('#deepsight_'+divid+'_body').show();
+        $('#'+main.name+'_deepsight_'+divid+'_saving').removeClass('deepsight_search_saving').html('<span>'+error_message+'</span>');
+        $('#'+main.name+'_deepsight_'+divid+'_saving').addClass('deepsight_search_saving_error');
+        $('#'+main.name+'_deepsight_'+divid+'_body').show();
     }
 
 

@@ -72,7 +72,7 @@ $.fn.deepsight_filterbar = function (options) {
      */
     this.add_tools_button = function () {
         if (typeof main.tools === "undefined") {
-            main.tools = $('<button id="deepsight_searchtools" class="" title="'+opts.lang_search_toolstitle+'">'+opts.lang_search_tools+'</button>');
+            main.tools = $('<button id="'+opts.datatable.name+'_deepsight_searchtools" class="" title="'+opts.lang_search_toolstitle+'">'+opts.lang_search_tools+'</button>');
             main.tools.addClass('elisicon-configuration');
             main.tools.addClass('deepsight_filter_generator');
             main.tools.addClass('deepsight_dropdown_activator');
@@ -94,7 +94,7 @@ $.fn.deepsight_filterbar = function (options) {
             filterbar: main
         });
 
-        if (opts.datatable.starting_searches.length < 1) {
+        if (typeof opts.datatable.starting_searches !== 'undefined' && opts.datatable.starting_searches.length < 1) {
             main.tools.hide();
             main.searchestitle.hide();
         } else {
@@ -110,14 +110,14 @@ $.fn.deepsight_filterbar = function (options) {
         var activate = false;
         if (opts.datatable.can_load_searches) {
             if (typeof (main.loadsearch) === "undefined") {
-                main.loadsearch = $('<button id="deepsight_searchload"  title="'+opts.lang_search_loadtitle+'">'+opts.lang_search_load+'</button>');
+                main.loadsearch = $('<button id="'+opts.datatable.name+'_deepsight_searchload"  title="'+opts.lang_search_loadtitle+'">'+opts.lang_search_load+'</button>');
                 main.loadsearch.addClass('elisicon-sortable');
                 main.loadsearch.addClass('deepsight_filter_generator');
                 main.loadsearch.addClass('deepsight_dropdown_activator');
                 main.searchesbar.append(main.loadsearch);
             }
 
-            if ($('#deepsight_searchload[class*="active"]').length) {
+            if ($('#'+opts.datatable.name+'_deepsight_searchload[class*="active"]').length) {
                 activate = true;
             }
 
@@ -137,8 +137,8 @@ $.fn.deepsight_filterbar = function (options) {
 
             if (activate) {
                 $.deactivate_all_filters();
-                $('#deepsight_searchload').mousedown();
-                $('#deepsight_searchload').click();
+                $('#'+opts.datatable.name+'_deepsight_searchload').mousedown();
+                $('#'+opts.datatable.name+'_deepsight_searchload').click();
             }
         }
     };
@@ -149,7 +149,7 @@ $.fn.deepsight_filterbar = function (options) {
     this.add_savesearch_button = function () {
         if (opts.datatable.can_load_searches && opts.datatable.can_save_searches) {
             if (typeof (main.searchsave) === 'undefined') {
-                var button = '<button id="deepsight_searchsave" ';
+                var button = '<button id="'+opts.datatable.name+'_deepsight_searchsave" ';
                 button += opts.lang_search_savetitle+'">'+opts.lang_search_save+'</button>';
                 main.searchsave = $(button);
                 main.searchsave.addClass('elisicon-more');
@@ -187,7 +187,7 @@ $.fn.deepsight_filterbar = function (options) {
 
         main.html('');
         if (main.generator === null) {
-            main.generator = $('<button id="filter_generator" class="elisicon-more" title="'+opts.lang_addtitle+'">'+opts.lang_add+'</button>');
+            main.generator = $('<button id="'+opts.datatable.name+'_filter_generator" class="elisicon-more" title="'+opts.lang_addtitle+'">'+opts.lang_add+'</button>');
         }
 
         if (typeof opts.datatable.current_search !== "undefined" &&
@@ -266,8 +266,8 @@ $.fn.deepsight_filterbar = function (options) {
             }
         }
 
-        opts.datatable.current_search.name = $('#deepsight_search_name').val();
-        opts.datatable.current_search.isdefault = $('#deepsight_search_default:checked').val() ? true : false;
+        opts.datatable.current_search.name = $('#'+opts.datatable.name+'_deepsight_search_name').val();
+        opts.datatable.current_search.isdefault = $('#'+opts.datatable.name+'_deepsight_search_default:checked').val() ? true : false;
         if (typeof opts.datatable.current_search.contextid == "undefined") {
             opts.datatable.current_search.contextid = opts.datatable.contextid;
         }
@@ -288,7 +288,7 @@ $.fn.deepsight_filterbar = function (options) {
      *     - Adds a filter generator containing all filters not defined to be starting filters.
      */
     this.initialize = function () {
-        var cleanform = ['filter_generator', 'deepsight_searchload', 'deepsight_searchsave', 'deepsight_searchtools'];
+        var cleanform = [opts.datatable.name+'_filter_generator', opts.datatable.name+'_deepsight_searchload', opts.datatable.name+'_deepsight_searchsave', opts.datatable.name+'_deepsight_searchtools'];
         $.remove_dynamic_elements(cleanform);
         main.loadfilters();
 
