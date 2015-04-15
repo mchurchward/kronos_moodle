@@ -46,12 +46,20 @@ class store implements \tool_log\log\writer, \core\log\sql_internal_reader {
      * @return bool
      */
     protected function is_event_ignored(\core\event\base $event) {
+        global $PAGE;
+
         if ((!CLI_SCRIPT or PHPUNIT_TEST) and !$this->logguests) {
             // Always log inside CLI scripts because we do not login there.
             if (!isloggedin() or isguestuser()) {
                 return true;
             }
         }
+
+        $data = $event->get_data();
+        if (($PAGE->requestorigin == 'cli') && ($data['target'] == 'message') && (($data['action'] == 'sent') || ($data['action'] == 'viewed'))) {
+            return true;
+        }
+
         return false;
     }
 
