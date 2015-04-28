@@ -3101,8 +3101,9 @@ function elis_files_set_curl_timeouts(&$session) {
     curl_setopt($session, CURLOPT_CONNECTTIMEOUT, $connecttimeout);
 
     $responsetimeout = get_config('elisfiles', 'response_timeout');
-    $responsetimeout = !empty($responsetimeout) ? (int)$responsetimeout : ELIS_FILES_CURL_RESPONSE_TIMEOUT;
-    curl_setopt($session, CURLOPT_TIMEOUT, $responsetimeout);
+    if (!empty($responsetimeout)) {
+        curl_setopt($session, CURLOPT_TIMEOUT, (int)$responsetimeout);
+    }
 }
 
 /**

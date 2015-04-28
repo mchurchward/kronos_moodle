@@ -47,7 +47,7 @@ defined('ELIS_FILES_XFER_WS') || define('ELIS_FILES_XFER_WS', 'webservices');
 defined('ELIS_FILES_XFER_FTP') || define('ELIS_FILES_XFER_FTP', 'ftp');
 
 defined('ELIS_FILES_CURL_CONNECT_TIMEOUT') || define('ELIS_FILES_CURL_CONNECT_TIMEOUT', '3');
-defined('ELIS_FILES_CURL_RESPONSE_TIMEOUT') || define('ELIS_FILES_CURL_RESPONSE_TIMEOUT', '0');
+defined('ELIS_FILES_CURL_RESPONSE_TIMEOUT') || define('ELIS_FILES_CURL_RESPONSE_TIMEOUT', '30');
 
 class repository_elisfiles extends repository {
     private $ticket = null;
