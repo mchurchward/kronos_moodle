@@ -60,7 +60,8 @@ class usersetform extends cmform {
 
         //obtain the non-child clusters that we could become the child of, with availability
         //determined based on the edit capability
-        $contexts = usersetpage::get_contexts('local/elisprogram:userset_edit');
+        $parentexists = !isset($this->_customdata['obj']->parent);
+        $contexts = $parentexists ? usersetpage::get_contexts('local/elisprogram:userset_edit') : usersetpage::get_contexts('local/elisprogram:userset_subsetadd');
         $non_child_clusters = cluster_get_non_child_clusters($current_cluster_id, $contexts);
 
         //parent dropdown
