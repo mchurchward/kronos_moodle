@@ -94,20 +94,29 @@ class deepsight_datatable_usersetsubuserset_assigned extends deepsight_datatable
         $actions = parent::get_actions();
 
         $langedit = get_string('edit', 'local_elisprogram');
-        $actions[] = new deepsight_action_usersetsubuserset_editlink($this->DB, 'usersetsubuserset_editlink', $langedit);
+        $actionlink = new deepsight_action_usersetsubuserset_editlink($this->DB, 'usersetsubuserset_editlink', $langedit);
+        $actionlink->condition = 'function(rowdata) { return(rowdata.meta.canedit); }';
+        $actions[] = $actionlink;
 
         $langtracks = get_string('tracks', 'local_elisprogram');
-        $actions[] = new deepsight_action_usersetsubuserset_trackslink($this->DB, 'usersetsubuserset_trackslink', $langtracks);
+        $actionlink = new deepsight_action_usersetsubuserset_trackslink($this->DB, 'usersetsubuserset_trackslink', $langtracks);
+        $actionlink->condition = 'function(rowdata) { return(rowdata.meta.cantrkassign); }';
+        $actions[] = $actionlink;
 
         $langusers = get_string('users', 'local_elisprogram');
-        $actions[] = new deepsight_action_usersetsubuserset_userslink($this->DB, 'usersetsubuserset_userslink', $langusers);
+        $actionlink = new deepsight_action_usersetsubuserset_userslink($this->DB, 'usersetsubuserset_userslink', $langusers);
+        $actionlink->condition = 'function(rowdata) { return(rowdata.meta.canusrassign); }';
+        $actions[] = $actionlink;
 
         $langpgms = get_string('curricula', 'local_elisprogram');
-        $actions[] = new deepsight_action_usersetsubuserset_programslink($this->DB, 'usersetsubuserset_programslink', $langpgms);
+        $actionlink = new deepsight_action_usersetsubuserset_programslink($this->DB, 'usersetsubuserset_programslink', $langpgms);
+        $actionlink->condition = 'function(rowdata) { return(rowdata.meta.canproassign); }';
+        $actions[] = $actionlink;
 
         // Delete action.
         $delete = new deepsight_action_usersetsubuserset_delete($this->DB, 'usersetsubuserset_delete');
         $delete->endpoint = (strpos($this->endpoint, '?') !== false) ? $this->endpoint.'&m=action' : $this->endpoint.'?m=action';
+        $delete->condition = 'function(rowdata) { return(rowdata.meta.candel); }';
         $actions[] = $delete;
 
         return $actions;
@@ -162,6 +171,44 @@ class deepsight_datatable_usersetsubuserset_assigned extends deepsight_datatable
         }
 
         return array($filtersql, $filterparams);
+    }
+
+    /**
+     * Formats the delete active permission params.
+     * @param array $row An array for a single result.
+     * @return array The transformed result.
+     */
+    protected function results_row_transform(array $row) {
+        require_once(elispm::file('usersetpage.class.php'));
+        require_once(elispm::lib('data/userset.class.php'));
+        $row = parent::results_row_transform($row);
+        $usersetpage = new usersetpage(array('id' => $row['element_id']));
+
+        // Check if the user has the User Set view and Associate capabilty.  Otherwise check for entity specific association capabilities.
+        $hascap = $usersetpage->_has_capability('local/elisprogram:userset_view', $row['element_id']);
+        $hascap = $hascap && $usersetpage->_has_capability('local/elisprogram:associate', $row['element_id']);
+        if ($hascap) {
+            $row['meta']['canedit'] = true;
+            $row['meta']['candel'] = true;
+            $row['meta']['cantrkassign'] = true;
+            $row['meta']['canusrassign'] = true;
+            $row['meta']['canproassign'] = true;
+            return $row;
+        }
+
+        $userset = new userset($row['element_id']);
+        $userset->load();
+        // Check if the user has the Edit Subset cap. in the parent context or if the have the Edit User Set cap. in the current context.
+        $hascap = $usersetpage->_has_capability('local/elisprogram:userset_subsetedit', $userset->parent);
+        $hascap = $hascap || $usersetpage->_has_capability('local/elisprogram:userset_edit', $row['element_id']);
+        $row['meta']['canedit'] = $hascap;
+        $hascap = $usersetpage->_has_capability('local/elisprogram:userset_subsetdelete', $userset->parent);
+        $hascap = $hascap || $usersetpage->_has_capability('local/elisprogram:userset_delete', $row['element_id']);
+        $row['meta']['candel'] = $hascap;
+        $row['meta']['cantrkassign'] = $usersetpage->_has_capability('local/elisprogram:userset_associatetrack', $row['element_id']);
+        $row['meta']['canusrassign'] = $usersetpage->_has_capability('local/elisprogram:userset_view', $row['element_id']);
+        $row['meta']['canproassign'] = $usersetpage->_has_capability('local/elisprogram:userset_associateprogram', $row['element_id']);
+        return $row;
     }
 }
 

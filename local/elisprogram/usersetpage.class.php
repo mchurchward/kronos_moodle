@@ -142,13 +142,16 @@ class usersetsubusersetpage extends deepsightpage {
 
     /**
      * Prints the single-button form used to request the add action for a record type.
+     * @return string|void HTML markup or void if the user doesn't have the capability.
      */
     public function print_add_button() {
         global $OUTPUT;
 
         $id = required_param('id', PARAM_INT);
         $targetpage = new usersetpage(array('action' => 'add', 'parent' => $id));
-        if (!$targetpage->can_do('add')) {
+
+        // Check if the user has the capability to add User Subsets KRONOSDEV-82.
+        if (!$targetpage->can_do('add_subset')) {
             return;
         }
 
@@ -346,7 +349,23 @@ class usersetpage extends managementpage {
          */
     }
 
-    function can_do_edit() {
+    /**
+     * This functions returns a boolean value if the user has the Edit User Set capability for the context.
+     * If the User Set is a User Subset, check if the user has the Edit User Subset in the parent context.
+     * @return bool True if the user has the capability.  Otherwise false.
+     */
+    public function can_do_edit() {
+        $id = $this->required_param('id', PARAM_INT);
+        $userset = new userset($id);
+        $userset->load();
+
+        // When in a subset, check the parent context if the user has the Edit Subsets cap. OR if the user has the Edit User Set cap.
+        // in the current context.  This helps to avoid the situation where a User is only given the Edit User Set capability in a 2nd
+        // level User Set, but cannot edit the User Set because they haven't been given the Edit Subset capability in the parent context.
+        if (!empty($userset->parent)) {
+            return $this->_has_capability('local/elisprogram:userset_subsetedit', $userset->parent) || $this->_has_capability('local/elisprogram:userset_edit');
+        }
+
         return $this->_has_capability('local/elisprogram:userset_edit');
     }
 
@@ -359,7 +378,23 @@ class usersetpage extends managementpage {
         return $this->_has_capability('local/elisprogram:userset_edit') && has_capability('local/elisprogram:userset_edit', $context);
     }
 
-    function can_do_delete() {
+    /**
+     * This functions returns a boolean value if the user has the Delete User Set capability for the context.
+     * If the User Set is a User Subset, check if the user has the Delete User Subset in the parent context.
+     * @return bool True if the user has the capability.  Otherwise false.
+     */
+    public function can_do_delete() {
+        $id = $this->required_param('id', PARAM_INT);
+        $userset = new userset($id);
+        $userset->load();
+
+        // When in a subset, check the parent context if the user has the Delete Subsets cap. OR if the user has the Delete User Set cap.
+        // in the current context.  This helps to avoid the situation where a User is only given the Delete User Set capability in a 2nd
+        // level User Set, but cannot delete the User Set because they haven't been given the Delete Subset capability in the parent context.
+        if (!empty($userset->parent)) {
+            return $this->_has_capability('local/elisprogram:userset_subsetdelete', $userset->parent) || $this->_has_capability('local/elisprogram:userset_delete');
+        }
+
         return $this->_has_capability('local/elisprogram:userset_delete');
     }
 
@@ -367,10 +402,35 @@ class usersetpage extends managementpage {
         return $this->can_do_delete();
     }
 
-    function can_do_add() {
-        $parent = ($this->optional_param('id', 0, PARAM_INT))
-                ? $this->optional_param('id', 0, PARAM_INT)
-                : $this->optional_param('parent', 0, PARAM_INT);
+    /**
+     * This function checks if the user has the create User Set capability.  If the User Set has a parent it checks to see
+     * if the User has the Create User Subset capability in the parent context.
+     * @return bool True if the user has the capability.  Otherwise false.
+     */
+    public function can_do_add() {
+        $id = $this->optional_param('id', 0, PARAM_INT);
+        $parent = $this->optional_param('parent', 0, PARAM_INT);
+        $capability = 'local/elisprogram:userset_create';
+
+        if ($id) {
+            $context = \local_elisprogram\context\userset::instance($id);
+        } else if ($parent) {
+            // Before rendering the page check if the user has the permissions in the parent context.
+            $context = \local_elisprogram\context\userset::instance($parent);
+            $capability = 'local/elisprogram:userset_subsetadd';
+        } else {
+            $context = context_system::instance();
+        }
+
+        return has_capability($capability, $context);
+    }
+
+    /**
+     * This function checks if the user has the capability to add a User Subset.
+     * @return bool True of the user is allowed to perform the action.  Otherwise false.
+     */
+    public function can_do_add_subset() {
+        $parent = $this->optional_param('parent', 0, PARAM_INT);
 
         if ($parent) {
             $context = \local_elisprogram\context\userset::instance($parent);
@@ -378,7 +438,7 @@ class usersetpage extends managementpage {
             $context = context_system::instance();
         }
 
-        return has_capability('local/elisprogram:userset_create', $context);
+        return has_capability('local/elisprogram:userset_subsetadd', $context);
     }
 
     /**

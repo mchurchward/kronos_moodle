@@ -287,7 +287,16 @@ class deepsight_action_usersetsubuserset_delete extends deepsight_action_standar
      */
     protected function can_delete($usersetid) {
         global $USER;
-        $clstctx = pm_context_set::for_user_with_capability('cluster', 'local/elisprogram:userset_delete', $USER->id);
+        $userset = new userset($usersetid);
+        $userset->load();
+
+        // Check the User Subset's parent context to see if the user has the capability to delete the User Subsets.
+        if (!empty($userset->parent)) {
+            $clstctx = pm_context_set::for_user_with_capability('cluster', 'local/elisprogram:userset_subsetdelete', $USER->id);
+        } else {
+            $clstctx = pm_context_set::for_user_with_capability('cluster', 'local/elisprogram:userset_delete', $USER->id);
+        }
+
         return $clstctx->context_allowed($usersetid, 'cluster');
     }
 

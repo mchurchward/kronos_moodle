@@ -615,6 +615,7 @@ class deepsight_action_link extends deepsight_action_standard {
     public function get_js_opts() {
         global $CFG;
         $opts = parent::get_js_opts();
+        $opts['condition'] = $this->condition;
         $opts['icon'] = $this->icon;
         $opts['opts']['linkwwwroot'] = $CFG->wwwroot;
         $opts['opts']['linkbaseurl'] = $this->baseurl;
