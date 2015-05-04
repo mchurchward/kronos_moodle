@@ -51,6 +51,7 @@ if (!empty($instance)) {
     $instance->visible = 1;
     $instance->blockpositionid = 0;
     $block = block_instance('elisdashboard', $instance);
+    $block->enablefullscreen();
 
     $widget = (isset($block->config->widget)) ? $block->config->widget : 'help';
     $widget = \local_elisprogram\lib\widgetbase::instance($widget);

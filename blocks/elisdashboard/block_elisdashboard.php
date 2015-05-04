@@ -29,6 +29,8 @@
 class block_elisdashboard extends block_base {
     /** @var string The component identifier for this block. */
     protected $component = 'block_elisdashboard';
+    /** @var boolean False if expand and full page links are to displayed and True if in fullscreen mode. */
+    protected $fullscreen = false;
 
     /**
      * Initialization function. Run on construction.
@@ -112,20 +114,22 @@ class block_elisdashboard extends block_base {
         $closebutton = \html_writer::tag('span', 'X', $closebuttonattrs);
         $this->content->text = \html_writer::tag('div', $closebutton.$widget->get_html(), $contentattrs);
 
-        // Generate expand link.
-        $expandattrs = [
-            'href' => 'javascript:;',
-            'onclick' => 'block_elisdashboard_expand(\''.$this->instance->id.'\')'
-        ];
-        $expand = \html_writer::tag('a', 'Expand', $expandattrs);
+        if (!$this->fullscreen) {
+            // Generate expand link.
+            $expandattrs = [
+                'href' => 'javascript:;',
+                'onclick' => 'block_elisdashboard_expand(\''.$this->instance->id.'\')'
+            ];
+            $expand = \html_writer::tag('a', 'Expand', $expandattrs);
 
-        // Generate fullscreen link.
-        $params = ['instance' => $this->instance->id];
-        $fullscreenurl = new \moodle_url('/blocks/elisdashboard/fullpage.php', $params);
-        $fullscreen = \html_writer::link($fullscreenurl, 'Fullscreen');
+            // Generate fullscreen link.
+            $params = ['instance' => $this->instance->id];
+            $fullscreenurl = new \moodle_url('/blocks/elisdashboard/fullpage.php', $params);
+            $fullscreen = \html_writer::link($fullscreenurl, 'Fullscreen');
 
-        // Add expand + fullscreen links.
-        $this->content->text .= \html_writer::tag('small', $expand.' | '.$fullscreen, ['class' => 'expandlinks']);
+            // Add expand + fullscreen links.
+            $this->content->text .= \html_writer::tag('small', $expand.' | '.$fullscreen, ['class' => 'expandlinks']);
+        }
 
         return $this->content;
     }
@@ -155,5 +159,20 @@ class block_elisdashboard extends block_base {
      */
     public function instance_allow_multiple() {
         return true;
+    }
+
+    /**
+     * If block in full screen mode than the block is not docked.
+     * @return boolean True if can be docked, false if block can not be docked.
+     */
+    public function instance_can_be_docked() {
+      return !$this->fullscreen;
+    }
+
+    /**
+     * Set block to full screen mode by disabling the expan linkd, disabling fullscreen link and disable docking.
+     */
+    public function enablefullscreen() {
+        $this->fullscreen = true;
     }
 }
