@@ -29,7 +29,7 @@ require('../../config.php');
 
 $contextid = required_param('blockcontext', PARAM_INT);
 $query = required_param('usrset', PARAM_RAW);
-$query = preg_replace('/[^A-Za-z0-9_-\s]/i', '', $query);
+$query = preg_replace('/[^A-Za-z0-9_\-\s]/i', '', $query);
 $query = trim($query);
 $callback = optional_param('callback', '', PARAM_TEXT);
 
