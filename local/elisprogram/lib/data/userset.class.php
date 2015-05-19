@@ -42,6 +42,10 @@ class userset extends data_object_with_custom_fields {
     protected $_dbfield_display;
     protected $_dbfield_parent;
     protected $_dbfield_depth;
+    /**
+     * @var string Display name of user set.
+     */
+    protected $_dbfield_displayname;
 
     static $associations = array(
         'parentset' => array(
@@ -174,6 +178,7 @@ class userset extends data_object_with_custom_fields {
 
     static $validation_rules = array(
         'validate_name_not_empty',
+        'validate_unique_displayname',
         'validate_unique_name'
     );
 
@@ -206,6 +211,14 @@ class userset extends data_object_with_custom_fields {
                 $this->depth = 1;
             } else {
                 $this->depth = $this->parentset->depth + 1;
+            }
+        }
+
+        // Update user set name if display name is being used.
+        if ($this->use_display_name()) {
+            $name = $this->get_name_from_displayname();
+            if (!empty($name)) {
+                $this->name = $name;
             }
         }
 
@@ -461,6 +474,63 @@ class userset extends data_object_with_custom_fields {
 
         return $result;
     }
+
+    /**
+     * Validate display name is unique with in sub user set.
+     * @throws data_object_validation_exception
+     */
+    public function validate_unique_displayname() {
+        global $DB;
+        if ($this->use_display_name()) {
+            if ($DB->record_exists_select(userset::TABLE, 'displayname = ? AND id <> ? AND parent = ?', array($this->displayname, $this->id, $this->parent))) {
+                $a = new stdClass;
+                $a->tablename = self::TABLE;
+                $a->fields = implode(',', array('displayname'));
+                throw new data_object_validation_exception('data_object_validation_unique', 'local_eliscore', '', $a);
+            }
+        }
+    }
+
+    /**
+     * Get unique user set name based off of display name.
+     * @return boolean|string The name of the user set or false.
+     */
+    public function get_name_from_displayname() {
+        global $DB;
+        $parent = $DB->get_record(userset::TABLE, array('id' => $this->parent));
+        if ($parent->depth == 2) {
+            // If parent is at depth 2, than we are at depth 3 and displayname is used.
+            if (empty($this->displayname)) {
+                return false;
+            }
+            $name = $this->displayname.'|';
+            if (!empty($parent->displayname)) {
+                $name .= $parent->displayname;
+            } else {
+                $name .= $parent->name;
+            }
+            // Check for the rare chance to see if an existing userset exists with this name.
+            if ($DB->record_exists_select(userset::TABLE, 'name = ? AND id <> ?', array($name, $this->id))) {
+                $c = 0;
+                do {
+                    $c++;
+                } while ($DB->record_exists_select(userset::TABLE, 'name = ? AND id <> ?', array($this->name.$c, $this->id)));
+                return $name.$c;
+            }
+            return $name;
+        }
+        return false;
+    }
+
+    /**
+     * Return true if display name is to be used.
+     * @return boolean True if display name is to be used.
+     */
+    public function use_display_name() {
+        global $DB;
+        return $this->depth == 3;
+    }
+
 }
 
 /**
