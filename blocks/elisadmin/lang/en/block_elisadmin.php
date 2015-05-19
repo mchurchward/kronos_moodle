@@ -25,6 +25,7 @@
 
 $string['blockname'] = 'ELIS Administration';
 $string['elisadmin:addinstance'] = 'Add a new ELIS Administration block';
+$string['elisadmin:myaddinstance'] = 'Add a new ELIS Administration block to My home page';
 $string['pluginname'] = 'ELIS Administration';
 
 $string['menu_item_widgetsettings'] = 'Widget Settings';

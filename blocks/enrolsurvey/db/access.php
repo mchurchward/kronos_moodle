@@ -55,5 +55,12 @@ $capabilities = array(
             'manager' => CAP_ALLOW
         ),
     ),
+    'block/enrolsurvey:myaddinstance' => array(
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_BLOCK,
+        'archetypes' => array(
+            'manager' => CAP_ALLOW
+        ),
+    ),
 );
 

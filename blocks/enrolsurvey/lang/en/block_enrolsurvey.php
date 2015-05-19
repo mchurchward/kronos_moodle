@@ -31,6 +31,7 @@ $string['delete'] = 'Delete';
 $string['editpage'] = 'Edit Survey';
 $string['enrolsurvey:addinstance'] = 'Add a new Survey block';
 $string['enrolsurvey:edit'] = 'Edit survey';
+$string['enrolsurvey:myaddinstance'] = 'Add a new Survey block to My home page';
 $string['enrolsurvey:take'] = 'Take survey';
 $string['existing_profile_fileds'] = 'Existing profile fields';
 $string['exit'] = 'Exit';
