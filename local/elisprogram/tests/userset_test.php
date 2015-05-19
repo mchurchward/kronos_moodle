@@ -290,4 +290,26 @@ class userset_testcase extends elis_database_test {
         $this->assertEquals('7', $child->parent);
         $this->assertEquals('2', $child->depth);
     }
+
+    /**
+     * Test saving of user set with a display name.
+     */
+    public function test_userset_displayname() {
+        global $DB;
+        $src = new userset(false, null, array(), false, array());
+        $src->name = 'toplevel';
+        $src->save();
+        $secondlevel = new userset(false, null, array(), false, array());
+        $secondlevel->name = 'secondlevel';
+        $secondlevel->parent = $src->id;
+        $secondlevel->save();
+        $thirdlevel = new userset();
+        $thirdlevel->name = 'thirdlevel';
+        $thirdlevel->parent = $secondlevel->id;
+        $thirdlevel->displayname = 'othername';
+        $thirdlevel->save();
+        $record = $DB->get_record('local_elisprogram_uset', array('id' => $thirdlevel->id));
+        $this->assertEquals($record->name, 'othername|secondlevel');
+        $this->assertEquals($record->displayname, 'othername');
+    }
 }

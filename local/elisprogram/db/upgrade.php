@@ -117,5 +117,24 @@ function xmldb_local_elisprogram_upgrade($oldversion=0) {
         upgrade_plugin_savepoint($result, '2014082506', 'local', 'elisprogram');
     }
 
+    if ($result && $oldversion < 2014082506.1) {
+        $tablefields = array(
+            'local_elisprogram_uset' => 'displayname'
+        );
+        $file = $CFG->dirroot.'/local/elisprogram/db/install.xml';
+        foreach ($tablefields as $tablename => $fieldname) {
+            $table = new xmldb_table($tablename);
+            if (!$dbman->table_exists($table)) {
+                $dbman->install_one_table_from_xmldb_file($file, $tablename);
+            } else {
+                $field = new xmldb_field('displayname',  XMLDB_TYPE_CHAR, '255', null, null, null, null, 'depth');
+                if (!$dbman->field_exists($table, $field)) {
+                         $dbman->add_field($table, $field);
+                }
+            }
+        }
+        upgrade_plugin_savepoint($result, '2014082506.1', 'local', 'elisprogram');
+    }
+
     return $result;
 }
