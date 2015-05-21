@@ -533,6 +533,9 @@ class usersetpage extends managementpage {
             foreach ($ancestors as $ancestor) {
                 $url = $this->get_new_page(array('action' => 'view',
                                                  'id' => $ancestor->id), true)->url;
+                // Show display name if one exists.
+                $ancestor = $this->get_new_data_object($ancestor->id);
+                $ancestor->load();
                 $this->navbar->add($ancestor->name, $url);
             }
         }
@@ -652,7 +655,12 @@ class usersetpage extends managementpage {
         $obj = $this->get_new_data_object($id);
         $obj->load(); // force load, so that the confirmation notice has something to display
         $obj->deletesubs = $deletesubs;
-        $obj->delete();
+        // Catch error if a sub user set cannot be deleted and stop deletion.
+        try {
+            $obj->delete();
+        } catch (Exception $e) {
+            redirect($target_page->url,  $e->getMessage());
+        }
 
         $returnurl = optional_param('return_url', null, PARAM_URL);
         if ($returnurl === null) {
@@ -688,6 +696,8 @@ class usersetpage extends managementpage {
      */
     function print_delete_form($obj) {
         global $DB;
+        // Load the user set make $obj->name available.
+        $obj->load();
         if (($count = userset::count(new field_filter('parent', $obj->id)))) {
             // cluster has sub-clusters, so ask the user if they want to
             // promote or delete the sub-clusters
