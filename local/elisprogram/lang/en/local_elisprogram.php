@@ -1496,3 +1496,5 @@ $string['when_student_grade_set'] = 'When Student grade set';
 $string['widget_preview_alt'] = 'Widget Preview';
 $string['widget_preview_notavailable'] = 'No preview available';
 
+$string['userset_delete_top_level_exists'] = 'The user set {$a->name} already exists in the top level, please rename before prompting to a top level User Set';
+$string['userset_notloaded'] = 'Internal coding error, user set not loaded.';
