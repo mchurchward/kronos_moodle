@@ -46,6 +46,10 @@ class userset extends data_object_with_custom_fields {
      * @var string Display name of user set.
      */
     protected $_dbfield_displayname;
+    /**
+     * @var boolean Set to true if user set is being saved to allow data_object_with_custom_fields to access userset name.
+     */
+    protected $issaving = false;
 
     static $associations = array(
         'parentset' => array(
@@ -103,6 +107,7 @@ class userset extends data_object_with_custom_fields {
      * @return bool True on success, False otherwise.
      */
     public function delete() {
+        global $DB;
         require_once elis::lib('data/data_filter.class.php');
 
         if ($this->deletesimple) {
@@ -160,6 +165,28 @@ class userset extends data_object_with_custom_fields {
                     /// Parent not found so this cluster will be top-level
                     $child->parent = 0;
                     $child->depth = 1;
+                    if (!empty($child->displayname) && !$this->use_display_name()) {
+                        // The user set has a display name and is moving to a user set that display name is not used.
+                        // Move displayname into name column.
+                        $child->name = $child->displayname;
+                        $child->displayname = '';
+                    }
+                    // Check for duplicate user set names when moving a user which uses the display name as the visible name.
+                    if ($this->use_display_name()) {
+                        // This prevents duplicate user set names being prompted to top level.
+                        $where = '(name = ? OR display = ? ) AND id <> ? AND parent = ?';
+                        $params = array($child->displayname, $child->displayname, $child->id, $child->parent);
+                        if ($DB->record_exists_select(userset::TABLE, $where, $params)) {
+                            throw new Exception(get_string('userset_delete_top_level_exists', 'local_elisprogram', $child->to_object()));
+                        }
+                    } else {
+                        // Display is not use, do check for name column.
+                        if ($DB->record_exists_select(userset::TABLE, 'name = ? AND id <> ? AND parent = ?', array($child->name, $child->id, $child->parent))) {
+                            $data = $child->to_object();
+                            $data->displayname = $data->name;
+                            throw new Exception(get_string('userset_delete_top_level_exists', 'local_elisprogram', $data));
+                        }
+                    }
                 }
                 $child->save();
 
@@ -179,7 +206,6 @@ class userset extends data_object_with_custom_fields {
     static $validation_rules = array(
         'validate_name_not_empty',
         'validate_unique_displayname',
-        'validate_unique_name'
     );
 
     public function validate_name_not_empty() {
@@ -214,15 +240,10 @@ class userset extends data_object_with_custom_fields {
             }
         }
 
-        // Update user set name if display name is being used.
-        if ($this->use_display_name()) {
-            $name = $this->get_name_from_displayname();
-            if (!empty($name)) {
-                $this->name = $name;
-            }
-        }
-
+        // Switch to saving mode to allow, to_object and __get to return the userset name for saving to the database.
+        $this->issaving = true;
         parent::save();
+        $this->issaving = false;
 
         if (isset($old) && $this->parent != $old->parent) {
             $cluster_context_instance = \local_elisprogram\context\userset::instance($this->id);
@@ -244,7 +265,6 @@ class userset extends data_object_with_custom_fields {
                        SET depth=0, path=NULL
                      WHERE id=? OR {$LIKE}";
             $this->_db->execute($sql, array($cluster_context_instance->id, "{$cluster_context_instance->path}/%"));
-
             // Rebuild any blanked out records in context table
             \local_eliscore\context\helper::build_all_paths(false, array(CONTEXT_ELIS_USERSET));
         }
@@ -304,6 +324,18 @@ class userset extends data_object_with_custom_fields {
             }
         }
 
+        // Set user set name for saving or display.
+        if ($this->use_display_name()) {
+            if (isset($obj->displayname) && !$this->issaving) {
+                // If object is being saved than the pipe delimited name should be seen.
+                $obj->name = $obj->displayname;
+            } else {
+                $obj->name = $this->get_name_from_displayname();
+            }
+        } else {
+            // If display is not being used than delete.
+            $obj->displayname = '';
+        }
         return $obj;
     }
 
@@ -493,15 +525,15 @@ class userset extends data_object_with_custom_fields {
 
     /**
      * Get unique user set name based off of display name.
-     * @return boolean|string The name of the user set or false.
+     * @return string The name of the user set.
      */
     public function get_name_from_displayname() {
         global $DB;
-        $parent = $DB->get_record(userset::TABLE, array('id' => $this->parent));
-        if ($parent->depth == 2) {
-            // If parent is at depth 2, than we are at depth 3 and displayname is used.
-            if (empty($this->displayname)) {
-                return false;
+        if ($this->use_display_name()) {
+            $parent = $DB->get_record(userset::TABLE, array('id' => $this->parent));
+            // If parent is at depth 3, concat displayname with parent name.
+            if (empty($this->displayname) && !empty($this->name)) {
+                $this->displayname = $this->_dbfield_name;
             }
             $name = $this->displayname.'|';
             if (!empty($parent->displayname)) {
@@ -514,12 +546,12 @@ class userset extends data_object_with_custom_fields {
                 $c = 0;
                 do {
                     $c++;
-                } while ($DB->record_exists_select(userset::TABLE, 'name = ? AND id <> ?', array($this->name.$c, $this->id)));
+                } while ($DB->record_exists_select(userset::TABLE, 'name = ? AND id <> ?', array($name.$c, $this->id)));
                 return $name.$c;
             }
             return $name;
         }
-        return false;
+        return $this->_dbfield_name;
     }
 
     /**
@@ -527,10 +559,58 @@ class userset extends data_object_with_custom_fields {
      * @return boolean True if display name is to be used.
      */
     public function use_display_name() {
-        global $DB;
-        return $this->depth == 3;
+        $depthfield = self::FIELD_PREFIX.'depth';
+        $depth = $this->$depthfield;
+        if (is_numeric($depth)) {
+            return $depth == 3;
+        }
+        return false;
     }
 
+    /**
+     * Override get function to use display name for name when get_name_from_displayname return true.
+     * @param string $name Name of field to return
+     * @return mixed Returns value of data.
+     * @throws coding_exception
+     */
+    public function __get($name) {
+        $fieldname = self::FIELD_PREFIX.$name;
+        $depthfield = self::FIELD_PREFIX.'depth';
+        // If $obj->load(); has not been called this can fail.
+        $depth = $this->$depthfield;
+        if ($name == 'name' && $this->use_display_name()) {
+            if ($this->issaving) {
+                return $this->get_name_from_displayname();
+            }
+            if (isset($this->displayname) && !empty($this->displayname)) {
+                return $this->displayname;
+            }
+        }
+        return parent::__get($name);
+    }
+
+    /**
+     * Magic set method -- allows setting field values via $this->fieldname.
+     * @param string $name Name of fieldname.
+     * @param mixed $value Value of fieldname.
+     */
+    public function __set($name, $value) {
+        // Set user set name for saving or display. This is to preserve the behavor of $obj->name = 'userset name';
+        if ($name == 'name') {
+            if ($this->use_display_name()) {
+                $fieldname = self::FIELD_PREFIX.'displayname';
+                $this->$fieldname = $value;
+                $fieldname = self::FIELD_PREFIX.'name';
+                $this->$fieldname = $this->get_name_from_displayname();
+            } else {
+                $fieldname = self::FIELD_PREFIX.'displayname';
+                $this->$fieldname = $value;
+                $fieldname = self::FIELD_PREFIX.'name';
+                $this->$fieldname = $this->get_name_from_displayname();
+            }
+        }
+        parent::__set($name, $value);
+    }
 }
 
 /**
@@ -992,7 +1072,7 @@ function cluster_get_non_child_clusters($target_cluster_id, $contexts = null) {
 
     $LIKE = $DB->sql_like('ctx.path', '?', true, true, true /* not like */);
 
-    $sql = "SELECT clst.id, clst.name
+    $sql = "SELECT clst.id, IF (clst.displayname = '' OR ISNULL(clst.displayname), clst.name, clst.displayname) AS name
               FROM {" . userset::TABLE . "} clst
               JOIN {context} ctx ON ctx.instanceid = clst.id
                    AND ctx.contextlevel = ?
@@ -1040,7 +1120,7 @@ function cluster_get_possible_sub_clusters($target_cluster_id, $contexts = null)
     $parent_contexts = explode('/', substr($cluster_context_instance->path,1));
     list($EQUAL, $params) = $DB->get_in_or_equal($parent_contexts, SQL_PARAMS_NAMED, 'param0000', false);
 
-    $sql = "SELECT clst.id, clst.name
+    $sql = "SELECT clst.id, IF (clst.displayname = '' OR ISNULL(clst.displayname), clst.name, clst.displayname) AS name
               FROM {" . userset::TABLE . "} clst
               JOIN {context} ctx ON ctx.instanceid = clst.id
                    AND ctx.contextlevel = :ctxlvl

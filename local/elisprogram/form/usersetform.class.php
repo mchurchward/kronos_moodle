@@ -47,9 +47,27 @@ class usersetform extends cmform {
         $mform->addElement('hidden', 'id');
         $mform->setType('id', PARAM_INT);
 
-        $mform->addElement('text', 'name', get_string('userset_name', 'local_elisprogram'));
+        // Check if displayname or name should be used for the visible name of the user set.
+        if (empty($this->_customdata['obj'])) {
+            $usedisplayname = $this->use_display_name(array());
+        } else {
+            $usedisplayname = $this->use_display_name((array)$this->_customdata['obj']);
+        }
+        if (!$usedisplayname || !empty($this->_customdata['obj']) && empty($this->_customdata['obj']->displayname) && !empty($this->_customdata['obj']->name)) {
+            if (!empty($this->_customdata['obj']) && !empty($this->_customdata['obj']->name)) {
+                $this->_customdata['obj']->displayname = $this->_customdata['obj']->name;
+            }
+        }
+        // Show display name input.
+        $mform->addElement('text', 'displayname', get_string('userset_name', 'local_elisprogram'));
+        $mform->setType('displayname', PARAM_TEXT);
+        $mform->addElement('hidden', 'name', '');
         $mform->setType('name', PARAM_TEXT);
-        $mform->addRule('name', get_string('required'), 'required', NULL, 'client');
+        $mform->addRule('displayname', get_string('required'), 'required', NULL, 'client');
+        if (!empty($this->_customdata['obj']->displayname)) {
+            $mform->setDefault('displayname', $this->_customdata['obj']->displayname);
+        }
+
         $mform->addHelpButton('name', 'userset_name', 'local_elisprogram');
 
         $mform->addElement('textarea', 'display', get_string('userset_description', 'local_elisprogram'), array('cols'=>40, 'rows'=>2));
@@ -101,12 +119,65 @@ class usersetform extends cmform {
         global $DB;
         $errors = parent::validation($data, $files);
 
-        if ($DB->record_exists_select(userset::TABLE, 'name = ? AND id <> ?', array($data['name'], $data['id']))) {
-            $errors['name'] = get_string('badusersetname', 'local_elisprogram');
+        // Validate displayname for uniques.
+        if ($this->use_display_name((array)$data)) {
+            $where = '(name = ? OR displayname = ?) AND id <> ? AND parent = ?';
+            $conditions = array($data['displayname'], $data['displayname'], $data['id'], $data['parent']);
+            if ($DB->record_exists_select(userset::TABLE, $where, $conditions)) {
+                $errors['displayname'] = get_string('badusersetname', 'local_elisprogram');
+            }
+            $errors += parent::validate_custom_fields($data, 'cluster');
+            return $errors;
+        }
+
+        if ($DB->record_exists_select(userset::TABLE, 'name = ? AND id <> ?', array($data['displayname'], $data['id']))) {
+            $errors['displayname'] = get_string('badusersetname', 'local_elisprogram');
         }
 
         $errors += parent::validate_custom_fields($data, 'cluster');
         return $errors;
+    }
+
+    /**
+     * Check to see if display name should be used for this user set.
+     * @param array $data Data object of current user set.
+     * @return boolean True if display name should be used.
+     */
+    public function use_display_name($data) {
+        global $DB;
+        // Retrieve parent id.
+        $parentid = 0;
+        if (!empty($data['parent'])) {
+            $parentid = $data['parent'];
+        }
+        if (!empty($parentid)) {
+            $parent = $DB->get_record(userset::TABLE, array('id' => $parentid));
+            if (!empty($parent->depth)) {
+                // If parent is at depth 2, than we are at depth 3 and displayname is used.
+                return $parent->depth == 2;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Get data submitted by form. If not depth level 3, than use displayname without concatenation.
+     * @return object Form data with name set based if display name should be used.
+     */
+    public function get_data() {
+        $data = parent::get_data();
+        if (empty($data)) {
+            return $data;
+        }
+        $hasparent = !empty($data->parent);
+        if (!($hasparent && $this->use_display_name((array)$data))) {
+            $data->name = $data->displayname;
+            // No need for display name for user sets not at depth 3.
+            unset($data->displayname);
+        } else {
+            $data->name = $data->displayname;
+        }
+        return $data;
     }
 }
 
