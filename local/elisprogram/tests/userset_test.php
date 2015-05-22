@@ -346,4 +346,55 @@ class userset_testcase extends elis_database_test {
         $this->assertTablesEqual($dataset->getTable(userset::TABLE), $result);
     }
 
+    /**
+     * Test saving of user set with a duplicate display name.
+     * @expectedException data_object_validation_exception
+     */
+    public function test_userset_duplicate_displayname() {
+        $src = new userset(false, null, array(), false, array());
+        $src->name = 'toplevel';
+        $src->save();
+        $secondlevel = new userset(false, null, array(), false, array());
+        $secondlevel->name = 'secondlevel';
+        $secondlevel->parent = $src->id;
+        $secondlevel->save();
+        $thirdlevel = new userset();
+        $thirdlevel->name = 'thirdlevel';
+        $thirdlevel->parent = $secondlevel->id;
+        $thirdlevel->displayname = 'othername';
+        $thirdlevel->save();
+        $thirdlevel1 = new userset();
+        $thirdlevel1->name = 'thirdlevel';
+        $thirdlevel1->parent = $secondlevel->id;
+        $thirdlevel1->displayname = 'othername';
+        $thirdlevel1->save();
+    }
+
+    /**
+     * Test saving of user set with no display name.
+     */
+    public function test_userset_no_displayname() {
+        global $DB;
+        $src = new userset(false, null, array(), false, array());
+        $src->name = 'toplevel';
+        $src->save();
+        $secondlevel = new userset(false, null, array(), false, array());
+        $secondlevel->name = 'secondlevel';
+        $secondlevel->parent = $src->id;
+        $secondlevel->save();
+        $thirdlevel = new userset();
+        $thirdlevel->name = 'thirdlevel';
+        $thirdlevel->parent = $secondlevel->id;
+        $thirdlevel->save();
+        $thirdlevel1 = new userset();
+        $thirdlevel1->name = 'thirdlevel1';
+        $thirdlevel1->parent = $secondlevel->id;
+        $thirdlevel1->save();
+        $record = $DB->get_record(userset::TABLE, array('id' => $thirdlevel->id));
+        $this->assertEquals('thirdlevel|secondlevel', $record->name);
+        $this->assertEquals('thirdlevel', $record->displayname);
+        $record = $DB->get_record(userset::TABLE, array('id' => $thirdlevel1->id));
+        $this->assertEquals('thirdlevel1|secondlevel', $record->name);
+        $this->assertEquals('thirdlevel1', $record->displayname);
+    }
 }
