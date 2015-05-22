@@ -208,8 +208,8 @@ class deepsight_datatable_userset extends deepsight_datatable_standard {
      */
     protected function get_select_fields(array $filters) {
         $selectfields = parent::get_select_fields($filters);
-        $total = count($selectfields);
-        for ($i = 0; $i < $total; $i++) {
+        // If displayname column is set, than use it as the user set name.
+        foreach ($selectfields as $i => $value) {
             if ($selectfields[$i] == "element.name AS element_name") {
                 $selectfields[$i] = 'IF (displayname = "" OR ISNULL(displayname), name, displayname) AS element_name';
             }

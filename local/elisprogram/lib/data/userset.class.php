@@ -172,16 +172,21 @@ class userset extends data_object_with_custom_fields {
                         $child->displayname = '';
                     }
                     // Check for duplicate user set names when moving a user which uses the display name as the visible name.
+                    if (empty($child->id)) {
+                        $id = 0;
+                    } else {
+                        $id = $child->id;
+                    }
                     if ($this->use_display_name()) {
                         // This prevents duplicate user set names being prompted to top level.
                         $where = '(name = ? OR display = ? ) AND id <> ? AND parent = ?';
-                        $params = array($child->displayname, $child->displayname, $child->id, $child->parent);
+                        $params = array($child->displayname, $child->displayname, $id, $child->parent);
                         if ($DB->record_exists_select(userset::TABLE, $where, $params)) {
                             throw new Exception(get_string('userset_delete_top_level_exists', 'local_elisprogram', $child->to_object()));
                         }
                     } else {
                         // Display is not use, do check for name column.
-                        if ($DB->record_exists_select(userset::TABLE, 'name = ? AND id <> ? AND parent = ?', array($child->name, $child->id, $child->parent))) {
+                        if ($DB->record_exists_select(userset::TABLE, 'name = ? AND id <> ? AND parent = ?', array($child->name, $id, $child->parent))) {
                             $data = $child->to_object();
                             $data->displayname = $data->name;
                             throw new Exception(get_string('userset_delete_top_level_exists', 'local_elisprogram', $data));
@@ -303,6 +308,7 @@ class userset extends data_object_with_custom_fields {
      * @return object The standard PHP object representation of the ELIS data object.
      */
     public function to_object($jsonsafe = false) {
+
         $obj = parent::to_object($jsonsafe);
 
         $prof_fields = $this->_db->get_records(userset_profile::TABLE, array('clusterid'=>$this->id), '', '*', 0, 2);
@@ -326,7 +332,10 @@ class userset extends data_object_with_custom_fields {
 
         // Set user set name for saving or display.
         if ($this->use_display_name()) {
-            if (isset($obj->displayname) && !$this->issaving) {
+            if (empty($obj->displayname) && !empty($obj->name)) {
+                $obj->displayname = $obj->name;
+            }
+            if (!empty($obj->displayname) && !$this->issaving) {
                 // If object is being saved than the pipe delimited name should be seen.
                 $obj->name = $obj->displayname;
             } else {
@@ -336,6 +345,7 @@ class userset extends data_object_with_custom_fields {
             // If display is not being used than delete.
             $obj->displayname = '';
         }
+
         return $obj;
     }
 
@@ -514,7 +524,12 @@ class userset extends data_object_with_custom_fields {
     public function validate_unique_displayname() {
         global $DB;
         if ($this->use_display_name()) {
-            if ($DB->record_exists_select(userset::TABLE, 'displayname = ? AND id <> ? AND parent = ?', array($this->displayname, $this->id, $this->parent))) {
+            if (empty($this->id)) {
+                $id = 0;
+            } else {
+                $id = $this->id;
+            }
+            if ($DB->record_exists_select(userset::TABLE, 'displayname = ? AND id <> ? AND parent = ?', array($this->displayname, $id, $this->parent))) {
                 $a = new stdClass;
                 $a->tablename = self::TABLE;
                 $a->fields = implode(',', array('displayname'));
@@ -532,8 +547,9 @@ class userset extends data_object_with_custom_fields {
         if ($this->use_display_name()) {
             $parent = $DB->get_record(userset::TABLE, array('id' => $this->parent));
             // If parent is at depth 3, concat displayname with parent name.
-            if (empty($this->displayname) && !empty($this->name)) {
-                $this->displayname = $this->_dbfield_name;
+            $field = self::FIELD_PREFIX.'name';
+            if (empty($this->displayname) && !empty($this->$field)) {
+                $this->displayname = $this->$field;
             }
             $name = $this->displayname.'|';
             if (!empty($parent->displayname)) {
@@ -541,12 +557,17 @@ class userset extends data_object_with_custom_fields {
             } else {
                 $name .= $parent->name;
             }
+            if (empty($id->id)) {
+                $id = 0;
+            } else {
+                $id = $this->id;
+            }
             // Check for the rare chance to see if an existing userset exists with this name.
-            if ($DB->record_exists_select(userset::TABLE, 'name = ? AND id <> ?', array($name, $this->id))) {
+            if ($DB->record_exists_select(userset::TABLE, 'name = ? AND id <> ?', array($name, $id))) {
                 $c = 0;
                 do {
                     $c++;
-                } while ($DB->record_exists_select(userset::TABLE, 'name = ? AND id <> ?', array($name.$c, $this->id)));
+                } while ($DB->record_exists_select(userset::TABLE, 'name = ? AND id <> ?', array($name.$c, $id)));
                 return $name.$c;
             }
             return $name;

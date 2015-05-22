@@ -911,8 +911,11 @@ class deepsight_savedsearch {
         global $USER;
         $this->context = $context;
         $this->pagename = $pagename;
-        $this->cansavesearches = has_capability('local/elisprogram:searchsave', $this->context, $USER->id);
-        $this->canloadsearches = has_capability('local/elisprogram:searchload', $this->context, $USER->id);
+        // Allows for passing of phpunit test deepsight_datatable_testcase.
+        if (!empty($context)) {
+            $this->cansavesearches = has_capability('local/elisprogram:searchsave', $this->context, $USER->id);
+            $this->canloadsearches = has_capability('local/elisprogram:searchload', $this->context, $USER->id);
+        }
     }
 
     /**
