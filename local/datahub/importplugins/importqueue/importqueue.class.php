@@ -24,13 +24,14 @@
  */
 
 require_once($CFG->dirroot.'/local/datahub/lib/rlip_importplugin.class.php');
-require_once($CFG->dirroot.'/local/datahub/importplugins/version1elis/version1elis.class.php');
+require_once($CFG->dirroot.'/local/datahub/importplugins/version1/lib.php');
+require_once($CFG->dirroot.'/local/datahub/importplugins/version1/version1.class.php');
 require_once($CFG->dirroot.'/local/datahub/importplugins/importqueue/importqueueprovidercsv.php');
 
 /**
  * Test plugin used to test a simple entity and action
  */
-class rlip_importplugin_importqueue extends rlip_importplugin_version1elis {
+class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
     /**
      * @var array Required variable definition.
      */
@@ -39,6 +40,22 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1elis {
      * @var int $queueid id of queue currently being processed.
      */
     private $queueid = 0;
+    /**
+     * @var string $usersolutionidfield Shortname of Moodle user field containing Solution id.
+     */
+    private $usersolutionidfield = '';
+    /**
+     * @var array $solutionidmap Map of solution id string to solution id user sets.
+     */
+    private $solutionidmap = array();
+    /**
+     * @var array $learningpathmap Map of learning path string to learning path user sets.
+     */
+    private $learningpathmap = array();
+    /**
+     * @var object $auth Kronos authentication plugin object.
+     */
+    private $auth = array();
 
     /**
      * Import queue plugin constructor
@@ -48,6 +65,14 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1elis {
      * @param boolean $manual  Set to true if a manual run
      */
     public function __construct($provider = null, $manual = false) {
+        global $DB;
+        $this->auth = get_auth_plugin('kronosportal');
+        if ($this->auth->is_configuration_valid()) {
+            // Get short names of user and user set solution id fields.
+            $this->usersolutionidfield = 'profile_field_'.kronosportal_get_solutionfield();
+        } else {
+            $this->usersolutionidfield = 'profile_field_solutionid';
+        }
         if (empty($provider)) {
             // Only avaiablity is being checked for if no provider is passed.
             return;
@@ -129,5 +154,270 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1elis {
             }
         } while ($provider->get_queueid());
         return $result;
+    }
+
+    /**
+     * Entry point for processing a single create record, checks if record can be created.
+     *
+     * @param string $entity The type of entity
+     * @param object $record One record of import data
+     * @param string $filename Import file name to user for logging
+     *
+     * @return boolean true on success, otherwise false
+     */
+    public function create($entity, $record, $filename) {
+        global $DB;
+        $usersolutionidfield = $this->usersolutionidfield;
+        // Ensure user can be updated.
+        if (!$this->canupdate($record)) {
+            $this->linenumber++;
+            $this->fslogger->log_failure(get_string('failcanupdate' , 'dhimport_importqueue', $record->email),
+                    0, $filename, $this->linenumber, $record, 'user');
+            return false;
+        }
+
+        // Apply the field mapping.
+        $mappedrecord = $this->apply_mapping($entity, $record);
+        // Clone $record to prevent parent::process_record from removing learningpath column.
+        $recordclone = json_decode(json_encode($record));
+        // Create the user first.
+        $result = parent::process_record($entity, $mappedrecord, $filename);
+
+        // Check to see if it was created.
+        if (!empty($recordclone->learningpath) && $this->canupdate($recordclone, true)) {
+            // Validate learning path.
+            if ($this->validlearningpath($recordclone->$usersolutionidfield, $recordclone->learningpath)) {
+                if ($this->addtolearningpath($filename, $recordclone, $recordclone->$usersolutionidfield, $recordclone->learningpath)) {
+                    $this->fslogger->log_success(get_string('successlearningpath', 'dhimport_importqueue', $recordclone),
+                            0, $filename, $this->linenumber, $recordclone, "user");
+                }
+            } else {
+                $this->fslogger->log_failure(get_string('faillearningpathinvalid', 'dhimport_importqueue', $recordclone),
+                            0, $filename, $this->linenumber, $recordclone, "user");
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Entry point for processing a single update record, checks if record can be updated.
+     *
+     * @param string $entity The type of entity
+     * @param object $record One record of import data
+     * @param string $filename Import file name to user for logging
+     *
+     * @return boolean true on success, otherwise false
+     */
+    public function update($entity, $record, $filename) {
+        // TDB.
+        return false;
+    }
+
+    /**
+     * Entry point for processing a single delete record, checks if record can be deleted.
+     *
+     * @param string $entity The type of entity
+     * @param object $record One record of import data
+     * @param string $filename Import file name to user for logging
+     *
+     * @return boolean true on success, otherwise false
+     */
+    public function delete($entity, $record, $filename) {
+        // TDB.
+        return false;
+    }
+
+    /**
+     * Entry point for processing a single record, checks if record is in userset.
+     *
+     * @param string $entity The type of entity
+     * @param object $record One record of import data
+     * @param string $filename Import file name to user for logging
+     *
+     * @return boolean true on success, otherwise false
+     */
+    public function process_record($entity, $record, $filename) {
+        global $DB;
+        // Only need to override processing of user upload files.
+        if ($entity != 'user') {
+            return parent::process_record($entity, $record, $filename);
+        }
+
+        $usersolutionidfield = $this->usersolutionidfield;
+
+        if (empty($record->email)) {
+            $this->linenumber++;
+            $this->fslogger->log_failure(get_string('failemail' , 'dhimport_importqueue'),
+                    0, $filename, $this->linenumber, $record, 'user');
+            return false;
+        }
+
+        if (empty($record->$usersolutionidfield)) {
+            $this->linenumber++;
+            $this->fslogger->log_failure(get_string('failsolutionidnotset' , 'dhimport_importqueue', $usersolutionidfield),
+                    0, $filename, $this->linenumber, $record, 'user');
+            return false;
+        }
+
+        // This should not happen but checking to make sure.
+        if (!$this->validsolutionid($record->$usersolutionidfield)) {
+            $this->linenumber++;
+            $this->fslogger->log_failure(get_string('failsolutionid' , 'dhimport_importqueue', $record->$usersolutionidfield),
+                    0, $filename, $this->linenumber, $record, 'user');
+            return false;
+        }
+
+        $action = 'create';
+        if (!empty($record->action)) {
+            $action = $record->action;
+        }
+
+        switch ($action) {
+            case 'create':
+                return $this->create($entity, $record, $filename);
+                break;
+            case 'update':
+                return $this->update($entity, $record, $filename);
+                break;
+            case 'delete':
+                return $this->delete($entity, $record, $filename);
+                break;
+            default:
+                $this->linenumber++;
+                $this->fslogger->log_failure(get_string('failaction' , 'dhimport_importqueue', $action),
+                        0, $filename, $this->linenumber, $record, 'user');
+                return false;
+        }
+    }
+
+    /**
+     * Detimine if solution id string has a valid solution id user set associated with it.
+     * @param string $solutionid Solution id string.
+     * @return boolean True on is valid, false on is not.
+     */
+    public function validsolutionid($solutionid) {
+        // Check cache in solution id map to prevent extra query for each record insert.
+        if (isset($this->solutionidmap[$solutionid])) {
+            if (!$this->solutionidmap[$solutionid]) {
+                return false;
+            }
+            return $this->solutionidmap[$solutionid];
+        }
+        // Check if the User's User Set exists.
+        $solutionuserset = $this->auth->userset_solutionid_exists($solutionid);
+        $this->solutionidmap[$solutionid] = $solutionuserset;
+        if (!$solutionuserset) {
+            return false;
+        }
+        return $solutionuserset;
+    }
+
+    /**
+     * Detimine if learning path name is valid learning path for solution id user set.
+     * @param string $solutionid Solution id string.
+     * @param string $learningpath Learning path display name.
+     * @return boolean True on is valid, false on is not.
+     */
+    public function validlearningpath($solutionid, $learningpath) {
+        global $DB;
+        // Retrieve solution id user set.
+        $solutionuserset = $this->validsolutionid($solutionid);
+        if (!$solutionuserset) {
+            return false;
+        }
+        // Check cache in learning path map to prevent extra query for each record insert.
+        if (isset($this->learningpathmap[$solutionid.'-'.$learningpath])) {
+            return $this->learningpathmap[$solutionid.'-'.$learningpath];
+        }
+        // Retrieve a User Set whose parent is equal to the solution id and whose display name is equal to Learning Path display name (Subset).
+        $userset = userset::find(array(
+                new field_filter('parent', $solutionuserset->usersetid),
+                new field_filter('displayname', $learningpath)
+        ));
+        // If a valid user set return the user set other wise. False.
+        if ($userset->valid()) {
+            $userset = $userset->current();
+            $this->learningpathmap[$solutionid.'-'.$learningpath] = $userset;
+            return $userset;
+        }
+        $this->learningpathmap[$solutionid.'-'.$learningpath] = false;
+        return false;
+    }
+
+    /**
+     * Add user to learning path.
+     * @param string $filename Filename current being processed.
+     * @param object $record Current record being processed.
+     * @param string $solutionid Solution id string.
+     * @param string $learningpath Learning path display name.
+     * @return boolean True on success, false on failure.
+     */
+    public function addtolearningpath($filename, $record, $solutionid, $learningpath) {
+        global $DB, $CFG;
+        $email = $record->email;
+        $muser = $DB->get_record('user', array('username' => $email, 'deleted' => 0, 'mnethostid' => (string)$CFG->mnet_localhost_id));
+        if (empty($muser)) {
+            $a = new stdClass();
+            $a->email = $email;
+            $a->learningpath = $learningpath;
+            $this->fslogger->log_failure(get_string('faillearningpathinvaliduser', 'dhimport_importqueue', $a),
+                0, $filename, $this->linenumber, $record, "user");
+            return false;
+        }
+        // Retrieve the ELIS user record.
+        $elisuser = usermoodle::find(array(new field_filter('muserid', $muser->id)));
+
+        $userset = $this->validlearningpath($solutionid, $learningpath);
+        if (empty($userset)) {
+            $a = new stdClass();
+            $a->email = $email;
+            $a->learningpath = $learningpath;
+            $this->fslogger->log_failure(get_string('faillearningpathinvalid', 'dhimport_importqueue', $a),
+                0, $filename, $this->linenumber, $record, "user");
+            return false;
+        }
+
+        $elisuser = ($elisuser->valid() && !is_null($userset)) ? $elisuser->current() : null;
+
+        if (!is_null($elisuser)) {
+            cluster_manual_assign_user($userset->id, $elisuser->cuserid);
+            return true;
+        } else {
+            $a = new stdClass();
+            $a->email = $email;
+            $a->learningpath = $learningpath;
+            $this->fslogger->log_failure(get_string('faillearningpathinvaliduser', 'dhimport_importqueue', $a),
+                0, $filename, $this->linenumber, $record, "user");
+            return false;
+        }
+        return false;
+    }
+
+    /**
+     * Check if a record can be updated.
+     * @param object $newrecord Record to be updated or created.
+     * @param boolean $updateonly False if checking if a record can be added. True if a record is required to exist to update.
+     * @return boolean True if record can be updated or created.
+     */
+    public function canupdate($newrecord, $updateonly = false) {
+        global $DB, $CFG;
+        $record = $DB->get_record('user', array('idnumber' => $newrecord->idnumber, 'deleted' => 0, 'mnethostid' => (string)$CFG->mnet_localhost_id));
+        if (empty($record)) {
+            // If the user cannot be found than they could be created.
+            return !$updateonly;
+        }
+        // If site admin or has sitewide access than update or create is allowed.
+        $queue = $DB->get_record('dhimport_importqueue', array('id' => $this->queueid));
+        $context = context_system::instance();
+        if (is_siteadmin($queue->userid) || has_capability('block/importqueue:sitewide', $context, $queue->userid)) {
+            return true;
+        }
+        // Retrieve custom user fields.
+        profile_load_data($record);
+        $usersolutionidfield = $this->usersolutionidfield;
+        if (empty($record->$usersolutionidfield) || empty($newrecord->$usersolutionidfield) || $record->$usersolutionidfield !== $newrecord->$usersolutionidfield) {
+            return false;
+        }
+        return true;
     }
 }

@@ -331,8 +331,7 @@ class dataobjectchildren_testcase extends elis_database_test {
                             'name' => 'Test Userset 101',
                             'display' => 'Fuller-er display name',
                             'parent' => 1,
-                            'depth' => 2,
-                            'displayname' => '',
+                            'depth' => 2
                         )
                 ),
                 array(
