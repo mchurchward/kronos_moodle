@@ -162,7 +162,6 @@ class usersetform extends cmform {
 
     /**
      * Get data submitted by form. If not depth level 3, than use displayname without concatenation.
-     * @return object Form data with name set based if display name should be used.
      */
     public function get_data() {
         $data = parent::get_data();
