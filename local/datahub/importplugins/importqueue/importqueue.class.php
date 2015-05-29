@@ -162,14 +162,23 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
      * @param string $entity The type of entity
      * @param object $record One record of import data
      * @param string $filename Import file name to user for logging
-     *
+     * @param boolean $isupdate True if updating record, false if not.
      * @return boolean true on success, otherwise false
      */
-    public function create($entity, $record, $filename) {
+    public function create($entity, $record, $filename, $isupdate = false) {
         global $DB;
         $usersolutionidfield = $this->usersolutionidfield;
+
+        // Check to see if the user exists when updating.
+        if ($isupdate && !$this->userexists($record)) {
+            $this->linenumber++;
+            $this->fslogger->log_failure(get_string('failnouser' , 'dhimport_importqueue', $record),
+                    0, $filename, $this->linenumber, $record, 'user');
+            return false;
+        }
+
         // Ensure user can be updated.
-        if (!$this->canupdate($record)) {
+        if (!$this->canupdate($record, $isupdate)) {
             $this->linenumber++;
             $this->fslogger->log_failure(get_string('failcanupdate' , 'dhimport_importqueue', $record->email),
                     0, $filename, $this->linenumber, $record, 'user');
@@ -197,20 +206,6 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
             }
         }
         return $result;
-    }
-
-    /**
-     * Entry point for processing a single update record, checks if record can be updated.
-     *
-     * @param string $entity The type of entity
-     * @param object $record One record of import data
-     * @param string $filename Import file name to user for logging
-     *
-     * @return boolean true on success, otherwise false
-     */
-    public function update($entity, $record, $filename) {
-        // TDB.
-        return false;
     }
 
     /**
@@ -277,7 +272,7 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
                 return $this->create($entity, $record, $filename);
                 break;
             case 'update':
-                return $this->update($entity, $record, $filename);
+                return $this->create($entity, $record, $filename, true);
                 break;
             case 'delete':
                 return $this->delete($entity, $record, $filename);
@@ -391,6 +386,17 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
             return false;
         }
         return false;
+    }
+
+    /**
+     * Check if a record has an existing user.
+     * @param object $newrecord Record to be updated or created.
+     * @param boolean $updateonly False if checking if a record can be added. True if a record is required to exist to update.
+     * @return boolean True if record can be updated or created.
+     */
+    public function userexists($newrecord, $updateonly = false) {
+        global $DB, $CFG;
+        return $DB->record_exists('user', array('idnumber' => $newrecord->idnumber, 'deleted' => 0, 'mnethostid' => (string)$CFG->mnet_localhost_id));
     }
 
     /**
