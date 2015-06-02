@@ -25,3 +25,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->version = 2015020900;
 $plugin->release = '2.7.3.0 (Build: 20141110)';
+$plugin->dependencies = array(
+    'block_importqueue' => 2015020501,
+    'auth_kronosportal' => 2015012802,
+);
