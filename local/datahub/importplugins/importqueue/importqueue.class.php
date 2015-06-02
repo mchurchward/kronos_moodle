@@ -28,6 +28,10 @@ require_once($CFG->dirroot.'/local/datahub/importplugins/version1/lib.php');
 require_once($CFG->dirroot.'/local/datahub/importplugins/version1/version1.class.php');
 require_once($CFG->dirroot.'/local/datahub/importplugins/importqueue/importqueueprovidercsv.php');
 
+define('IMPORTQUEUE_DOESNOTEXIST', 1);
+define('IMPORTQUEUE_USERDELETED', 2);
+define('IMPORTQUEUE_EXISTS', 3);
+
 /**
  * Test plugin used to test a simple entity and action
  */
@@ -56,6 +60,10 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
      * @var object $auth Kronos authentication plugin object.
      */
     private $auth = array();
+    /**
+     * @var string $deletesolutionid Solution id for which delete users are moved to.
+     */
+    private $deletesolutionid = 'delete';
 
     /**
      * Import queue plugin constructor
@@ -84,6 +92,8 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
             $this->queueid = $provider->get_queueid();
         }
         $this->provider = $provider;
+        // Solution id to move deleted users to.
+        $this->deletesolutionid = get_config('block_importqueue', 'deletesolutionid');
         parent::__construct($provider, $manual);
     }
 
@@ -170,17 +180,43 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
         $usersolutionidfield = $this->usersolutionidfield;
 
         // Check to see if the user exists when updating.
-        if ($isupdate && !$this->userexists($record)) {
+        $status = $this->userstatus($record);
+        if ($isupdate && $status != IMPORTQUEUE_EXISTS) {
             $this->linenumber++;
-            $this->fslogger->log_failure(get_string('failnouser' , 'dhimport_importqueue', $record),
-                    0, $filename, $this->linenumber, $record, 'user');
-            return false;
+            if ($status == IMPORTQUEUE_USERDELETED) {
+                $this->fslogger->log_failure(get_string('failuserdeleted' , 'dhimport_importqueue', $record),
+                        0, $filename, $this->linenumber, $record, 'user');
+                return false;
+            } else {
+                $this->fslogger->log_failure(get_string('failnouser' , 'dhimport_importqueue', $record),
+                        0, $filename, $this->linenumber, $record, 'user');
+                return false;
+            }
+        }
+
+        // Ensures user does not exist and is not deleted.
+        if (!$isupdate && $status != IMPORTQUEUE_DOESNOTEXIST) {
+                $this->linenumber++;
+            if ($status == IMPORTQUEUE_USERDELETED) {
+                $this->fslogger->log_failure(get_string('failuserdeleted' , 'dhimport_importqueue', $record),
+                        0, $filename, $this->linenumber, $record, 'user');
+                return false;
+            } else if ($this->canupdate($record, true)) {
+                // User exist and can be updated.
+                $this->fslogger->log_failure(get_string('failuserexistscanupdate' , 'dhimport_importqueue', $record),
+                        0, $filename, $this->linenumber, $record, 'user');
+                return false;
+            } else {
+                $this->fslogger->log_failure(get_string('failuserexistscannotupdate' , 'dhimport_importqueue', $record),
+                        0, $filename, $this->linenumber, $record, 'user');
+                return false;
+            }
         }
 
         // Ensure user can be updated.
         if (!$this->canupdate($record, $isupdate)) {
             $this->linenumber++;
-            $this->fslogger->log_failure(get_string('failcanupdate' , 'dhimport_importqueue', $record->email),
+            $this->fslogger->log_failure(get_string('failcanupdate' , 'dhimport_importqueue', $record->idnumber),
                     0, $filename, $this->linenumber, $record, 'user');
             return false;
         }
@@ -209,20 +245,6 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
     }
 
     /**
-     * Entry point for processing a single delete record, checks if record can be deleted.
-     *
-     * @param string $entity The type of entity
-     * @param object $record One record of import data
-     * @param string $filename Import file name to user for logging
-     *
-     * @return boolean true on success, otherwise false
-     */
-    public function delete($entity, $record, $filename) {
-        // TDB.
-        return false;
-    }
-
-    /**
      * Entry point for processing a single record, checks if record is in userset.
      *
      * @param string $entity The type of entity
@@ -239,13 +261,6 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
         }
 
         $usersolutionidfield = $this->usersolutionidfield;
-
-        if (empty($record->email)) {
-            $this->linenumber++;
-            $this->fslogger->log_failure(get_string('failemail' , 'dhimport_importqueue'),
-                    0, $filename, $this->linenumber, $record, 'user');
-            return false;
-        }
 
         if (empty($record->$usersolutionidfield)) {
             $this->linenumber++;
@@ -274,9 +289,6 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
             case 'update':
                 return $this->create($entity, $record, $filename, true);
                 break;
-            case 'delete':
-                return $this->delete($entity, $record, $filename);
-                break;
             default:
                 $this->linenumber++;
                 $this->fslogger->log_failure(get_string('failaction' , 'dhimport_importqueue', $action),
@@ -297,6 +309,10 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
                 return false;
             }
             return $this->solutionidmap[$solutionid];
+        }
+        // Check if solution id is the deletion solution id.
+        if ($solutionid == $this->deletesolutionid) {
+            return true;
         }
         // Check if the User's User Set exists.
         $solutionuserset = $this->auth->userset_solutionid_exists($solutionid);
@@ -389,14 +405,25 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
     }
 
     /**
-     * Check if a record has an existing user.
+     * Check status of a user, check if the user exists or deleted.
      * @param object $newrecord Record to be updated or created.
      * @param boolean $updateonly False if checking if a record can be added. True if a record is required to exist to update.
      * @return boolean True if record can be updated or created.
      */
-    public function userexists($newrecord, $updateonly = false) {
+    public function userstatus($newrecord, $updateonly = false) {
         global $DB, $CFG;
-        return $DB->record_exists('user', array('idnumber' => $newrecord->idnumber, 'deleted' => 0, 'mnethostid' => (string)$CFG->mnet_localhost_id));
+        $record = $DB->get_record('user', array('idnumber' => $newrecord->idnumber, 'deleted' => 0, 'mnethostid' => (string)$CFG->mnet_localhost_id));
+        if (empty($record)) {
+            return IMPORTQUEUE_DOESNOTEXIST;
+        }
+        // Retrieve custom user fields.
+        profile_load_data($record);
+        $usersolutionidfield = $this->usersolutionidfield;
+        if (!empty($record->$usersolutionidfield) && $this->deletesolutionid == $record->$usersolutionidfield) {
+            // User is deleted.
+            return IMPORTQUEUE_USERDELETED;
+        }
+        return IMPORTQUEUE_EXISTS;
     }
 
     /**
@@ -421,6 +448,17 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
         // Retrieve custom user fields.
         profile_load_data($record);
         $usersolutionidfield = $this->usersolutionidfield;
+        // Check if solution id is the deletion solution id.
+        if (!empty($newrecord->$usersolutionidfield) && $newrecord->$usersolutionidfield == $this->deletesolutionid) {
+            $auth = get_auth_plugin('kronosportal');
+            $solutionid = $auth->get_user_solution_id($queue->userid);
+            // Ensure the user owns the user.
+            if (!empty($record->$usersolutionidfield) && $record->$usersolutionidfield == $solutionid) {
+                return true;
+            }
+            return false;
+        }
+        // Check to see if solution id's match.
         if (empty($record->$usersolutionidfield) || empty($newrecord->$usersolutionidfield) || $record->$usersolutionidfield !== $newrecord->$usersolutionidfield) {
             return false;
         }
