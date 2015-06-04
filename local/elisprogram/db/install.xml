@@ -329,7 +329,8 @@
         <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Data name" PREVIOUS="id" NEXT="display"/>
         <FIELD NAME="display" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Screen display" PREVIOUS="name" NEXT="parent"/>
         <FIELD NAME="parent" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" PREVIOUS="display" NEXT="depth"/>
-        <FIELD NAME="depth" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false" PREVIOUS="parent"/>
+        <FIELD NAME="depth" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false" PREVIOUS="parent" NEXT="displayname" />
+        <FIELD NAME="displayname" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Screen display" PREVIOUS="depth"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>

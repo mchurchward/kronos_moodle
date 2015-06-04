@@ -40,10 +40,11 @@ class deepsight_datatable_userset extends deepsight_datatable_standard {
      * @return array An array of deepsight_filter objects that will be available.
      */
     protected function get_filters() {
+        global $DB;
         $langname = get_string('userset_name', 'local_elisprogram');
 
         $filters = array(
-            new deepsight_filter_textsearch($this->DB, 'name', $langname, array('element.name' => $langname)),
+            new deepsight_filter_textsearch($this->DB, "name", $langname, array("element.name" => $langname)),
         );
 
         $customfieldfilters = $this->get_custom_field_info(CONTEXT_ELIS_USERSET);
@@ -91,7 +92,7 @@ class deepsight_datatable_userset extends deepsight_datatable_standard {
         }
 
         list($where, $params) = $this->DB->get_in_or_equal($ids);
-        $sql = 'SELECT id, name FROM {'.$this->main_table.'} WHERE id '.$where;
+        $sql = 'SELECT id, IF (displayname = "" OR ISNULL(displayname), name, displayname) name FROM {'.$this->main_table.'} WHERE id '.$where;
         $results = $this->DB->get_recordset_sql($sql, $params);
         $pageresults = array_flip($ids);
         foreach ($results as $result) {
@@ -192,5 +193,27 @@ class deepsight_datatable_userset extends deepsight_datatable_standard {
             $pageresults[] = $this->results_row_transform($pageresult);
         }
         return array($pageresults, $totalresults);
+    }
+
+    /**
+     * Gets an array of fields to include in the search SQL's SELECT clause.
+     *
+     * Pulls information from $this->fixed_columns, and each filter's get_select_fields() function.
+     *
+     * @uses deepsight_filter::get_select_fields();
+     * @uses deepsight_datatable_standard::$fixed_columns
+     * @uses deepsight_datatable_standard::$available_filters
+     * @param array $filters An Array of active filters to use to determine the needed select fields.
+     * @return array An array of fields for the SELECT clause.
+     */
+    protected function get_select_fields(array $filters) {
+        $selectfields = parent::get_select_fields($filters);
+        // If displayname column is set, than use it as the user set name.
+        foreach ($selectfields as $i => $value) {
+            if ($selectfields[$i] == "element.name AS element_name") {
+                $selectfields[$i] = 'IF (displayname = "" OR ISNULL(displayname), name, displayname) AS element_name';
+            }
+        }
+        return $selectfields;
     }
 }

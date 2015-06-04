@@ -25,9 +25,6 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-// Start of "data handling" section.
-$settings->add(new admin_setting_heading('dhimport_importqueue/datahandling', get_string('datahandling', 'dhimport_importqueue'), null));
-
 // Start of "scheduling" section.
 $settings->add(new admin_setting_heading('dhimport_importqueue/scheduling', get_string('importfilesheading', 'dhimport_importqueue'), ''));
 
