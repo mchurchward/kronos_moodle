@@ -52,15 +52,10 @@ switch ($errors) {
         break;
 }
 
-echo html_writer::tag('h3', get_string($heading, 'block_importqueue'));
+$options = array('class' => 'queuelog');
+echo html_writer::tag('h3', get_string($heading, 'block_importqueue'), $options);
 
-$link = new moodle_url('/blocks/importqueue/importusers.php');
-$options = array("onclick" => 'window.location=\''.$link->out()."'");
-echo html_writer::tag('button', get_string('importuserstitle', 'block_importqueue'), $options);
-
-$link = new moodle_url('/blocks/importqueue/queuestatus.php');
-$options = array("onclick" => 'window.location=\''.$link->out()."'");
-echo html_writer::tag('button', get_string('importusersviewqueue', 'block_importqueue'), $options);
+echo html_writer::tag('div', get_config('block_importqueue', 'menu'));
 
 echo html_writer::empty_tag('br');
 

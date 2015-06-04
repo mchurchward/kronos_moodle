@@ -27,7 +27,7 @@ if (!defined('MOODLE_INTERNAL')) {
     die('Direct access to this script is forbidden.');
 }
 
-$plugin->version = 2015020500;
+$plugin->version = 2015020501;
 $plugin->component = 'block_importqueue';
 $plugin->release = 'Import queue block';
 $plugin->requires = 2014051201.00;

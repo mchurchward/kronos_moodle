@@ -38,7 +38,7 @@ $context = context_system::instance();
 $like = $DB->sql_like('name', '?', false);
 if (is_siteadmin() || has_capability('block/importqueue:sitewide', $context, $USER->id)) {
     // For system adminstrator or role with sitewide access select from all usersets.
-    $sql = "SELECT *
+    $sql = "SELECT id, IF (displayname = \"\" OR ISNULL(displayname), name, displayname) name, parent, depth
               FROM {local_elisprogram_uset}
              WHERE depth in (2, 3)
                    AND {$like}
@@ -60,7 +60,7 @@ if (is_siteadmin() || has_capability('block/importqueue:sitewide', $context, $US
                    AND fldchar.data = ?";
     $usersetcontextandname = $DB->get_record_sql($sql, array($solutionidfield, $solutionid));
     // Show roles and solution id userset.
-    $sql = "SELECT *
+    $sql = "SELECT id, IF (displayname = \"\" OR ISNULL(displayname), name, displayname) name, parent, depth
               FROM {local_elisprogram_uset}
              WHERE depth in (2, 3)
                    AND (parent = ? OR id = ?)

@@ -28,41 +28,37 @@ require_once($CFG->dirroot.'/blocks/importqueue/importqueue_form.php');
 
 require_login(null, false);
 
-$mode = optional_param('mode', 'create', PARAM_TEXT);
-$prefix = 'importusers';
-if ($mode == 'update') {
-    $prefix = 'update';
-}
-if ($mode == 'delete') {
-    $prefix = 'delete';
-}
-
 $PAGE->set_url('/blocks/importqueue/importusers.php');
 $context = context_system::instance();
 $PAGE->set_context($context);
 $PAGE->set_pagelayout('admin');
-$PAGE->set_title(get_string($prefix.'heading', 'block_importqueue'));
-$importqueueform = new importqueue_form($context, 0, $mode);
+$confirm = required_param('confirm', PARAM_INT);
 
-echo $OUTPUT->header();
-
-$options = array('class' => 'importqueue'.$mode);
-echo html_writer::tag('h3', get_string($prefix.'heading', 'block_importqueue'), $options);
-
-echo html_writer::tag('div', get_config('block_importqueue', 'menu'));
-
-if ($importqueueform->is_submitted() && $importqueueform->is_validated()) {
-    $queueid = $importqueueform->process($mode);
-    if (empty($queueid)) {
-        echo $importqueueform->geterror();
-    } else {
-        echo html_writer::tag('h3', get_string($prefix.'success', 'block_importqueue'));
-        echo $importqueueform->geterror();
-    }
-} else {
-    $importqueueform->display();
+if (empty($SESSION->block_importqueue_csvfile) || !file_exists($SESSION->block_importqueue_csvfile)) {
+    $confirm = 0;
 }
 
+if ($confirm) {
+    $count = count(file($SESSION->block_importqueue_csvfile)) - 1;
+    $importqueue = new importqueue();
+    $queueid = $importqueue->addtoqueue($SESSION->block_importqueue_csvfile, null, null);
+    @unlink($SESSION->block_importqueue_csvfile);
+    if ($queueid) {
+        $status = new stdClass();
+        $status->total = $count;
+        $options = array('class' => 'deleteconfirmed');
+        $PAGE->set_title(get_string('deleteconfirmed', 'block_importqueue', $status));
+        echo $OUTPUT->header();
+        echo html_writer::tag('h3', get_string('deleteconfirmed', 'block_importqueue', $status), $options);
+    }
+} else {
+    $options = array('class' => 'deleteerror');
+    $PAGE->set_title(get_string('deleteerror', 'block_importqueue'));
+    echo $OUTPUT->header();
+    echo html_writer::tag('h3', get_string('deleteerror', 'block_importqueue'), $options);
+}
+
+// Count how many uploads have been completed.
 if ($count = $DB->count_records('dhimport_importqueue', array('userid' => $USER->id))) {
     $options = array('class' => 'uploadstatustext');
     echo html_writer::tag('p', get_string('importusersqueue', 'block_importqueue', $count), $options);

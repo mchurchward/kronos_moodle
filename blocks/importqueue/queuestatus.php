@@ -35,11 +35,10 @@ $PAGE->set_pagelayout('admin');
 $PAGE->set_title(get_string('queuestatustitle', 'block_importqueue'));
 
 echo $OUTPUT->header();
-echo html_writer::tag('h3', get_string('queuestatusheading', 'block_importqueue'));
+$options = array('class' => 'queuestatus');
+echo html_writer::tag('h3', get_string('queuestatusheading', 'block_importqueue'), $options);
 
-$link = new moodle_url('/blocks/importqueue/importusers.php');
-$options = array("onclick" => 'window.location=\''.$link->out()."'");
-echo html_writer::tag('button', get_string('importuserstitle', 'block_importqueue'), $options);
+echo html_writer::tag('div', get_config('block_importqueue', 'menu'));
 
 $link = new moodle_url('/blocks/importqueue/queuestatus.php');
 $options = array("onclick" => 'window.location=\''.$link->out()."'");
