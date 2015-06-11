@@ -2959,7 +2959,6 @@ abstract class repository implements cacheable_object {
                         'panel/assets/skins/sam/panel-skin.css',
                         'assets/skin/sam/skin.css'
                 );
-                $pgreqmanager = new elis_pg_reqs_manager();
                 foreach ($reqcss as $css) {
                     $out .= $pgreqmanager->yui_css_style($page, $css);
                 }
