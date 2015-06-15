@@ -55,3 +55,4 @@ $string['failuserdeleted'] = 'The user {$a->idnumber} currently deleted. Please 
 $string['failuserexistscanupdate'] = 'The user {$a->idnumber} currently exists. Try updating the user.';
 $string['failuserexistscannotupdate'] = 'The user {$a->idnumber} currently exists and you do not have premission to update the user. Please contact support.';
 $string['faillearningpathinvaliduser'] = 'The user {$a->email} could not be found. Failed enroling the user into the learning path {$a->learningpath}';
+$string['eventimport_user_deleted'] = 'User deleted';

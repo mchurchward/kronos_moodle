@@ -15,17 +15,42 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Kronos import queue plugin.
+ *
  * @package    dhimport_importqueue
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @copyright  (C) 2015 Remote Learner.net Inc http://www.remote-learner.net
  */
 
+namespace dhimport_importqueue\event;
+
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2015020901;
-$plugin->release = '2.7.3.0 (Build: 20141110)';
-$plugin->dependencies = array(
-    'block_importqueue' => 2015020501,
-    'auth_kronosportal' => 2015012802,
-);
+/**
+ * The dhimport_importqueue event class.
+ */
+class importqueue_import_user_deleted extends \core\event\base {
+    /**
+     * This function initializes class properties.
+     */
+    protected function init() {
+        $this->data['crud'] = 'd';
+        $this->data['edulevel'] = self::LEVEL_PARTICIPATING;
+        $this->context = \context_system::instance();
+    }
+
+    /**
+     * This function is overridden from the parent class.
+     */
+    public static function get_name() {
+        return get_string('eventimport_user_deleted', 'dhimport_importqueue');
+    }
+
+    /**
+     * This fnction is overridden from the parent class.
+     */
+    public function get_description() {
+        return "{$this->other['message']}.";
+    }
+}
