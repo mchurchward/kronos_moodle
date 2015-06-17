@@ -50,6 +50,7 @@ class course extends base {
         }
 
         require_once(\elispm::lib('deepsight/lib/filter.php'));
+        require_once(\elispm::lib('data/user.class.php'));
 
         // Basic fields.
         $langname = get_string('course_name', 'local_elisprogram');
@@ -59,6 +60,11 @@ class course extends base {
         $langcredits = get_string('credits', 'local_elisprogram');
         $langcost = get_string('cost', 'local_elisprogram');
         $langversion = get_string('course_version', 'local_elisprogram');
+        $langcoursestatus = get_string('course_status', 'local_elisprogram');
+        $euserid = \user::get_current_userid();
+        $coursestatusfilter = new \deepsight_filter_coursestatus($this->DB, 'coursestatus', $langcoursestatus, array('userid' => $euserid),
+                $CFG->wwwroot.'/local/elisprogram/widgets/enrolment/ajax.php'); // TBD.
+        $coursestatusfilter->set_default(''); // TBD.
         $filters = [
                 new \deepsight_filter_textsearch($this->DB, 'name', $langname, ['element.name' => $langname]),
                 new \deepsight_filter_textsearch($this->DB, 'code', $langcode, ['element.code' => $langcode]),
@@ -67,6 +73,7 @@ class course extends base {
                 new \deepsight_filter_textsearch($this->DB, 'credits', $langcredits, ['element.credits' => $langcredits]),
                 new \deepsight_filter_textsearch($this->DB, 'cost', $langcost, ['element.cost' => $langcost]),
                 new \deepsight_filter_textsearch($this->DB, 'version', $langversion, ['element.version' => $langversion]),
+                $coursestatusfilter
         ];
 
         // Add custom fields.
@@ -77,6 +84,10 @@ class course extends base {
         // Restrict to configured enabled fields.
         $enabledfields = get_config('eliswidget_enrolment', 'courseenabledfields');
         if (!empty($enabledfields)) {
+            $enabledfields .= ',';
+        }
+        $enabledfields .= 'coursestatus'; // TBD: always add coursestatus filter?
+        if (!empty($enabledfields)) {
             $enabledfields = explode(',', $enabledfields);
             foreach ($filters as $i => $filter) {
                 if (!in_array($filter->get_name(), $enabledfields)) {
@@ -86,6 +97,27 @@ class course extends base {
         }
 
         return $filters;
+    }
+
+    /**
+     * Get an array of fields to select in the get_search_results method.
+     *
+     * @param array $filters An array of requested filter data. Formatted like [filtername]=>[data].
+     * @return array Array of fields to select.
+     */
+    protected function get_select_fields(array $filters = array()) {
+        $selectfields = parent::get_select_fields($filters);
+        $selectfields[] = 'element.idnumber AS idnumber';
+        $selectfields[] = 'element.name AS name';
+        $selectfields[] = 'element.code AS code';
+        $selectfields[] = 'element.syllabus AS syllabus';
+        $selectfields[] = 'element.lengthdescription AS description';
+        $selectfields[] = 'element.length AS length';
+        $selectfields[] = 'element.credits AS credits';
+        $selectfields[] = 'element.completion_grade AS completion_grade';
+        $selectfields[] = 'element.cost AS cost';
+        $selectfields[] = 'element.version AS version';
+        return $selectfields;
     }
 
     /**
@@ -120,5 +152,22 @@ class course extends base {
         $ctxlevel = \local_eliscore\context\helper::get_level_from_name('course');
         $newsql = $this->get_custom_field_joins($ctxlevel, $enabledcfields);
         return [array_merge($sql, $newsql), $params];
+    }
+
+    /**
+     * Get search results/
+     *
+     * @param array $filters An array of requested filter data. Formatted like [filtername]=>[data].
+     * @param int $page The page being displayed.
+     * @return array An array of course information.
+     */
+    public function get_search_results(array $filters = array(), $page = 1) {
+        list($pageresults, $totalresultsamt) = parent::get_search_results($filters, $page);
+        $pageresultsar = [];
+        foreach ($pageresults as $id => $result) {
+            $result->header = get_string('course_header', 'eliswidget_enrolment', $result);
+            $pageresultsar[$id] = $result;
+        }
+        return [array_values($pageresultsar), $totalresultsamt];
     }
 }

@@ -26,6 +26,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['advancedscheduling'] = 'Advanced Scheduling';
+$string['ago'] = 'ago';
 $string['allitemsselected'] = 'All items selected';
 $string['autocomplete_filterdisabled'] = 'Autocomplete filter is disabled!';
 $string['autocomplete_nofields'] = 'No valid search_fields option received when constructing autocomplete filter';
@@ -247,6 +248,7 @@ $string['health_etl_prune_log_desc'] = 'The ETL process is currently processing 
 $string['health_etl_prune_log_soln'] = 'Set Moodle\'s <i>loglifetime</i> setting to a larger value or <i>Never delete logs</i> until the ETL process can complete.';
 $string['health_etl_prune_log_title'] = 'ETL process is processing log data that maybe prematurely deleted';
 
+$string['includenever'] = 'Include Never';
 $string['invalidid'] = 'Invalid ID';
 $string['invalidoperator'] = 'Invalid Operator';
 
@@ -311,6 +313,7 @@ $string['set_nonexistent_member'] = 'Attempt to set nonexistent member variable 
 $string['simpleselect'] = 'Simple select filter';
 $string['simpleselect_help'] = '<h1>Simple select filter</h1>
 <p>This filter allows you to filter information based on a drop down list. This filter does not have any extra options.</p>';
+$string['strtodatefilter'] = 'String to Date-range';
 $string['subplugintype_eliscoreplugins_plural'] = 'General plugins';
 $string['subplugintype_elisfields_plural'] = 'Custom field types';
 $string['text'] = 'Text filter';
@@ -338,6 +341,12 @@ $string['time_on'] = 'On';
 $string['recurrence'] = 'Recurrence';
 $string['recurrencetype'] = 'Recurrence Type';
 $string['simple_recurrence'] = 'Simple';
+$string['simple_scheduling'] = 'Simple recurrence settings';
+$string['simple_scheduling_help'] = '<ul><li>Once per day, every day, indefinitely (until options are changed or report is deleted) OR</li>
+<li>Once per day, until a particular date OR</li>
+<li>A set number of times:<ul>
+<li>Enter how many times the report will run - this will auto-decrement with each report run and auto-delete when complete.<br/>Leave <i>blank</i> or \'0\' (zero) to run forever.</li>
+<li>Enter how often each run occurs in minutes, hours, days, or months - must be at least 5 minutes.</li></ul></li></ul>';
 $string['calendar_recurrence'] = 'Calendar';
 $string['simple_recurrence_settings'] = 'Simple recurrence settings';
 $string['runtype'] = 'The report runs:';

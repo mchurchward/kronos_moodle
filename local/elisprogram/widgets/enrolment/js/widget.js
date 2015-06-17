@@ -458,9 +458,11 @@
                 // Hidden details.
                 var detailshidden = $('<div class="detailshidden" style="display:none;"></div>');
                 for (var fieldalias in fieldvisibility.hidden) {
-                    var label = fieldvisibility.hidden[fieldalias];
-                    var value = main.data[fieldalias];
-                    detailshidden.append(main.generateitem(label, value, fieldalias));
+                    if (typeof main.data[fieldalias] != 'undefined') {
+                        var label = fieldvisibility.hidden[fieldalias];
+                        var value = main.data[fieldalias];
+                        detailshidden.append(main.generateitem(label, value, fieldalias));
+                    }
                 }
                 details.append(detailshidden);
 
@@ -556,7 +558,7 @@
              */
             this.renderheader = function() {
                 var header = $('<div class="header"></div>');
-                header.append('<h6 class="title">'+main.data.element_idnumber+': '+main.data.element_name+'</h6>');
+                header.append('<h6 class="title">'+main.data.header+'</h6>');
 
                 // Determine status.
                 if (main.data.numenrol > 0) {
@@ -586,9 +588,11 @@
 
                 var detailshidden = $('<div class="detailshidden" style="display:none;"></div>');
                 for (var fieldalias in fieldvisibility.hidden) {
-                    var label = fieldvisibility.hidden[fieldalias];
-                    var value = main.data[fieldalias];
-                    detailshidden.append(main.generateitem(label, value, fieldalias));
+                    if (typeof main.data[fieldalias] != 'undefined') {
+                        var label = fieldvisibility.hidden[fieldalias];
+                        var value = main.data[fieldalias];
+                        detailshidden.append(main.generateitem(label, value, fieldalias));
+                    }
                 }
                 details.append(detailshidden);
 
@@ -722,7 +726,7 @@
              */
             this.renderheader = function() {
                 var header = $('<div class="header"></div>');
-                header.append('<h6 class="title">'+main.data.element_idnumber+': '+main.data.element_name+'</h6>');
+                header.append('<h6 class="title">'+main.data.header+'</h6>');
 
                 // Build and add details.
                 var details = $('<div class="details"></div>');
@@ -734,9 +738,11 @@
 
                 var detailshidden = $('<div class="detailshidden" style="display:none;"></div>');
                 for (var fieldalias in fieldvisibility.hidden) {
-                    var label = fieldvisibility.hidden[fieldalias];
-                    var value = main.data[fieldalias];
-                    detailshidden.append(main.generateitem(label, value, fieldalias));
+                    if (typeof main.data[fieldalias] != 'undefined') {
+                        var label = fieldvisibility.hidden[fieldalias];
+                        var value = main.data[fieldalias];
+                        detailshidden.append(main.generateitem(label, value, fieldalias));
+                    }
                 }
                 details.append(detailshidden);
 
@@ -889,15 +895,19 @@
                 // Build and add details.
                 var details = $('<div class="details"></div>');
                 for (var fieldalias in fieldvisibility.visible) {
-                    var label = fieldvisibility.visible[fieldalias];
-                    var value = main.data[fieldalias];
-                    details.append(main.generateitem(label, value, fieldalias));
+                    if (typeof main.data[fieldalias] != 'undefined') {
+                        var label = fieldvisibility.visible[fieldalias];
+                        var value = main.data[fieldalias];
+                        details.append(main.generateitem(label, value, fieldalias));
+                    }
                 }
                 var detailshidden = $('<div class="detailshidden" style="display:none;"></div>');
                 for (var fieldalias in fieldvisibility.hidden) {
-                    var label = fieldvisibility.hidden[fieldalias];
-                    var value = main.data[fieldalias];
-                    detailshidden.append(main.generateitem(label, value, fieldalias));
+                    if (typeof main.data[fieldalias] != 'undefined') {
+                        var label = fieldvisibility.hidden[fieldalias];
+                        var value = main.data[fieldalias];
+                        detailshidden.append(main.generateitem(label, value, fieldalias));
+                    }
                 }
                 details.append(detailshidden);
 
