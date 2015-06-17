@@ -27,6 +27,8 @@ require_once($CFG->dirroot.'/local/datahub/lib/rlip_importplugin.class.php');
 require_once($CFG->dirroot.'/local/datahub/importplugins/version1/lib.php');
 require_once($CFG->dirroot.'/local/datahub/importplugins/version1/version1.class.php');
 require_once($CFG->dirroot.'/local/datahub/importplugins/importqueue/importqueueprovidercsv.php');
+require_once($CFG->dirroot.'/local/datahub/importplugins/importqueue/classes/event/import_user_deleted.php');
+require_once($CFG->dirroot.'/user/lib.php');
 
 define('IMPORTQUEUE_DOESNOTEXIST', 1);
 define('IMPORTQUEUE_USERDELETED', 2);
@@ -115,11 +117,11 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
     public function run($targetstarttime = 0, $lastruntime = 0, $maxruntime = 0, $state = null) {
         global $DB;
         if (empty($this->queueid)) {
-             // This is a manual upload, run with out queue.
-             if ($this->provider instanceof rlip_importprovider_moodlefile) {
-                 return parent::run($targetstarttime, $lastruntime, $maxruntime, $state);
-             }
-             return null;
+            // This is a manual upload, run with out queue.
+            if ($this->provider instanceof rlip_importprovider_moodlefile) {
+                return parent::run($targetstarttime, $lastruntime, $maxruntime, $state);
+            }
+            return null;
         }
 
         $record = $DB->get_record('dhimport_importqueue', array('id' => $this->queueid));
@@ -225,8 +227,61 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
         $mappedrecord = $this->apply_mapping($entity, $record);
         // Clone $record to prevent parent::process_record from removing learningpath column.
         $recordclone = json_decode(json_encode($record));
+        // If solution id is being set to the deleted value than the record is being deleted, retrieve existing solution id.
+        $currentsolutionid = '';
+        if (!empty($recordclone->idnumber) && $recordclone->$usersolutionidfield == $this->deletesolutionid) {
+            $user = $DB->get_record('user', array('idnumber' => $recordclone->idnumber));
+            // Ensure user exists.
+            if (!empty($user)) {
+                profile_load_data($user);
+                $currentsolutionid = $user->$usersolutionidfield;
+            }
+        }
+
         // Create the user first.
         $result = parent::process_record($entity, $mappedrecord, $filename);
+
+        // If solution id is being set to the deleted value than the record is being deleted, suspend and make log entry.
+        if (!empty($recordclone->idnumber) && $recordclone->$usersolutionidfield == $this->deletesolutionid) {
+            $user = $DB->get_record('user', array('idnumber' => $recordclone->idnumber));
+            // Ensure user exists.
+            if (empty($user)) {
+                $this->fslogger->log_failure(get_string('failuserdeleted' , 'dhimport_importqueue', $record),
+                        0, $filename, $this->linenumber, $record, 'user');
+                return false;
+            }
+            $user->suspended = 1;
+            // Update user, do not change password and do not trigger event.
+            user_update_user($user, false, false);
+            // Remove users from learning paths.
+            $elisuser = usermoodle::find(array(new field_filter('muserid', $user->id)));
+            $elisuser = $elisuser->valid() ? $elisuser->current() : null;
+            // If no solution id than ignore request.
+            if (!empty($currentsolutionid) && !empty($elisuser)) {
+                $solutionuserset = $this->auth->userset_solutionid_exists($currentsolutionid);
+                // Ensure user set solution id exists.
+                if (!empty($solutionuserset) && !empty($solutionuserset->usersetid)) {
+                    $this->deassign_subusersets($elisuser->cuserid, $solutionuserset->usersetid);
+                }
+            }
+            // Force logout.
+            \core\session\manager::kill_user_sessions($user->id);
+            // Create log entry.
+            $queue = $DB->get_record('dhimport_importqueue', array('id' => $this->queueid));
+            $message = "Userid: {$user->id}, Idnumber: {$user->idnumber}, Username: {$user->username},";
+            $message .= " Training manager userid: {$queue->userid}, Solution id: {$currentsolutionid}";
+            $event = \dhimport_importqueue\event\importqueue_import_user_deleted::create(array(
+                'userid' => $queue->userid,
+                'relateduserid' => $user->id,
+                'other' => array(
+                    'message' => $message,
+                    'username' => $user->username,
+                    'trainingmangerid' => $queue->userid,
+                    'solutionid' => $currentsolutionid
+                )
+            ));
+            $event->trigger();
+        }
 
         // Check to see if it was created.
         if (!empty($recordclone->learningpath) && $this->canupdate($recordclone, true)) {
@@ -242,6 +297,35 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
             }
         }
         return $result;
+    }
+
+    /**
+     * Remove user from all subuserssets of solution id.
+     * @param int $userid ELIS user id to deassign subuser sets from.
+     * @param int $usersetid Id of parent user set to locate sub users sets to deassign.
+     */
+    public function deassign_subusersets($userid, $usersetid) {
+        global $DB;
+        if (!empty($usersetid)) {
+            $usersetcontextinstance = \local_elisprogram\context\userset::instance($usersetid);
+            $targetusersetpath = $usersetcontextinstance->path;
+        } else {
+            return;
+        }
+        $like = $DB->sql_like('ctx.path', '?', true, true, false);
+
+        $sql = "SELECT clst.id
+                  FROM {".userset::TABLE."} clst
+                  JOIN {context} ctx ON ctx.instanceid = clst.id
+                       AND ctx.contextlevel = ?
+                 WHERE {$like}
+                       AND ctx.instanceid != ?";
+
+        $params = array(CONTEXT_ELIS_USERSET, "{$targetusersetpath}/%", $usersetcontextinstance->id);
+        $usersets = $DB->get_records_sql($sql, $params);
+        foreach ($usersets as $userset) {
+            cluster_deassign_user($userset->id, $userid);
+        }
     }
 
     /**

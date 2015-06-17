@@ -98,6 +98,64 @@ class importqueue_testcase extends advanced_testcase {
     }
 
     /***
+     * Test removing a user from learning paths.
+     */
+    public function test_importqueue_deletelearningpath() {
+        global $CFG, $DB;
+        require_once($CFG->dirroot.'/local/datahub/importplugins/importqueue/importqueue.class.php');
+
+        $importqueue = new rlip_importplugin_importqueue();
+        $record = new stdClass();
+        $record->email = 'test@test.com';
+        $addtolearningpath = $importqueue->addtolearningpath('filename.csv', $record, '00000006-solutionid', 'learning path name 00000006-solutionid');
+        $this->assertTrue($addtolearningpath);
+        $learningpath = $importqueue->validlearningpath('00000006-solutionid', 'learning path name 00000006-solutionid');
+
+        // Locate elis user id.
+        $elisuser = usermoodle::find(array(new field_filter('muserid', $this->users[0]->id)));
+        $elisuser = $elisuser->valid() ? $elisuser->current() : null;
+
+        // Assign to solution id.
+        cluster_manual_assign_user($learningpath->parent, $elisuser->cuserid);
+
+        // Create sub sub path..
+        $userset = array(
+            'name' => 'abc1',
+            'display' => 'test userset description',
+            'parent' => $learningpath->id
+        );
+
+        $ussub = new userset();
+        $ussub->set_from_data((object)$userset);
+        $ussub->save();
+
+        cluster_manual_assign_user($ussub->id, $elisuser->cuserid);
+
+        // Create sub sub path..
+        $userset = array(
+            'name' => 'subsubabc1',
+            'display' => 'test userset description',
+            'parent' => $ussub->id
+        );
+
+        $ussubsub = new userset();
+        $ussubsub->set_from_data((object)$userset);
+        $ussubsub->save();
+
+        cluster_manual_assign_user($ussubsub->id, $elisuser->cuserid);
+
+        $usersetassign = $DB->get_records('local_elisprogram_uset_asign', array('userid' => $elisuser->cuserid));
+        $this->assertEquals(4, count($usersetassign));
+
+        $importqueue->deassign_subusersets($elisuser->cuserid, $learningpath->parent);
+
+        // Check if user is not assigned to user set.
+        $usersetassign = $DB->get_records('local_elisprogram_uset_asign', array('userid' => $elisuser->cuserid));
+        $this->assertEquals(1, count($usersetassign));
+        $this->assertEquals(array_pop($usersetassign)->clusterid, $learningpath->parent);
+    }
+
+    /***
      * Test if a user can be updated.
      */
     public function test_importqueue_canupdate() {
