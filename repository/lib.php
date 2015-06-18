@@ -2952,12 +2952,12 @@ abstract class repository implements cacheable_object {
             if (class_exists('elis_pg_reqs_manager')) {
                 $pgreqmanager = new elis_pg_reqs_manager();
                 $reqcss = array(
+                        'assets/skin/sam/skin.css',
                         'panel/assets/panel-core.css',
                         'panel/assets/skins/night/panel-skin.css',
                         'panel/assets/skins/night/panel.css',
                         'panel/assets/skins/sam/panel.css',
-                        'panel/assets/skins/sam/panel-skin.css',
-                        'assets/skin/sam/skin.css'
+                        'panel/assets/skins/sam/panel-skin.css'
                 );
                 foreach ($reqcss as $css) {
                     $out .= $pgreqmanager->yui_css_style($page, $css);
