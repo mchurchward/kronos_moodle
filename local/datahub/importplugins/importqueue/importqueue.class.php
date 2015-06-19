@@ -223,8 +223,6 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
             return false;
         }
 
-        // Apply the field mapping.
-        $mappedrecord = $this->apply_mapping($entity, $record);
         // Clone $record to prevent parent::process_record from removing learningpath column.
         $recordclone = json_decode(json_encode($record));
         // If solution id is being set to the deleted value than the record is being deleted, retrieve existing solution id.
@@ -239,7 +237,7 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
         }
 
         // Create the user first.
-        $result = parent::process_record($entity, $mappedrecord, $filename);
+        $result = parent::process_record($entity, $record, $filename);
 
         // If solution id is being set to the deleted value than the record is being deleted, suspend and make log entry.
         if (!empty($recordclone->idnumber) && $recordclone->$usersolutionidfield == $this->deletesolutionid) {
@@ -247,7 +245,7 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
             // Ensure user exists.
             if (empty($user)) {
                 $this->fslogger->log_failure(get_string('failuserdeleted' , 'dhimport_importqueue', $record),
-                        0, $filename, $this->linenumber, $record, 'user');
+                        0, $filename, $this->linenumber, $recordclone, 'user');
                 return false;
             }
             $user->suspended = 1;

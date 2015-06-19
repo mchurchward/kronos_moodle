@@ -52,7 +52,7 @@ print_tabs(array($tabs), $tab);
 
 //data from db
 $mappingdata = rlipimport_version1_get_mapping($tab);
-print_r($mappingdata);
+
 //options
 $plugin = new rlip_importplugin_version1(NULL, false);
 $options = $plugin->get_available_fields($tab);
