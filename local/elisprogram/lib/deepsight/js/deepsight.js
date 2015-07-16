@@ -1551,14 +1551,21 @@ $.fn.deepsight_datatable = function(options) {
      *
      * @param string filtername The name of the filter
      * @param mixed  val        The value to remove. If not defined, ALL values for the filter will be removed.
+     * @param bool   keepfilter true to keepfilter active even if 'empty'
      */
-    this.filter_remove = function(filtername, val) {
+    this.filter_remove = function(filtername, val, keepfilter) {
+        if (typeof keepfilter == 'undefined') {
+            keepfilter = false;
+        }
         if (typeof(val) != 'undefined') {
             var index = $.inArray(val, main.filters[filtername]);
             if (index >= 0) {
-                main.filters[filtername].splice(index,1);
+                main.filters[filtername].splice(index, 1);
             }
-        } else {
+            if (!keepfilter && main.filters[filtername].length == 0) {
+                delete main.filters[filtername];
+            }
+        } else if (!keepfilter) {
             delete main.filters[filtername];
         }
     }

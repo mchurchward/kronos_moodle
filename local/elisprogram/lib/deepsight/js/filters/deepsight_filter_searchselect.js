@@ -74,7 +74,7 @@ $.fn.deepsight_filter_searchselect = function(options) {
 
     var opts = $.extend({}, this.default_opts, options);
     var main = this;
-    var eleid = main.prop('id');
+    var eleid = main.prop('id')+'_'+Math.random().toString(36).substring(5); // ELIS-9176.
 
     this.name = opts.name;
     this.type = 'searchselect';
@@ -94,12 +94,13 @@ $.fn.deepsight_filter_searchselect = function(options) {
      * @param object checkbox The jQuery object of the checkbox that was clicked.
      */
     this.updateselections = function(checkbox) {
+        var val = checkbox.val();
         if (checkbox.prop('checked') == true) {
-            main.selections[checkbox.val()] = {id:checkbox.val(), label:checkbox.prop('title')}
-            opts.datatable.filter_add(main.name, checkbox.val());
+            main.selections[val] = {id: val, label: checkbox.prop('title')}
+            opts.datatable.filter_add(main.name, val);
         } else {
-            delete main.selections[checkbox.val()];
-            opts.datatable.filter_remove(main.name, checkbox.val());
+            delete main.selections[val];
+            opts.datatable.filter_remove(main.name, val, true);
         }
 
         ds_debug('[filter_searchselect.updateselections] Updated selections for filter "'+main.name+'" with data: ', main.selections);
@@ -262,7 +263,7 @@ $.fn.deepsight_filter_searchselect = function(options) {
                         return false;
                     }
                     main.filterui.dropdown.children('.selections').empty().hide();
-                    main.set_choices(data);
+                    main.set_choices(data, true); // TBD?
                 }
             });
         } else {
@@ -349,7 +350,7 @@ $.fn.deepsight_filter_searchselect = function(options) {
         main.append(main.removebutton);
 
         // populate initial choices
-        main.set_choices(opts.initialchoices,true);
+        main.set_choices(opts.initialchoices, true);
 
         if (typeof opts.initialvalue !== "undefined" && typeof opts.initialvalue === "object") {
             total = opts.initialvalue.length;
