@@ -342,6 +342,15 @@ $capabilities = array(
         )
     ),
 
+    'local/elisprogram:userset_autoassociate' => array(
+        'riskbitmask' => RISK_PERSONAL,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => array(
+            'manager' => CAP_ALLOW
+        )
+    ),
+
 // Courses:
 
     'local/elisprogram:course_view' => array(

@@ -100,14 +100,33 @@ class usersetform extends cmform {
         $mform->setType('parent', PARAM_INT);
 
         // allow plugins to add their own fields
-
-        $mform->addElement('header', 'userassociationfieldset', get_string('userset_userassociation', 'local_elisprogram'));
-
+        $headeradded = false;
+        $hascap = false;
         $plugins = core_component::get_plugin_list(userset::ENROL_PLUGIN_TYPE);
+        $capautoassociate = 'local/elisprogram:userset_autoassociate';
+        $usetid = $this->_customdata['obj']->id;
+
         foreach ($plugins as $plugin => $plugindir) {
-            require_once(elis::plugin_file(userset::ENROL_PLUGIN_TYPE.'_'.$plugin, 'lib.php'));
-            call_user_func('cluster_' . $plugin . '_edit_form', $this, $mform, $current_cluster_id);
+            $hascap = false;
+
+            // Check whether the user has the capability to enrol using this sub-plugin.
+            if ('moodleprofile' == $plugin) {
+                $hascap = has_capability($capautoassociate, \local_elisprogram\context\userset::instance($usetid));
+            }
+
+            if (true == $hascap) {
+                // Add Header if it has not already been added.
+                if (!$headeradded) {
+                    $mform->addElement('header', 'userassociationfieldset', get_string('userset_userassociation', 'local_elisprogram'));
+                    $headeradded = True;
+                }
+
+                // Call required lib and plugin edit form.
+                require_once(elis::plugin_file(userset::ENROL_PLUGIN_TYPE.'_'.$plugin, 'lib.php'));
+                call_user_func('cluster_' . $plugin . '_edit_form', $this, $mform, $current_cluster_id);
+            }
         }
+
 
         // custom fields
         $this->add_custom_fields('cluster', 'local/elisprogram:userset_edit', 'local/elisprogram:userset_view', 'cluster');
