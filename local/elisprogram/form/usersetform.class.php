@@ -38,7 +38,7 @@ class usersetform extends cmform {
      * items in the form
      */
     public function definition() {
-        global $CFG;
+        global $CFG, $USER;
 
         parent::definition();
 
@@ -83,9 +83,17 @@ class usersetform extends cmform {
         $non_child_clusters = cluster_get_non_child_clusters($current_cluster_id, $contexts);
 
         //parent dropdown
+        $usetid = 0;
         if (!empty($non_child_clusters)) {
             $mform->addElement('select', 'parent', get_string('userset_parent', 'local_elisprogram'), $non_child_clusters);
             $mform->addHelpButton('parent', 'userset_parent', 'local_elisprogram');
+
+            // This condition is true when adding User Subset.
+            if (isset($this->_customdata['obj'])) {
+                // Retrieve the closest parent.
+                $keys = array_keys($non_child_clusters);
+                $usetid = end($keys);
+            }
         } else {
             global $DB;
             $parentid = 0;
@@ -96,6 +104,7 @@ class usersetform extends cmform {
             }
             $mform->addElement('static', 'staticparent', get_string('userset_parent', 'local_elisprogram'), $parentname);
             $mform->addElement('hidden', 'parent', $parentid);
+            $usetid = $parentid;
         }
         $mform->setType('parent', PARAM_INT);
 
@@ -104,23 +113,37 @@ class usersetform extends cmform {
         $hascap = false;
         $plugins = core_component::get_plugin_list(userset::ENROL_PLUGIN_TYPE);
         $capautoassociate = 'local/elisprogram:userset_autoassociate';
-        $usetid = $this->_customdata['obj']->id;
 
         foreach ($plugins as $plugin => $plugindir) {
-            $hascap = false;
-
+            // Set this to true by default.  This will all additional ELIS enrolment plugins to appear on the User Set form.
+            // However, every ELIS enrolment plug-in should have a capabiilty to handle the user of it's enrolment fields.
+            $hascap = true;;
             // Check whether the user has the capability to enrol using this sub-plugin.
             if ('moodleprofile' == $plugin) {
-                $hascap = has_capability($capautoassociate, \local_elisprogram\context\userset::instance($usetid));
-            }
-
-            if (true == $hascap) {
-                // Add Header if it has not already been added.
-                if (!$headeradded) {
-                    $mform->addElement('header', 'userassociationfieldset', get_string('userset_userassociation', 'local_elisprogram'));
-                    $headeradded = True;
+                if (empty($usetid)) {
+                    // Check if user has edit auto associate permission at system context level.
+                    $hascap = has_capability($capautoassociate, context_system::instance(), $USER->id);
+                } else {
+                    // Check if user has edit auto associate permission on parent user set.
+                    $hascap = has_capability($capautoassociate, \local_elisprogram\context\userset::instance($usetid), $USER->id);
+                    // Check if user has edit auto associate permission on user set.
+                    if (!$hascap && !empty($current_cluster_id)) {
+                        $hascap = has_capability($capautoassociate, \local_elisprogram\context\userset::instance($current_cluster_id), $USER->id);
+                    }
                 }
 
+                if (true == $hascap) {
+                    // Add Header if it has not already been added.
+                    if (!$headeradded) {
+                        $mform->addElement('header', 'userassociationfieldset', get_string('userset_userassociation', 'local_elisprogram'));
+                        $headeradded = True;
+                    }
+
+                    // Call required lib and plugin edit form.
+                    require_once(elis::plugin_file(userset::ENROL_PLUGIN_TYPE.'_'.$plugin, 'lib.php'));
+                    call_user_func('cluster_' . $plugin . '_edit_form', $this, $mform, $current_cluster_id);
+                }
+            } else {
                 // Call required lib and plugin edit form.
                 require_once(elis::plugin_file(userset::ENROL_PLUGIN_TYPE.'_'.$plugin, 'lib.php'));
                 call_user_func('cluster_' . $plugin . '_edit_form', $this, $mform, $current_cluster_id);
