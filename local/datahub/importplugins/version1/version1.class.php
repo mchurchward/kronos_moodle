@@ -395,7 +395,7 @@ class rlip_importplugin_version1 extends rlip_importplugin_base {
                 $action = 'create';
             }
         }
-        if (isset($record->username)) {
+        if ($action == 'create' && isset($record->username)) {
             $record->username = core_text::strtolower($record->username);
         }
         return $action;
