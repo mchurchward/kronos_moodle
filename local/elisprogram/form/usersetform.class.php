@@ -83,9 +83,17 @@ class usersetform extends cmform {
         $non_child_clusters = cluster_get_non_child_clusters($current_cluster_id, $contexts);
 
         //parent dropdown
+        $usetid = 0;
         if (!empty($non_child_clusters)) {
             $mform->addElement('select', 'parent', get_string('userset_parent', 'local_elisprogram'), $non_child_clusters);
             $mform->addHelpButton('parent', 'userset_parent', 'local_elisprogram');
+
+            // This condition is true when adding User Subset.
+            if (isset($this->_customdata['obj'])) {
+                // Retrieve the closest parent.
+                $keys = array_keys($non_child_clusters);
+                $usetid = end($keys);
+            }
         } else {
             global $DB;
             $parentid = 0;
@@ -96,6 +104,7 @@ class usersetform extends cmform {
             }
             $mform->addElement('static', 'staticparent', get_string('userset_parent', 'local_elisprogram'), $parentname);
             $mform->addElement('hidden', 'parent', $parentid);
+            $usetid = $parentid;
         }
         $mform->setType('parent', PARAM_INT);
 
@@ -104,14 +113,19 @@ class usersetform extends cmform {
         $hascap = false;
         $plugins = core_component::get_plugin_list(userset::ENROL_PLUGIN_TYPE);
         $capautoassociate = 'local/elisprogram:userset_autoassociate';
-        $usetid = $this->_customdata['obj']->id;
 
         foreach ($plugins as $plugin => $plugindir) {
-            $hascap = false;
+            // Set this to true by default.  This will all additional ELIS enrolment plugins to appear on the User Set form.
+            // However, every ELIS enrolment plug-in should have a capabiilty to handle the user of it's enrolment fields.
+            $hascap = true;;
 
             // Check whether the user has the capability to enrol using this sub-plugin.
             if ('moodleprofile' == $plugin) {
-                $hascap = has_capability($capautoassociate, \local_elisprogram\context\userset::instance($usetid));
+                if (empty($usetid)) {
+                    $hascap = has_capability($capautoassociate, context_system::instance());
+                } else {
+                    $hascap = has_capability($capautoassociate, \local_elisprogram\context\userset::instance($usetid));
+                }
             }
 
             if (true == $hascap) {
