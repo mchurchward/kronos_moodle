@@ -187,7 +187,8 @@ $.fn.deepsight_filterbar = function (options) {
 
         main.html('');
         if (main.generator === null) {
-            main.generator = $('<button id="'+opts.datatable.name+'_filter_generator" class="elisicon-more" title="'+opts.lang_addtitle+'">'+opts.lang_add+'</button>');
+            var filtergenid = 'filter_generator_'+Math.random().toString(36).substring(5); // ELIS-9178.
+            main.generator = $('<button id="'+opts.datatable.name+"_"+filtergenid+'_filter_generator" class="elisicon-more" title="'+opts.lang_addtitle+'">'+opts.lang_add+'</button>');
         }
 
         if (typeof opts.datatable.current_search !== "undefined" &&
@@ -217,7 +218,8 @@ $.fn.deepsight_filterbar = function (options) {
 
                 var filter_opts = $.extend({}, default_filter_opts, opts.filters[i].opts);
                 var filterfunc = 'deepsight_filter_'+opts.filters[i].type;
-                if (typeof opts.datatable.current_search.data !== "undefined" &&
+                if (typeof opts.datatable.current_search !== "undefined" &&
+                    typeof opts.datatable.current_search.data !== "undefined" &&
                     typeof opts.datatable.current_search.data[i] !== "undefined") {
                     filter_opts.initialvalue = opts.datatable.current_search.data[i];
                 }
