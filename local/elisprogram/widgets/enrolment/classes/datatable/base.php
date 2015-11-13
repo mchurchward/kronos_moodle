@@ -309,6 +309,7 @@ abstract class base {
         $query = implode(' ', $sqlparts);
         $query = 'SELECT count(1) as count FROM ('.$query.') results';
         $totalresults = $this->DB->count_records_sql($query, $params);
+
         if ($totalresults == 0) {
             return [$resultsarray, $totalresults];
         }
@@ -329,9 +330,11 @@ abstract class base {
             $resultsetarray[$id] = $id;
         }
         unset($resultset);
+
         if (empty($resultsetarray)) {
             return [$resultsarray, $totalresults];
         }
+
         list($idsql, $idparams) = $this->DB->get_in_or_equal(array_values($resultsetarray));
         $filtersql = !empty($filtersql) ? $filtersql.' AND element.id '.$idsql : 'WHERE element.id '.$idsql;
         $params = array_merge($params, $idparams);

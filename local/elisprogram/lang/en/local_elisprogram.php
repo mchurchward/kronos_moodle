@@ -618,6 +618,7 @@ $string['elisprogram:userset_subsetdelete'] = 'Delete User Subsets';
 $string['elisprogram:viewcoursecatalog'] = 'Can view learning plan';
 $string['elisprogram:viewownreports'] = 'Can view own reports';
 $string['elisprogram:viewusers'] = 'Can view user profiles';
+$string['elisprogram:userset_autoassociate'] = 'Edit Auto-Associate fields';
 $string['eliswidget_trackenrol_usersettree'] = 'Select User Set';
 $string['eliswidget_trackenrol_usersettree_help'] = '<p align="center"><b>User Set Selection Tree Help</b></p>
 

@@ -45,7 +45,6 @@
  * @param object options  Options object (See Options section above for description)
  */
 $.fn.deepsight_filterbar = function (options) {
-    console.log(options.datatable);
     this.default_opts = {
         datatable: null,
         filters: {},
