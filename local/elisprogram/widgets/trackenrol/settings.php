@@ -136,4 +136,7 @@ if ($ADMIN->fulltree) {
     // Multi-select list of required capabilities, '' => 'allowall'.
     $settings->add(new \admin_setting_configselect('eliswidget_trackenrol/trackviewcap', get_string('setting_trackviewcap', 'eliswidget_trackenrol'),
             get_string('setting_trackviewcap_description', 'eliswidget_trackenrol'), '', $caps)); // TBD: default 'track_view'?
+
+    $settings->add(new \admin_setting_configcheckbox('eliswidget_trackenrol/orderbyenroled', get_string('setting_orderbyenroled', 'eliswidget_trackenrol'),
+            get_string('setting_orderbyenroled_description', 'eliswidget_trackenrol'), ''));
 }

@@ -198,7 +198,12 @@ class track extends \eliswidget_enrolment\datatable\base {
      * @return string An ORDER BY sql fragment, if desired.
      */
     protected function get_sort_sql() {
-        return 'ORDER BY element.idnumber ASC';
+        $enabled = get_config('eliswidget_trackenrol', 'orderbyenroled');
+        $sort = '';
+        if ($enabled) {
+            $sort = 'usertrack_id DESC,';
+        }
+        return "ORDER BY $sort element.idnumber ASC";
     }
 
     /**
