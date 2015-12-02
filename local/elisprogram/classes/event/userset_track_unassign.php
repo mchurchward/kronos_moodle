@@ -23,12 +23,47 @@
  *
  */
 
+namespace local_elisprogram\event;
+
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2014082507.02;
-$plugin->release = '2.7.10.1 (Build: 20151021)';
-$plugin->maturity = MATURITY_STABLE;
-$plugin->dependencies = array(
-    'enrol_elis' => 2014082501,
-    'local_eliscore' => 2014082501
-);
+/**
+ * Event for when a userset and track are unassociated.
+ */
+class userset_track_unassign extends \core\event\base {
+
+    /**
+     * Init method.
+     */
+    protected function init() {
+        $this->data['crud'] = 'r';
+        $this->data['edulevel'] = self::LEVEL_OTHER;
+    }
+
+    /**
+     * Returns description of what happened.
+     *
+     * @return string
+     */
+    public function get_description() {
+        return 'A userset and track have been unassociated';
+    }
+
+    /**
+     * Returns localised general event name.
+     *
+     * @return string
+     */
+    public static function get_name() {
+        return get_string('userset_track_unassign', 'local_elisprogram');
+    }
+
+    /**
+     * Returns relevant URL.
+     *
+     * @return \moodle_url
+     */
+    public function get_url() {
+        return new \moodle_url('/local/elisprogram/index.php');
+    }
+}

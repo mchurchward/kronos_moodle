@@ -148,4 +148,11 @@ $observers = array(
             'callback'    => 'moodle_course_deleted_handler',
             'internal'    => false
         ),
+        array(
+            'eventname'   => '\local_elisprogram\event\userset_track_unassign',
+            'includefile' => '/local/elisprogram/lib/data/userset.class.php',
+            'callback'    => 'userset::userset_track_unassign_handler',
+            'internal'    => false
+        ),
+
 );

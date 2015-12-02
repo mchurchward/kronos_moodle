@@ -1500,3 +1500,7 @@ $string['widget_preview_notavailable'] = 'No preview available';
 
 $string['userset_delete_top_level_exists'] = 'The user set {$a->name} already exists in the top level, please rename before prompting to a top level User Set';
 $string['userset_notloaded'] = 'Internal coding error, user set not loaded.';
+
+$string['userset_track_unassign'] = 'Userset was unassociated from Track';
+$string['remove_trk_cls_pgr_assoc_setting'] = 'Cascade unenrol when removed from Track';
+$string['remove_trk_cls_pgr_assoc_help'] = '<p>If this setting is enabled, when a user is removed from a User Set containing a Track the user will be removed from the Track, Track\'s Class Instance and Program.  Likewise for when a Track is removed from a User Set.  <b>Some restrictions for removing a user apply.</b></p><p>Regarding Tracks, if the user belongs to another User Set associated with the Track then they will not be removed.</p><p>Regarding Class Instances, if the Class Instance is associated with another Program or Track, that the user is also enroled in, the user will not be unenroled from the Class Instance.</p><p>Regarding Programs, if the user is enroled in another Track associated with the same Program; or enroled in another Class Instance associated with the same Program, then the user will not be removed from the Program.</p>';
