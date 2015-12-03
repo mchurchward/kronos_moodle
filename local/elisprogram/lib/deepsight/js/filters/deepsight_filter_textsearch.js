@@ -1,6 +1,6 @@
 /**
  * ELIS(TM): Enterprise Learning Intelligence Suite
- * Copyright (C) 2008-2013 Remote-Learner.net Inc (http://www.remote-learner.net)
+ * Copyright (C) 2008-2015 Remote-Learner.net Inc (http://www.remote-learner.net)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
  * @package    local_elisprogram
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (C) 2013 Remote Learner.net Inc http://www.remote-learner.net
+ * @copyright  (C) 2013 Onwards Remote Learner.net Inc (http://www.remote-learner.net)
  * @author     James McQuillan <james.mcquillan@remote-learner.net>
  *
  */
@@ -140,7 +140,18 @@ $.fn.deepsight_filter_textsearch = function(options) {
 
         main.filterui = $('<button></button>');
         main.filterui.addClass('filterui');
-        main.filterui.html('<span class="lbl">'+opts.label+': </span><span class="selection">'+opts.lang_any+'</span><input type="text"/>');
+        // Needed for ELIS-9205, assigning a default value.  Currently used by widgets only.
+        var initialval = '';
+        var inputval = '';
+        if (typeof(opts.initial_value) != 'undefined') {
+            initialval = opts.initial_value[0]; // TBD.
+            main.curval = initialval;
+            opts.datatable.filter_add(main.name, main.curval);
+            inputval = ' value="'+initialval+'"';
+        }
+
+        main.filterui.html('<span class="lbl">'+opts.label+': </span><span class="selection">'+(initialval != ''
+                ? '"'+initialval+'"' : opts.lang_any)+'</span><input type="text"'+inputval+'/>');
         main.append(main.filterui);
 
         var ele_input = main.filterui.children('input');

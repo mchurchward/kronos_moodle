@@ -38,7 +38,7 @@ class usersetform extends cmform {
      * items in the form
      */
     public function definition() {
-        global $CFG, $USER;
+        global $CFG;
 
         parent::definition();
 
@@ -118,32 +118,23 @@ class usersetform extends cmform {
             // Set this to true by default.  This will all additional ELIS enrolment plugins to appear on the User Set form.
             // However, every ELIS enrolment plug-in should have a capabiilty to handle the user of it's enrolment fields.
             $hascap = true;;
+
             // Check whether the user has the capability to enrol using this sub-plugin.
             if ('moodleprofile' == $plugin) {
                 if (empty($usetid)) {
-                    // Check if user has edit auto associate permission at system context level.
-                    $hascap = has_capability($capautoassociate, context_system::instance(), $USER->id);
+                    $hascap = has_capability($capautoassociate, context_system::instance());
                 } else {
-                    // Check if user has edit auto associate permission on parent user set.
-                    $hascap = has_capability($capautoassociate, \local_elisprogram\context\userset::instance($usetid), $USER->id);
-                    // Check if user has edit auto associate permission on user set.
-                    if (!$hascap && !empty($current_cluster_id)) {
-                        $hascap = has_capability($capautoassociate, \local_elisprogram\context\userset::instance($current_cluster_id), $USER->id);
-                    }
+                    $hascap = has_capability($capautoassociate, \local_elisprogram\context\userset::instance($usetid));
+                }
+            }
+
+            if (true == $hascap) {
+                // Add Header if it has not already been added.
+                if (!$headeradded) {
+                    $mform->addElement('header', 'userassociationfieldset', get_string('userset_userassociation', 'local_elisprogram'));
+                    $headeradded = True;
                 }
 
-                if (true == $hascap) {
-                    // Add Header if it has not already been added.
-                    if (!$headeradded) {
-                        $mform->addElement('header', 'userassociationfieldset', get_string('userset_userassociation', 'local_elisprogram'));
-                        $headeradded = True;
-                    }
-
-                    // Call required lib and plugin edit form.
-                    require_once(elis::plugin_file(userset::ENROL_PLUGIN_TYPE.'_'.$plugin, 'lib.php'));
-                    call_user_func('cluster_' . $plugin . '_edit_form', $this, $mform, $current_cluster_id);
-                }
-            } else {
                 // Call required lib and plugin edit form.
                 require_once(elis::plugin_file(userset::ENROL_PLUGIN_TYPE.'_'.$plugin, 'lib.php'));
                 call_user_func('cluster_' . $plugin . '_edit_form', $this, $mform, $current_cluster_id);

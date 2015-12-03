@@ -1,7 +1,7 @@
 <?php
 /**
  * ELIS(TM): Enterprise Learning Intelligence Suite
- * Copyright (C) 2008-2013 Remote-Learner.net Inc (http://www.remote-learner.net)
+ * Copyright (C) 2008-2015 Remote-Learner.net Inc (http://www.remote-learner.net)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  * @package    local_elisprogram
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (C) 2008-2013 Remote Learner.net Inc http://www.remote-learner.net
+ * @copyright  (C) 2008-2015 Remote Learner.net Inc http://www.remote-learner.net
  *
  */
 
@@ -72,14 +72,22 @@ class clusterassignment extends elis_data_object {
     );
 
     public function delete() {
+        global $DB;
+
         $this->load(); // The object must be loaded before sending through to any event handlers -- ELIS-6567
         $status = parent::delete();
 
+        // Retrieve the Moodle user id.
+        $mdluserid = $DB->get_field(usermoodle::TABLE, 'muserid', array('cuserid' => $this->userid));
+
         $eventdata = array(
             'context' => context_system::instance(),
-            'other' => $this->to_array(true)
+            'other' => $this->to_array(true),
+            'relateduserid' => $mdluserid,
         );
-        $event = \local_elisprogram\event\cluster_assigned::create($eventdata);
+        $eventdata['other']['usetid'] = $this->clusterid;
+        $eventdata['other']['class'] = get_class($this);
+        $event = \local_elisprogram\event\cluster_deassigned::create($eventdata);
         $event->trigger();
         return $status;
 	}
@@ -105,6 +113,7 @@ class clusterassignment extends elis_data_object {
      * new record, and to update an existing record.
      */
     public function save() {
+        global $DB;
         $trigger = false;
 
         if (!isset($this->id)) {
@@ -113,10 +122,14 @@ class clusterassignment extends elis_data_object {
 
         parent::save();
 
+        // Retrieve the Moodle user id.
+        $mdluserid = $DB->get_field(usermoodle::TABLE, 'muserid', array('cuserid' => $this->userid));
+
         if ($trigger) {
             $eventdata = array(
                 'context' => context_system::instance(),
-                'other' => $this->to_array(true)
+                'other' => $this->to_array(true),
+                'relateduserid' => $mdluserid
             );
             $event = \local_elisprogram\event\cluster_assigned::create($eventdata);
             $event->trigger();

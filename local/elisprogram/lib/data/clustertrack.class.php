@@ -136,42 +136,17 @@ class clustertrack extends elis_data_object {
      * Disassociates a cluster from a track.
      */
     public function delete() {
-
-        if ($this->autounenrol) {
-            // ELIS-7582
-            @set_time_limit(0);
-
-            // Unenrol all users in the cluster from the track (unless they are
-            // in another cluster associated with the track and autoenrolled by
-            // that cluster).  Only work on users that were autoenrolled in the
-            // track by the cluster.
-
-            // $filter selects all users enrolled in the track due to being in
-            // a(nother) cluster associated with the track.  We will left-join
-            // with it, and only select non-matching records.
-            $params = array();
-            $filter = 'SELECT u.userid '
-                . 'FROM {' . clusterassignment::TABLE . '} u '
-                . 'INNER JOIN {' . usertrack::TABLE . '} ut ON u.userid = ut.userid '
-                . 'WHERE ut.trackid = :trackid AND u.autoenrol=\'1\'';
-            $params['trackid'] = $this->trackid;
-
-            $sql = 'SELECT usrtrk.id '
-                . 'FROM {' . clusterassignment::TABLE . '} cu '
-                . 'INNER JOIN {' . usertrack::TABLE . '} usrtrk ON cu.userid = usrtrk.userid AND usrtrk.trackid = \'' . $this->trackid . '\' '
-                . 'LEFT OUTER JOIN (' . $filter . ') f ON f.userid = cu.userid '
-                . 'WHERE cu.clusterid = :clusterid AND cu.autoenrol=\'1\' AND f.userid IS NULL';
-            $params['clusterid'] = $this->clusterid;
-
-            $usertracks = $this->_db->get_recordset_sql($sql, $params);
-            foreach ($usertracks as $usertrack) {
-                $ut = new usertrack($usertrack->id);
-                $ut->unenrol();
-            }
-            unset($usertracks);
-        }
-
+        // Remove User Set Track association.
         parent::delete();
+        $eventdata = array(
+            'context' => context_system::instance(),
+            'relateduserid' => null,
+            'other' => $this->to_array(true),
+        );
+        $eventdata['other']['trackid'] = $this->trackid;
+        $eventdata['other']['class'] = get_class($this);
+        $event = \local_elisprogram\event\userset_track_unassign::create($eventdata);
+        $event->trigger();
     }
 
     /// collection functions. (These may be able to replaced by a generic container/listing class)

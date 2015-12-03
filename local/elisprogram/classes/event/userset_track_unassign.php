@@ -16,13 +16,54 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @package    rlreport_individual_user
+ * @package    local_elisprogram
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @copyright  (C) 2008-2015 Remote-Learner.net Inc (http://www.remote-learner.net)
+ *
  */
+
+namespace local_elisprogram\event;
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2014082500;
-$plugin->release = '2.7.10.1 (Build: 20151021)';
+/**
+ * Event for when a userset and track are unassociated.
+ */
+class userset_track_unassign extends \core\event\base {
+
+    /**
+     * Init method.
+     */
+    protected function init() {
+        $this->data['crud'] = 'r';
+        $this->data['edulevel'] = self::LEVEL_OTHER;
+    }
+
+    /**
+     * Returns description of what happened.
+     *
+     * @return string
+     */
+    public function get_description() {
+        return 'A userset and track have been unassociated';
+    }
+
+    /**
+     * Returns localised general event name.
+     *
+     * @return string
+     */
+    public static function get_name() {
+        return get_string('userset_track_unassign', 'local_elisprogram');
+    }
+
+    /**
+     * Returns relevant URL.
+     *
+     * @return \moodle_url
+     */
+    public function get_url() {
+        return new \moodle_url('/local/elisprogram/index.php');
+    }
+}

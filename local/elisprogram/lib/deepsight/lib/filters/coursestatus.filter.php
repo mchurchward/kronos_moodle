@@ -42,6 +42,9 @@ class deepsight_filter_coursestatus extends deepsight_filter_menuofchoices {
     /** @var int $userid */
     protected $userid = 0;
 
+    /** @var string $tablealias */
+    protected $tablealias = 'enrol';
+
     /**
      * Constructor.
      *
@@ -54,22 +57,40 @@ class deepsight_filter_coursestatus extends deepsight_filter_menuofchoices {
      * @param string          $endpoint  The endpoint to make requests to, when searching for a choice.
      */
     public function __construct(moodle_database &$DB, $name, $label, array $fielddata = array(), $endpoint=null) {
-        if (isset($fielddata['userid'])) {
-            $this->userid = $fielddata['userid'];
-            unset($fielddata['userid']);
+        if (isset($fielddata['tablealias'])) {
+            $this->tablealias = $fielddata['tablealias'];
+            unset($fielddata['tablealias']);
+        }
+        foreach ($fielddata as $key => $val) {
+            if (strrpos($key, 'userid') == (strlen($key) - strlen('userid'))) {
+                $this->userid = $fielddata[$key];
+                unset($fielddata[$key]);
+                break;
+            }
         }
         parent::__construct($DB, $name, $label, $fielddata, $endpoint);
         $this->postconstruct();
     }
 
     /**
+     * Get the static choices for this filter.
+     *
+     * @return array The array of choices.
+     */
+    public static function get_static_choices() {
+        return [
+            'notenrolled' => get_string('ds_notenrolled', 'local_elisprogram'),
+            'enrolled' => get_string('ds_enrolled', 'local_elisprogram'),
+            'notcompleted' => get_string('ds_notcompleted', 'local_elisprogram'),
+            'completed' => get_string('ds_completed', 'local_elisprogram'),
+        ];
+    }
+
+    /**
      * Sets the available choices - not enrolled, enrolled, or all.
      */
     public function postconstruct() {
-        $this->choices['notenrolled'] = get_string('ds_notenrolled', 'local_elisprogram');
-        $this->choices['enrolled'] = get_string('ds_enrolled', 'local_elisprogram');
-        $this->choices['notcompleted'] = get_string('ds_notcompleted', 'local_elisprogram');
-        $this->choices['completed'] = get_string('ds_completed', 'local_elisprogram');
+        $this->choices = static::get_static_choices();
     }
 
     /**
@@ -118,13 +139,19 @@ class deepsight_filter_coursestatus extends deepsight_filter_menuofchoices {
         $params = array();
         foreach ($data as $option) {
             if ($option == 'notenrolled') {
-                $sql[] = 'enrol.id IS NULL';
+                $sql[] = "({$this->tablealias}.id IS NULL
+                           AND NOT EXISTS (SELECT 'x'
+                                             FROM {local_elisprogram_cls} clscs
+                                             JOIN {local_elisprogram_cls_enrol} enrolcs ON enrolcs.classid = clscs.id
+                                                  AND enrolcs.userid = ?
+                                            WHERE clscs.courseid = element.id))";
+                $params[] = $this->userid;
             } else if ($option == 'enrolled') {
-                $sql[] = 'enrol.id IS NOT NULL';
+                $sql[] = "{$this->tablealias}.id IS NOT NULL";
             } else if ($option == 'notcompleted') {
-                $sql[] = '(enrol.id IS NOT NULL AND enrol.completestatusid = '.STUSTATUS_NOTCOMPLETE.')';
+                $sql[] = "({$this->tablealias}.id IS NOT NULL AND {$this->tablealias}.completestatusid = ".STUSTATUS_NOTCOMPLETE.')';
             } else if ($option == 'completed') {
-                $sql[] = '(enrol.id IS NOT NULL AND enrol.completestatusid > '.STUSTATUS_NOTCOMPLETE.')';
+                $sql[] = "({$this->tablealias}.id IS NOT NULL AND {$this->tablealias}.completestatusid > ".STUSTATUS_NOTCOMPLETE.')';
             }
         }
         if (empty($sql)) {

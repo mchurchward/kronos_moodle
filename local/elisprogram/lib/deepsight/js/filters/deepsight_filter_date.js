@@ -1,6 +1,6 @@
 /**
  * ELIS(TM): Enterprise Learning Intelligence Suite
- * Copyright (C) 2008-2013 Remote-Learner.net Inc (http://www.remote-learner.net)
+ * Copyright (C) 2008-2015 Remote-Learner.net Inc (http://www.remote-learner.net)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
  * @package    local_elisprogram
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (C) 2013 Remote Learner.net Inc http://www.remote-learner.net
+ * @copyright  (C) 2013 Onwards Remote Learner.net Inc (http://www.remote-learner.net)
  * @author     James McQuillan <james.mcquillan@remote-learner.net>
  *
  */
@@ -155,7 +155,13 @@ $.fn.deepsight_filter_date = function(options) {
         main.addClass(opts.css_filter_class);
 
         main.filterui = $('<button></button>').addClass('filterui');
-        main.filterui.html(opts.label+': '+opts.lang_any+' &#x25BC;');
+        var initialval = '';
+        var displayval = '';
+        if (typeof(opts.initial_value) != 'undefined') {
+            initialval = opts.initial_value[0];
+            displayval = opts.lang_months[initialval.month]+' '+initialval.date.toString()+', '+initialval.year.toString();
+        }
+        main.filterui.html('<span class="lbl">'+opts.label+': '+(displayval != '' ? displayval : opts.lang_any)+' &#x25BC;</span>');
         main.append(main.filterui);
 
         // add and initialize dropdown
@@ -165,6 +171,22 @@ $.fn.deepsight_filter_date = function(options) {
         var date = new Date();
         main.calendar.deepsight_calendar(date.getFullYear(), date.getMonth(), opts.lang_days, opts.lang_months);
         main.calendar.bind('calendar_date_changed', main.updateselection);
+        if (initialval != '') {
+            main.calendar.selection = initialval;
+            opts.datatable.filter_add(main.name, main.calendar.selection);
+            main.calendar.render_calendar(initialval.year, initialval.month);
+        }
+
+        if (typeof opts.initialvalue != "undefined" && typeof opts.initialvalue[0] != "undefined") {
+            // Add the value to the field but don't update.
+            main.calendar.selection = {
+                year: opts.initialvalue[0].year,
+                month: opts.initialvalue[0].month,
+                date: opts.initialvalue[0].date
+            };
+            main.calendar.render_calendar(opts.initialvalue[0].year, opts.initialvalue[0].month);
+            main.updateselection();
+        }
 
         if (typeof opts.initialvalue != "undefined" && typeof opts.initialvalue[0] != "undefined") {
             // Add the value to the field but don't update.

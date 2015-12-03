@@ -106,6 +106,7 @@
         this.doupdatetable = function() {
             main.abortupdatetable();
             main.addClass('loading');
+            opts.requestdata.initialized = main.filtersinit;
             var data = {
                 m: opts.requestmode,
                 data: opts.requestdata,
@@ -348,6 +349,10 @@
             this.changestatus = function(e, action) {
                 e.preventDefault();
                 e.stopPropagation();
+                // Check if a dialog is already present.
+                if ($('.modaldialog').length) {
+                    return false;
+                }
                 // Add confirm dialog.
                 var height = 175;
                 var prompt = '<b>'+opts.lang['enrol_confirm_'+action]+'</b><br/>&nbsp;&nbsp;'+opts.lang.idnumber+': '+main.data.element_idnumber;
@@ -364,6 +369,7 @@
                 $('<div></div>').appendTo('body')
                     .html(prompt)
                     .dialog({
+                        dialogClass: 'modaldialog',
                         modal: true,
                         resizable: true,
                         height: height,

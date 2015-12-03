@@ -62,9 +62,11 @@ class course extends base {
         $langversion = get_string('course_version', 'local_elisprogram');
         $langcoursestatus = get_string('course_status', 'local_elisprogram');
         $euserid = \user::get_current_userid();
-        $coursestatusfilter = new \deepsight_filter_coursestatus($this->DB, 'coursestatus', $langcoursestatus, array('userid' => $euserid),
-                $CFG->wwwroot.'/local/elisprogram/widgets/enrolment/ajax.php'); // TBD.
-        $coursestatusfilter->set_default(''); // TBD.
+        $enrolalias = (get_class($this) == 'eliswidget_enrolment\\datatable\\nonprogramcourse') ? 'stu' : 'enrol';
+        $coursestatusfilter = new \deepsight_filter_coursestatus($this->DB, 'coursestatus', $langcoursestatus, [
+           "{$enrolalias}.userid" => $euserid,
+           'tablealias' => $enrolalias], $CFG->wwwroot.'/local/elisprogram/widgets/enrolment/ajax.php');
+        $coursestatusfilter->set_default('');
         $filters = [
                 new \deepsight_filter_textsearch($this->DB, 'name', $langname, ['element.name' => $langname]),
                 new \deepsight_filter_textsearch($this->DB, 'code', $langcode, ['element.code' => $langcode]),
@@ -81,18 +83,14 @@ class course extends base {
         $customfieldfilters = $this->get_custom_field_info($coursectxlevel, ['table' => get_called_class()]);
         $filters = array_merge($filters, $customfieldfilters);
 
-        // Restrict to configured enabled fields.
-        $enabledfields = get_config('eliswidget_enrolment', 'courseenabledfields');
-        if (!empty($enabledfields)) {
-            $enabledfields .= ',';
-        }
-        $enabledfields .= 'coursestatus'; // TBD: always add coursestatus filter?
-        if (!empty($enabledfields)) {
-            $enabledfields = explode(',', $enabledfields);
-            foreach ($filters as $i => $filter) {
-                if (!in_array($filter->get_name(), $enabledfields)) {
-                    unset($filters[$i]);
-                }
+        // Restrict to visible fields.
+        foreach ($filters as $i => $filter) {
+            $filtername = $filter->get_name();
+            $enabled = get_config('eliswidget_enrolment', 'course_field_'.$filtername.'_radio');
+            if ($enabled == 1 || ($enabled === false && strpos($filtername, 'cf_') === 0)) { // Hidden.
+                unset($filters[$i]);
+            } else if ($enabled == 3) { // Locked.
+                $this->lockedfilters[$filtername] = true;
             }
         }
 

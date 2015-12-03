@@ -1483,6 +1483,11 @@ abstract class deepsight_datatable_standard implements deepsight_datatable {
             }
             $currentsearch = $startingsearches[0];
         }
+        // If the context is not set, saved searches is disabled.
+        $contextid = 0;
+        if (!empty($this->context)) {
+            $contextid = $this->context->id;
+        }
         $opts = array(
             'dataurl' => $this->endpoint,
             'savesearchurl' => $CFG->wwwroot.'/local/elisprogram/lib/deepsight/deepsight.php',
@@ -1495,7 +1500,7 @@ abstract class deepsight_datatable_standard implements deepsight_datatable {
             'rowfilter' => null,
             'actions' => array(),
             'name' => $this->name,
-            'contextid' => $this->context->id,
+            'contextid' => $contextid,
             'pagename' => $this->pagename,
             'can_save_searches' => $savedsearch->cansavesearches(),
             'can_load_searches' => $savedsearch->canloadsearches(),

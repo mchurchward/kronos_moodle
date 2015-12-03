@@ -199,25 +199,8 @@ function get_moodle_profile_field_options($prof_field, $elementid, $existing_val
 }
 
 function userset_moodleprofile_update($cluster) {
-    global $CFG, $DB, $USER;
+    global $CFG, $DB;
 
-    if (!empty($USER->id)) {
-        $capautoassociate = 'local/elisprogram:userset_autoassociate';
-        // Check if user has edit auto associate permission at system context level.
-        $hascap = has_capability($capautoassociate, context_system::instance(), $USER->id);
-        if (!$hascap) {
-            // Check if user has edit auto associate permission on user set.
-            $hascap = has_capability($capautoassociate, \local_elisprogram\context\userset::instance($cluster->id), $USER->id);
-        }
-        if (!$hascap && !empty($cluster->parent)) {
-            // Check if user has edit auto associate permission on parent user set.
-            $hascap = has_capability($capautoassociate, \local_elisprogram\context\userset::instance($cluster->parent), $USER->id);
-        }
-        if (!$hascap) {
-            // Logged in user does not have capability to update auto associate.
-            return;
-        }
-    }
     // get the "old" (existing) profile field assignment values
     $old = userset_profile::find(new field_filter('clusterid', $cluster->id), array(), 0, 2)->to_array();
 

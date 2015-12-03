@@ -53,6 +53,9 @@ abstract class base {
     /** @var string URL where all AJAX requests will be sent. */
     protected $endpoint = '';
 
+    /** @var array Array of locked filters */
+    protected $lockedfilters = [];
+
     /**
      * Constructor.
      * @param \moodle_database $DB An active database connection.
@@ -145,6 +148,9 @@ abstract class base {
 
         $fixedvisible = array_flip($this->get_fixed_visible_datafields());
         foreach ($this->availablefilters as $filtername => $filter) {
+            if (!empty($this->lockedfilters[$filtername])) {
+                continue;
+            }
             $fields = array_combine(array_values($filter->get_field_list()), array_values($filter->get_column_labels()));
             if (isset($fixedvisible[$filtername]) || isset($filters[$filtername])) {
                 $visiblefields = array_merge($visiblefields, $fields);
@@ -288,6 +294,7 @@ abstract class base {
         if (empty($this->maintable)) {
             throw new \coding_error('You must specify a main table ($this->maintable) in subclasses.');
         }
+        $resultsarray = [];
 
         // Get the number of results in the full dataset.
         $newgroupbysql = empty($groupbysql) ? 'GROUP BY element.id' : preg_replace('/GROUP BY (.*)/i', 'GROUP BY element.id, $1', $groupbysql);
@@ -302,6 +309,10 @@ abstract class base {
         $query = implode(' ', $sqlparts);
         $query = 'SELECT count(1) as count FROM ('.$query.') results';
         $totalresults = $this->DB->count_records_sql($query, $params);
+
+        if ($totalresults == 0) {
+            return [$resultsarray, $totalresults];
+        }
 
         // Generate and execute query to determine pages w/o multi-valued custom field rows.
         $sqlparts = [
@@ -319,6 +330,11 @@ abstract class base {
             $resultsetarray[$id] = $id;
         }
         unset($resultset);
+
+        if (empty($resultsetarray)) {
+            return [$resultsarray, $totalresults];
+        }
+
         list($idsql, $idparams) = $this->DB->get_in_or_equal(array_values($resultsetarray));
         $filtersql = !empty($filtersql) ? $filtersql.' AND element.id '.$idsql : 'WHERE element.id '.$idsql;
         $params = array_merge($params, $idparams);
@@ -334,7 +350,6 @@ abstract class base {
         $query = implode(' ', $sqlparts);
         $results = $this->DB->get_recordset_sql($query, $params);
 
-        $resultsarray = [];
         $multivaluedflag = false;
         $lastid = null;
         foreach ($results as $id => $result) {

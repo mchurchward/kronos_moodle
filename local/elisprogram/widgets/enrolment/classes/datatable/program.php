@@ -71,14 +71,14 @@ class program extends base {
         $customfieldfilters = $this->get_custom_field_info($pgmctxlevel, ['table' => get_called_class()]);
         $filters = array_merge($filters, $customfieldfilters);
 
-        // Restrict to configured enabled fields.
-        $enabledfields = get_config('eliswidget_enrolment', 'curriculumenabledfields');
-        if (!empty($enabledfields)) {
-            $enabledfields = explode(',', $enabledfields);
-            foreach ($filters as $i => $filter) {
-                if (!in_array($filter->get_name(), $enabledfields)) {
-                    unset($filters[$i]);
-                }
+        // Restrict to visible fields.
+        foreach ($filters as $i => $filter) {
+            $filtername = $filter->get_name();
+            $enabled = get_config('eliswidget_enrolment', 'curriculum_field_'.$filtername.'_radio');
+            if ($enabled == 1 || ($enabled === false && strpos($filtername, 'cf_') === 0)) { // Hidden.
+                unset($filters[$i]);
+            } else if ($enabled == 3) { // Locked.
+                $this->lockedfilters[$filtername] = true;
             }
         }
 

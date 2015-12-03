@@ -18,7 +18,7 @@
  * @package    local_elisprogram
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (C) 2013 Onwards Remote Learner.net Inc http://www.remote-learner.net
+ * @copyright  (C) 2013 Onwards Remote Learner.net Inc (http://www.remote-learner.net)
  * @author     James McQuillan <james.mcquillan@remote-learner.net>
  *
  */
@@ -322,7 +322,27 @@ $.fn.deepsight_filter_searchselect = function(options) {
         main.addClass(opts.filter_cssclass);
 
         main.filterui = $('<button></button>').addClass('filterui');
-        main.filterui.html(opts.label+': '+opts.lang_all+' &#x25BC;');
+        var initialval = '';
+        if (typeof(opts.initial_value) != 'undefined') {
+            for (var i in opts.initial_value) {
+                if (initialval != '') {
+                    initialval += ',';
+                }
+                flag = false;
+                for (var j in opts.initialchoices) {
+                    if (opts.initial_value[i] == opts.initialchoices[j].id) {
+                        flag = true;
+                        initialval += opts.initialchoices[j].label;
+                        main.selections[opts.initial_value[i]] = {id: opts.initial_value[i], label: opts.initialchoices[j].label};
+                        opts.datatable.filter_add(main.name, opts.initial_value[i]);
+                    }
+                }
+                if (!flag) {
+                    initialval += opts.initial_value[i].toString();
+                }
+            }
+        }
+        main.filterui.html('<span class="lbl">'+opts.label+': '+(initialval != '' ? initialval : opts.lang_all)+' &#x25BC;</span>');
         main.append(main.filterui);
 
         // add and initialize dropdown
