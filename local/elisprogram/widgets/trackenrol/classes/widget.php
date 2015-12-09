@@ -126,6 +126,8 @@ class widget extends \local_elisprogram\lib\widgetbase {
                 new \moodle_url('/local/elisprogram/lib/deepsight/js/buttons/deepsight_tools_button.js'),
                 new \moodle_url('/local/elisprogram/lib/deepsight/js/buttons/deepsight_loadsearch_button.js'),
                 new \moodle_url('/local/elisprogram/lib/deepsight/js/buttons/deepsight_savesearch_button.js'),
+                new \moodle_url('/local/elisprogram/lib/deepsight/js/filters/deepsight_filter_switch.js'),
+                new \moodle_url('/local/elisprogram/lib/deepsight/js/filters/deepsight_filter_switch_kronos_trackenrol.js')
         ];
     }
 

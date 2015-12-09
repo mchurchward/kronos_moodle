@@ -30,6 +30,10 @@ global $DB, $PAGE, $USER;
 
 if ($ADMIN->fulltree) {
 
+    global $CFG;
+    require_once($CFG->dirroot.'/local/elisprogram/lib/deepsight/lib/filter.php');
+    require_once($CFG->dirroot.'/local/elisprogram/lib/deepsight/lib/filters/switch.filter.php');
+    require_once($CFG->dirroot.'/local/elisprogram/lib/deepsight/lib/filters/kronos_track_enroled_switch.filter.php');
     // Enabled fields for each level.
     $enabledfieldsheader = get_string('setting_enabledfields_heading', 'eliswidget_trackenrol');
     $enabledfieldsheaderdesc = get_string('setting_enabledfields_heading_description', 'eliswidget_trackenrol');
@@ -64,7 +68,13 @@ if ($ADMIN->fulltree) {
                     'label' => get_string('track_enddate', 'local_elisprogram'),
                     'datatype' => 'date',
                     'visible' => false
-                ]
+                ],
+                'showenrol' => [
+                    'label' => get_string('showenroltitle', 'eliswidget_trackenrol'),
+                    'datatype' => 'menu',
+                    'visible' => true,
+                    'choices' => kronos_track_enroled_switch::get_custom_choices(),
+                ],
             ]
         ]
     ];
@@ -76,8 +86,12 @@ if ($ADMIN->fulltree) {
         ];
         $settings->add(new \admin_setting_heading($enabledfields['name'], $info['displayname'], '')); // TBD.
         foreach ($info['fields'] as $ckey => $cval) {
+            $choices = [];
+            if ('showenrol' == $ckey) {
+                $choices = isset($cval['choices']) ? $cval['choices'] : [];
+            }
             $settings->add(new \local_elisprogram\admin\setting\widgetfilterconfig($enabledfields['name'].$ckey, $cval['label'],
-                    '', isset($cval['datatype']) ? $cval['datatype'] : '' , (isset($cval['visible']) && $cval['visible'] == false) ? 1 : 0, []));
+                    '', isset($cval['datatype']) ? $cval['datatype'] : '' , (isset($cval['visible']) && $cval['visible'] == false) ? 1 : 0, $choices));
         }
 
         // Get custom fields ...

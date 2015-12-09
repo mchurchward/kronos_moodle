@@ -52,6 +52,7 @@ class track extends \eliswidget_enrolment\datatable\base {
         require_once(\elispm::lib('deepsight/lib/filter.php'));
         require_once(\elispm::lib('deepsight/lib/filters/textsearch.filter.php'));
         require_once(\elispm::lib('deepsight/lib/filters/date.filter.php'));
+        require_once(\elispm::lib('deepsight/lib/filters/kronos_track_enroled_switch.filter.php'));
 
         $langidnumber = get_string('track_idnumber', 'eliswidget_trackenrol');
         $langname = get_string('track_name', 'eliswidget_trackenrol');
@@ -59,6 +60,11 @@ class track extends \eliswidget_enrolment\datatable\base {
         $langprogram = get_string('track_program', 'eliswidget_trackenrol');
         $langstartdate = get_string('startdate', 'eliswidget_trackenrol');
         $langenddate = get_string('enddate', 'eliswidget_trackenrol');
+        $langshowenroltitle = get_string('showenroltitle', 'eliswidget_trackenrol');
+
+        $showenroled = new \kronos_track_enroled_switch($DB, 'showenrol', $langshowenroltitle, ['element.showenrol' => $langshowenroltitle]);
+        $choices = \kronos_track_enroled_switch::get_custom_choices();
+        $showenroled->set_choices($choices);
 
         $filters = [
                 new \deepsight_filter_textsearch($DB, 'idnumber', $langidnumber, ['element.idnumber' => $langidnumber]),
@@ -66,7 +72,8 @@ class track extends \eliswidget_enrolment\datatable\base {
                 new \deepsight_filter_textsearch($DB, 'program', $langprogram, ['cur.name' => $langprogram]),
                 new \deepsight_filter_date($DB, 'startdate', $langstartdate, ['element.startdate' => $langstartdate]),
                 new \deepsight_filter_date($DB, 'enddate', $langenddate, ['element.enddate' => $langenddate]),
-                new \deepsight_filter_textsearch($DB, 'description', $langdescription, ['element.description' => $langdescription])
+                new \deepsight_filter_textsearch($DB, 'description', $langdescription, ['element.description' => $langdescription]),
+                $showenroled
         ];
 
         // Add custom fields.
@@ -96,6 +103,7 @@ class track extends \eliswidget_enrolment\datatable\base {
      */
     protected function get_select_fields(array $filters = array()) {
         $selectfields = parent::get_select_fields($filters);
+        $selectfields = $this->exclude_field_from_filters($selectfields);
         $selectfields[] = 'cur.id AS curid';
         return $selectfields;
     }
@@ -143,6 +151,7 @@ class track extends \eliswidget_enrolment\datatable\base {
         $hidden['element_description'] = get_string('track_description', 'eliswidget_trackenrol');
         $hidden['element_startdate'] = get_string('startdate', 'eliswidget_trackenrol');
         $hidden['element_enddate'] = get_string('enddate', 'eliswidget_trackenrol');
+        $visible = $this->exclude_field_from_filters($visible);
         return [$visible, $hidden];
     }
 
@@ -184,10 +193,21 @@ class track extends \eliswidget_enrolment\datatable\base {
         $ctxlevel = \local_eliscore\context\helper::get_level_from_name('track');
         // Get current user id.
         $euserid = \user::get_current_userid();
-
         $newsql = $this->get_active_filters_custom_field_joins($filters, $ctxlevel, $enabledcfields);
         $newsql[] = 'JOIN {'.\curriculum::TABLE.'} cur ON cur.id = element.curid';
-        $newsql[] = 'LEFT JOIN {'.\usertrack::TABLE.'} usertrack ON usertrack.trackid = element.id AND usertrack.userid = ?';
+        // If showenrol filter is enabled then change the JOIN against usertrack table.
+        if (isset($filters['showenrol']) && is_array($filters['showenrol'])) {
+            // Default value of the filter is to only show enroled.
+            if (empty($filters['showenrol']) || 'onlyenrol' == $filters['showenrol'][0]) {
+                $newsql[] = 'JOIN {'.\usertrack::TABLE.'} usertrack ON usertrack.trackid = element.id AND usertrack.userid = ?';
+            } else {
+                $newsql[] = 'LEFT JOIN {'.\usertrack::TABLE.'} usertrack ON usertrack.trackid = element.id AND usertrack.userid = ?';
+            }
+        } else {
+            // Executes when the filter isn't present on the filterbar.
+            $newsql[] = 'LEFT JOIN {'.\usertrack::TABLE.'} usertrack ON usertrack.trackid = element.id AND usertrack.userid = ?';
+        }
+
         $newparams = [$euserid];
         return [array_merge($sql, $newsql), array_merge($params, $newparams)];
     }
@@ -236,5 +256,35 @@ class track extends \eliswidget_enrolment\datatable\base {
         }
 
         return [array_values($pageresultsar), $totalresultsamt];
+    }
+
+    /**
+     * This function removes the 'element.'' portion of the string
+     * @param array $filters An array of filters.
+     * @return Array Same array except with the name changed.
+     */
+    protected function exclude_field_from_filters($filters) {
+        $excludedfilters = $this->excluded_fields();
+        foreach ($excludedfilters as $filtername) {
+            foreach ($filters as $key => $filter) {
+                if (false !== strpos($filter, $filtername)) {
+                    unset($filters[$key]);
+                    continue;
+                }
+                if (false !== strpos($key, $filtername)) {
+                    unset($filters[$key]);
+                    continue;
+                }
+            }
+        }
+        return $filters;
+    }
+
+    /**
+     * Returns a list of fields to be excluded from the datatable query.
+     * @return array An array with the name of the field to exclude from the query.
+     */
+    protected function excluded_fields() {
+        return array('showenrol');
     }
 }
