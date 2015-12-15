@@ -1,7 +1,7 @@
 <?php
 /**
  * ELIS(TM): Enterprise Learning Intelligence Suite
- * Copyright (C) 2008-2014 Remote-Learner.net Inc (http://www.remote-learner.net)
+ * Copyright (C) 2008-2015 Remote-Learner.net Inc (http://www.remote-learner.net)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  * @package    local_elisprogram
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (C) 2008-2014 Remote-Learner.net Inc (http://www.remote-learner.net)
+ * @copyright  (C) 2008-2015 Remote-Learner.net Inc (http://www.remote-learner.net)
  *
  */
 
@@ -28,9 +28,9 @@ namespace local_elisprogram\event;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Event for when a track is assigned.
+ * Event for when a track is unassociated from a user.
  */
-class track_assigned extends \core\event\base {
+class user_track_unassign extends \core\event\base {
 
     /**
      * Init method.
@@ -38,7 +38,6 @@ class track_assigned extends \core\event\base {
     protected function init() {
         $this->data['crud'] = 'r';
         $this->data['edulevel'] = self::LEVEL_OTHER;
-        $this->data['objecttable'] = 'local_elisprogram_usr_trk';
     }
 
     /**
@@ -47,7 +46,7 @@ class track_assigned extends \core\event\base {
      * @return string
      */
     public function get_description() {
-        return "ELIS user id: {$this->other['userid']} was assigned to Track id: {$this->other['trackid']}.";
+        return "ELIS user id: {$this->other['userid']} was removed from Track id: {$this->other['trackid']}.";
     }
 
     /**
@@ -56,16 +55,7 @@ class track_assigned extends \core\event\base {
      * @return string
      */
     public static function get_name() {
-        return get_string('track_assigned', 'local_elisprogram');
-    }
-
-    /**
-     * Does this event replace a legacy event?
-     *
-     * @return string legacy event name
-     */
-    static public function get_legacy_eventname() {
-        return 'track_assigned';
+        return get_string('user_track_unassign', 'local_elisprogram');
     }
 
     /**
@@ -75,15 +65,5 @@ class track_assigned extends \core\event\base {
      */
     public function get_url() {
         return new \moodle_url('/local/elisprogram/index.php');
-    }
-
-    /**
-     * Legacy event data if get_legacy_eventname() is not empty.
-     *
-     * @return stdClass
-     */
-    protected function get_legacy_eventdata() {
-        $legacyeventdata = (object)$this->other;
-        return $legacyeventdata;
     }
 }

@@ -131,6 +131,8 @@ class clusterassignment extends elis_data_object {
                 'other' => $this->to_array(true),
                 'relateduserid' => $mdluserid
             );
+            $eventdata['other']['clusterid'] = $this->clusterid;
+            $eventdata['other']['userid'] = $this->userid;
             $event = \local_elisprogram\event\cluster_assigned::create($eventdata);
             $event->trigger();
         }

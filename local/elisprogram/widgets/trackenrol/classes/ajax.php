@@ -266,10 +266,11 @@ class ajax {
         if (empty($data['action']) || empty($data['trackid'])) {
             throw new \Exception('No action or classid received.');
         }
-
+        // Check if the user assignment into the Track meets the required conditions (this is specific to Kronos).
+        $canunenrol = \eliswidget_trackenrol\datatable\track::user_can_unenrol($data['trackid']);
         switch($data['action']) {
             case 'enrol':
-                $enrolallowed = get_config('enrol_elis', 'enrol_from_course_catalog');
+                $enrolallowed = get_config('eliswidget_trackenrol', 'enrol_into_track');
                 if (empty($enrolallowed) || $enrolallowed != '1') {
                     throw new \Exception('Self-enrolments from dashboard not allowed.');
                 }
@@ -285,10 +286,11 @@ class ajax {
                     // TBD: log error?
                     throw $e;
                 }
-                return ['newstatus' => 'enroled'];
+                // Include the flag to enable the unenrol link to appear, if the user has the ability to unenrol.
+                return ['newstatus' => 'enroled', 'canunenrol' => $canunenrol];
 
             case 'unenrol':
-                $unenrolallowed = get_config('enrol_elis', 'unenrol_from_course_catalog');
+                $unenrolallowed = get_config('eliswidget_trackenrol', 'unenrol_from_track');
                 if (empty($unenrolallowed) || $unenrolallowed != '1') {
                     throw new \Exception('Self-unenrolments from dashboard not allowed.');
                 }
@@ -298,7 +300,13 @@ class ajax {
                     throw new \Exception('User not enroled.');
                 }
                 $usertrack = new \usertrack($enrolment);
-                $usertrack->delete();
+                // KRONOSDEV-114: If Cascade removal is enabled in the ELIS settings and the user is allowed to unenrol then cascade unenrol.
+                if (!empty(\elis::$config->local_elisprogram->remove_trk_cls_pgr_assoc) && $canunenrol) {
+                    $usertrack->cascade_unenrol();
+                } else if ($canunenrol) {
+                    // If Cascade removal is not enabled but the user can still unenrol, then unenrol the user as normal.
+                    $usertrack->unenrol();
+                }
                 return ['newstatus' => 'available'];
 
             default:

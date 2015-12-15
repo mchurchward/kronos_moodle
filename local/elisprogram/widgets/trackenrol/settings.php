@@ -153,4 +153,10 @@ if ($ADMIN->fulltree) {
 
     $settings->add(new \admin_setting_configcheckbox('eliswidget_trackenrol/orderbyenroled', get_string('setting_orderbyenroled', 'eliswidget_trackenrol'),
             get_string('setting_orderbyenroled_description', 'eliswidget_trackenrol'), ''));
+
+    $settings->add(new \admin_setting_configcheckbox('eliswidget_trackenrol/enrol_into_track',
+            get_string('enrol_into_track', 'eliswidget_trackenrol'), get_string('enrol_into_track_desc', 'eliswidget_trackenrol'), ''));
+
+    $settings->add(new \admin_setting_configcheckbox('eliswidget_trackenrol/unenrol_from_track',
+            get_string('unenrol_from_track', 'eliswidget_trackenrol'), get_string('unenrol_from_track_desc', 'eliswidget_trackenrol'), ''));
 }

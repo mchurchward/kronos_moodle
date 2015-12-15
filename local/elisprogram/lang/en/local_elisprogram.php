@@ -205,7 +205,7 @@ $string['clear'] = 'Clear';
 $string['clustcpycurr'] = 'Program {$a->name} copied to {$a->newname}';
 $string['cluster'] = 'User Set';
 $string['clusters'] = 'User Sets';
-$string['cluster_assigned'] = 'User subset assigned to user set';
+$string['cluster_assigned'] = 'User assigned to user set';
 $string['cluster_deassigned'] = 'User subset unassigned from user set';
 $string['cluster_deleted'] = 'User set deleted';
 $string['cluster_role_help'] = 'This is the default role to assign to a Program Management user in any user sets they create.
@@ -1502,5 +1502,6 @@ $string['userset_delete_top_level_exists'] = 'The user set {$a->name} already ex
 $string['userset_notloaded'] = 'Internal coding error, user set not loaded.';
 
 $string['userset_track_unassign'] = 'Userset was unassociated from Track';
+$string['user_track_unassign'] = 'User was unassigned from Track';
 $string['remove_trk_cls_pgr_assoc_setting'] = 'Cascade unenrol when removed from Track';
 $string['remove_trk_cls_pgr_assoc_help'] = '<p>If this setting is enabled, when a user is removed from a User Set containing a Track the user will be removed from the Track, Track\'s Class Instance and Program.  Likewise for when a Track is removed from a User Set.  <b>Some restrictions for removing a user apply.</b></p><p>Regarding Tracks, if the user belongs to another User Set associated with the Track then they will not be removed.</p><p>Regarding Class Instances, if the Class Instance is associated with another Program or Track, that the user is also enroled in, the user will not be unenroled from the Class Instance.</p><p>Regarding Programs, if the user is enroled in another Track associated with the same Program; or enroled in another Class Instance associated with the same Program, then the user will not be removed from the Program.</p>';
