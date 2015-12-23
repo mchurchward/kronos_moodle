@@ -45,6 +45,7 @@ class deepsight_datatable_usersetuser_base extends deepsight_datatable_user {
     public function get_js_dependencies() {
         $deps = parent::get_js_dependencies();
         $deps[] = '/local/elisprogram/lib/deepsight/js/actions/deepsight_action_confirm.js';
+        $deps[] = '/local/elisprogram/lib/deepsight/js/actions/deepsight_action_usersetuser_unassign.js';
         return $deps;
     }
 
