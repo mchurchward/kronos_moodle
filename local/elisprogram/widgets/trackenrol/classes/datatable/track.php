@@ -302,6 +302,8 @@ class track extends \eliswidget_enrolment\datatable\base {
     public static function user_can_unenrol($trackid) {
         global $USER, $DB;
 
+        $selfenrol = 1;
+        $otherenrol = 1;
         $context = \context_system::instance();
         $params = array(
             'userid' => $USER->id,
@@ -339,7 +341,7 @@ class track extends \eliswidget_enrolment\datatable\base {
         $rs = $DB->get_recordset_sql($sql, $params);
         // If record set is empty then no evidence exists that the user assigned themselves to the Track
         if (!$rs->valid()) {
-            return 0;
+            $selfenrol = 0;
         }
         $selfrec = $rs->current();
         $rs->close();
@@ -365,11 +367,20 @@ class track extends \eliswidget_enrolment\datatable\base {
         $rs = $DB->get_recordset_sql($sql, $params);
         // If the recordset is empty then the user self enroled in the Track.
         if (!$rs->valid()) {
-            return 1;
+            $otherenrol = 0;
         }
         $otherrec = $rs->current();
         $rs->close();
 
+        // If both selfenrol and otherenrol is zero then we allow the user to self unenrol.  This condition covers the case where the user self enrols
+        // for the first time; the event has not yet triggered and no log is inserted, in addition the user is unable to see the unernol link in the
+        // Track enrolment widget until the user refreshes the page and the code finds the log entry.
+        if (empty($selfenrol) && empty($otherenrol)) {
+            return 1;
+        } else if ($selfenrol != $otherenrol) {
+            // If selfenrol and otherenrol are not equal, then return a 0 if selfenrol is 0, otherwise return a 1.
+            return (empty($selfenrol)) ? 0 : 1;
+        }
         // If the self Track assignment record has a timestamp greater than the non self Track assignment, then return true
         if ($selfrec->timecreated > $otherrec->timecreated) {
             return 1;
