@@ -318,6 +318,12 @@ class deepsight_action_usersettrack_unassign extends deepsight_action_standard {
         $langelements->actionelement = strtolower(get_string('tracks', 'local_elisprogram'));
         $this->descmultiple = (!empty($descmultiple))
                 ? $descmultiple : get_string('ds_action_unassign_confirm_multi', 'local_elisprogram', $langelements);
+
+        if ($this->get_cascade_warning_msg($langelements)) {
+            $this->descsingle = $this->get_cascade_warning_msg($langelements);
+            $this->descmultiple = $this->descsingle;
+            $this->cascademsg = 1;
+        }
     }
 
     /**
@@ -360,5 +366,21 @@ class deepsight_action_usersettrack_unassign extends deepsight_action_standard {
         $assocclass = 'clustertrack';
         $assocparams = ['main' => 'clusterid', 'incoming' => 'trackid'];
         return $this->attempt_unassociate($usersetid, $elements, $bulkaction, $assocclass, $assocparams);
+    }
+
+    /**
+     * Returns a warning message for both single and bulk removal. Shown when cascade unenrol is enabled.  Otherwise it returns nothing.
+     * @param object An object containing 'baseelement' and 'actionelement' as properties that is used for languagestring
+     * substitution.  See language string 'ds_action_unassign_confirm' and 'ds_action_unassign_confirm_cascade'.
+     * @return string A warning message.
+     */
+    protected function get_cascade_warning_msg($langelements) {
+        if (class_exists('course_completion_by_cluster_report') && !empty(elis::$config->local_elisprogram->remove_trk_cls_pgr_assoc)) {
+            $url = new \moodle_url('/local/elisreports/render_report_page.php', array('report' => 'course_completion_by_cluster'));
+            $langelements->reportlink = \html_writer::link($url, get_string('displayname', 'rlreport_course_completion_by_cluster'), array('class' => 'deepsight_anchor_on_dark'));
+            return get_string('ds_action_unassign_confirm_multi_cascade', 'local_elisprogram', $langelements);
+        }
+        return '';
+
     }
 }

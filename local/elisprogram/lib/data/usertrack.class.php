@@ -145,10 +145,18 @@ class usertrack extends elis_data_object {
             $curstu->save();
         }
 
+        // Retrieve the Moodle user id.
+        $mdluserid = $DB->get_field(usermoodle::TABLE, 'muserid', array('cuserid' => $userid));
+
         $eventdata = array(
             'context' => context_system::instance(),
-            'other' => $record->to_array(true)
+            'other' => $record->to_array(true),
+            'relateduserid' => $mdluserid,
+            'objectid' => $trackid
         );
+        $eventdata['other']['userid'] = $userid;
+        $eventdata['other']['trackid'] = $trackid;
+
         $event = \local_elisprogram\event\track_assigned::create($eventdata);
         $event->trigger();
 
@@ -208,11 +216,48 @@ class usertrack extends elis_data_object {
     }
 
     /**
+     * Unenrols a user from a Track, in addition to attempting to unenrol a user from the Track's
+     * Program and the Class Instance associated with the Track
+     * @return bool Returns true.
+     */
+    public function cascade_unenrol() {
+        $data = local_elisprogram_usrtrk_unassign($this->userid, $this->trackid);
+
+        if (empty($data[0]) && empty($data[1])) {
+            return true;
+        }
+        // If cascade unenrol is not enabled then no further work is needed.
+        if (empty(elis::$config->local_elisprogram->remove_trk_cls_pgr_assoc)) {
+            return true;
+        }
+        $trkprogram = array();
+        $trkcls = array();
+        $trkprogram[$this->trackid] = $data[0];
+        $trkcls[$this->trackid] = $data[1];
+        unenrol_user_from_track_class_instance($trkcls, $trkprogram, $this->userid);
+        unassign_user_from_program($trkprogram, $this->userid);
+        return true;
+    }
+
+    /**
      * Unenrols a user from a track.
      */
     function unenrol() {
+        global $DB;
         //return $this->data_delete_record();
         parent::delete();
+        // Retrieve the Moodle user id.
+        $mdluserid = $DB->get_field(usermoodle::TABLE, 'muserid', array('cuserid' => $this->userid));
+
+        $eventdata = array(
+            'context' => context_system::instance(),
+            'other' => $this->to_array(true),
+            'relateduserid' => $mdluserid,
+        );
+        $eventdata['other']['userid'] = $this->userid;
+        $eventdata['other']['trackid'] = $this->trackid;
+        $event = \local_elisprogram\event\user_track_unassign::create($eventdata);
+        $event->trigger();
     }
 
     static $validation_rules = array(

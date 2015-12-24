@@ -125,9 +125,12 @@ class deepsight_action_usersetuser_assign extends deepsight_action_confirm {
  */
 class deepsight_action_usersetuser_unassign extends deepsight_action_confirm {
     use deepsight_action_usersetuser;
+    const TYPE = 'usersetuser_unassign';
 
     public $label = 'Unassign';
     public $icon = 'elisicon-unassoc';
+    protected $cascademsg = 0;
+    protected $cascademsgtoken = 'element_id';
 
     /**
      * Constructor.
@@ -146,11 +149,21 @@ class deepsight_action_usersetuser_unassign extends deepsight_action_confirm {
         $this->descsingle = (!empty($descsingle))
                 ? $descsingle : get_string('ds_action_unassign_confirm', 'local_elisprogram', $langelements);
 
+        if ($this->get_cascade_single_warning_msg($langelements)) {
+            $this->descsingle = $this->get_cascade_single_warning_msg($langelements);
+            $this->cascademsg = 1;
+        }
+
         $langelements = new stdClass;
         $langelements->baseelement = strtolower(get_string('cluster', 'local_elisprogram'));
         $langelements->actionelement = strtolower(get_string('users', 'local_elisprogram'));
         $this->descmultiple = (!empty($descmultiple))
                 ? $descmultiple : get_string('ds_action_unassign_confirm_multi', 'local_elisprogram', $langelements);
+
+        if ($this->get_cascade_bulk_warning_msg($langelements)) {
+            $this->descmultiple = $this->get_cascade_bulk_warning_msg($langelements);
+            $this->cascademsg = 1;
+        }
     }
 
     /**
@@ -202,5 +215,59 @@ class deepsight_action_usersetuser_unassign extends deepsight_action_confirm {
         } else {
             return array('result' => 'success', 'msg' => 'Success');
         }
+    }
+
+    /**
+     * Provide options to the javascript.
+     * @return array An array of options.
+     */
+    public function get_js_opts() {
+        global $CFG;
+        $opts = parent::get_js_opts();
+        $opts['condition'] = $this->condition;
+        $opts['opts']['actionurl'] = $this->endpoint;
+        $opts['opts']['desc_single'] = $this->descsingle;
+        $opts['opts']['desc_multiple'] = $this->descmultiple;
+        $opts['opts']['mode'] = 'unassign'; // TBD
+        $opts['opts']['lang_bulk_confirm'] = get_string('ds_bulk_confirm', 'local_elisprogram');
+        $opts['opts']['lang_working'] = get_string('ds_working', 'local_elisprogram');
+        $opts['opts']['langrecursive'] = get_string('usersettrack_recursive_unassign', 'local_elisprogram');
+        $opts['opts']['langyes'] = get_string('yes', 'moodle');
+        $opts['opts']['langno'] = get_string('no', 'moodle');
+        $opts['opts']['cascademsg'] = $this->cascademsg;
+        $opts['opts']['cascademsgtoken'] = $this->cascademsgtoken;
+        return $opts;
+    }
+
+    /**
+     * Returns a warning message for single removal. Shown when cascade unenrol is enabled.  Otherwise it returns nothing.
+     * @param object An object containing 'baseelement' and 'actionelement' as properties that is used for languagestring
+     * substitution.  See language string 'ds_action_unassign_confirm' and 'ds_action_unassign_confirm_cascade'.
+     * @return string A warning message.
+     */
+    protected function get_cascade_single_warning_msg($langelements) {
+        if (class_exists('individual_course_progress_report') && !empty(elis::$config->local_elisprogram->remove_trk_cls_pgr_assoc)) {
+            $url = new \moodle_url('/local/elisreports/render_report_page.php', array('report' => 'individual_course_progress', 'filterautoc_id' => $this->cascademsgtoken));
+            $stub = new \individual_course_progress_report('temp');
+            $langelements->reportlink = \html_writer::link($url, get_string('displayname', $stub->lang_file), array('class' => 'deepsight_anchor_on_dark'));
+            return get_string('ds_action_unassign_confirm_cascade', 'local_elisprogram', $langelements);
+        }
+        return '';
+    }
+
+    /**
+     * Returns a warning message for bulk removal. Shown when cascade unenrol is enabled.  Otherwise it returns nothing.
+     * @param object An object containing 'baseelement' and 'actionelement' as properties that is used for languagestring
+     * substitution.  See language string 'ds_action_unassign_confirm' and 'ds_action_unassign_confirm_cascade'.
+     * @return string A warning message.
+     */
+    protected function get_cascade_bulk_warning_msg($langelements) {
+        if (class_exists('course_completion_by_cluster_report') && !empty(elis::$config->local_elisprogram->remove_trk_cls_pgr_assoc)) {
+            $url = new \moodle_url('/local/elisreports/render_report_page.php', array('report' => 'course_completion_by_cluster'));
+            $langelements->reportlink = \html_writer::link($url, get_string('displayname', 'rlreport_course_completion_by_cluster'), array('class' => 'deepsight_anchor_on_dark'));
+            return get_string('ds_action_unassign_confirm_multi_cascade', 'local_elisprogram', $langelements);
+        }
+        return '';
+
     }
 }

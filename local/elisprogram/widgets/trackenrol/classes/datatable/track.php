@@ -52,6 +52,7 @@ class track extends \eliswidget_enrolment\datatable\base {
         require_once(\elispm::lib('deepsight/lib/filter.php'));
         require_once(\elispm::lib('deepsight/lib/filters/textsearch.filter.php'));
         require_once(\elispm::lib('deepsight/lib/filters/date.filter.php'));
+        require_once(\elispm::lib('deepsight/lib/filters/kronos_track_enroled_switch.filter.php'));
 
         $langidnumber = get_string('track_idnumber', 'eliswidget_trackenrol');
         $langname = get_string('track_name', 'eliswidget_trackenrol');
@@ -59,6 +60,11 @@ class track extends \eliswidget_enrolment\datatable\base {
         $langprogram = get_string('track_program', 'eliswidget_trackenrol');
         $langstartdate = get_string('startdate', 'eliswidget_trackenrol');
         $langenddate = get_string('enddate', 'eliswidget_trackenrol');
+        $langshowenroltitle = get_string('showenroltitle', 'eliswidget_trackenrol');
+
+        $showenroled = new \kronos_track_enroled_switch($DB, 'showenrol', $langshowenroltitle, ['element.showenrol' => $langshowenroltitle]);
+        $choices = \kronos_track_enroled_switch::get_custom_choices();
+        $showenroled->set_choices($choices);
 
         $filters = [
                 new \deepsight_filter_textsearch($DB, 'idnumber', $langidnumber, ['element.idnumber' => $langidnumber]),
@@ -66,7 +72,8 @@ class track extends \eliswidget_enrolment\datatable\base {
                 new \deepsight_filter_textsearch($DB, 'program', $langprogram, ['cur.name' => $langprogram]),
                 new \deepsight_filter_date($DB, 'startdate', $langstartdate, ['element.startdate' => $langstartdate]),
                 new \deepsight_filter_date($DB, 'enddate', $langenddate, ['element.enddate' => $langenddate]),
-                new \deepsight_filter_textsearch($DB, 'description', $langdescription, ['element.description' => $langdescription])
+                new \deepsight_filter_textsearch($DB, 'description', $langdescription, ['element.description' => $langdescription]),
+                $showenroled
         ];
 
         // Add custom fields.
@@ -96,6 +103,7 @@ class track extends \eliswidget_enrolment\datatable\base {
      */
     protected function get_select_fields(array $filters = array()) {
         $selectfields = parent::get_select_fields($filters);
+        $selectfields = $this->exclude_field_from_filters($selectfields);
         $selectfields[] = 'cur.id AS curid';
         return $selectfields;
     }
@@ -143,6 +151,7 @@ class track extends \eliswidget_enrolment\datatable\base {
         $hidden['element_description'] = get_string('track_description', 'eliswidget_trackenrol');
         $hidden['element_startdate'] = get_string('startdate', 'eliswidget_trackenrol');
         $hidden['element_enddate'] = get_string('enddate', 'eliswidget_trackenrol');
+        $visible = $this->exclude_field_from_filters($visible);
         return [$visible, $hidden];
     }
 
@@ -184,10 +193,21 @@ class track extends \eliswidget_enrolment\datatable\base {
         $ctxlevel = \local_eliscore\context\helper::get_level_from_name('track');
         // Get current user id.
         $euserid = \user::get_current_userid();
-
         $newsql = $this->get_active_filters_custom_field_joins($filters, $ctxlevel, $enabledcfields);
         $newsql[] = 'JOIN {'.\curriculum::TABLE.'} cur ON cur.id = element.curid';
-        $newsql[] = 'LEFT JOIN {'.\usertrack::TABLE.'} usertrack ON usertrack.trackid = element.id AND usertrack.userid = ?';
+        // If showenrol filter is enabled then change the JOIN against usertrack table.
+        if (isset($filters['showenrol']) && is_array($filters['showenrol'])) {
+            // Default value of the filter is to only show enroled.
+            if (empty($filters['showenrol']) || 'onlyenrol' == $filters['showenrol'][0]) {
+                $newsql[] = 'JOIN {'.\usertrack::TABLE.'} usertrack ON usertrack.trackid = element.id AND usertrack.userid = ?';
+            } else {
+                $newsql[] = 'LEFT JOIN {'.\usertrack::TABLE.'} usertrack ON usertrack.trackid = element.id AND usertrack.userid = ?';
+            }
+        } else {
+            // Executes when the filter isn't present on the filterbar.
+            $newsql[] = 'LEFT JOIN {'.\usertrack::TABLE.'} usertrack ON usertrack.trackid = element.id AND usertrack.userid = ?';
+        }
+
         $newparams = [$euserid];
         return [array_merge($sql, $newsql), array_merge($params, $newparams)];
     }
@@ -233,8 +253,138 @@ class track extends \eliswidget_enrolment\datatable\base {
             } else {
                 $pageresultsar[$id]->element_enddate = get_string('date_na', 'eliswidget_trackenrol');
             }
+            $pageresultsar[$id]->can_unenrol = track::user_can_unenrol($result->element_id);
         }
 
         return [array_values($pageresultsar), $totalresultsamt];
     }
+
+    /**
+     * This function removes the 'element.'' portion of the string
+     * @param array $filters An array of filters.
+     * @return Array Same array except with the name changed.
+     */
+    protected function exclude_field_from_filters($filters) {
+        $excludedfilters = $this->excluded_fields();
+        foreach ($excludedfilters as $filtername) {
+            foreach ($filters as $key => $filter) {
+                if (false !== strpos($filter, $filtername)) {
+                    unset($filters[$key]);
+                    continue;
+                }
+                if (false !== strpos($key, $filtername)) {
+                    unset($filters[$key]);
+                    continue;
+                }
+            }
+        }
+        return $filters;
+    }
+
+    /**
+     * Returns a list of fields to be excluded from the datatable query.
+     * @return array An array with the name of the field to exclude from the query.
+     */
+    protected function excluded_fields() {
+        return array('showenrol');
+    }
+
+    /**
+     * This function is to enforce Kronos specific business rules, where by a Track cannot be unenroled from
+     * a user unless that user initiall enroled themselves into the Track.  The function first checks the
+     * Moodle log table to see if there is a record that indicate the current user enrolled themself in the
+     * Track.  If no record is found the user will not be able to unenrol from the Track.  If a record is found
+     * then another check is performed to ensure that there is no other Track assign log record that has a newer
+     * date.
+     * @param int $trackid The Track id
+     * @return int Returns 1 if the user can unenrol.  Otherwise 0 is returned.
+     */
+    public static function user_can_unenrol($trackid) {
+        global $USER, $DB;
+
+        $selfenrol = 1;
+        $otherenrol = 1;
+        $context = \context_system::instance();
+        $params = array(
+            'userid' => $USER->id,
+            'relateduserid' => $USER->id,
+            'component' => 'local_elisprogram',
+            'action' => 'assigned',
+            'target' => 'track',
+            'crud' => 'r',
+            'edulevel' => 0,
+            'contextid' => $context->id,
+            'contextlevel' => $context->contextlevel,
+            'contextinstanceid' => $context->instanceid,
+            'courseid' => 0,
+            'objecttable' => 'local_elisprogram_usr_trk',
+            'objectid' => $trackid
+        );
+        // Find a record where the user self enroled in a the Track.
+        $sql = "SELECT id, timecreated
+                 FROM {logstore_standard_log}
+                WHERE userid = :userid
+                      AND relateduserid = :relateduserid
+                      AND component = :component
+                      AND action = :action
+                      AND target = :target
+                      AND crud = :crud
+                      AND edulevel = :edulevel
+                      AND contextid = :contextid
+                      AND contextlevel = :contextlevel
+                      AND contextinstanceid = :contextinstanceid
+                      AND courseid = :courseid
+                      AND objecttable = :objecttable
+                      AND objectid = :objectid
+             ORDER BY timecreated DESC
+                LIMIT 1";
+        $rs = $DB->get_recordset_sql($sql, $params);
+        // If record set is empty then no evidence exists that the user assigned themselves to the Track
+        if (!$rs->valid()) {
+            $selfenrol = 0;
+        }
+        $selfrec = $rs->current();
+        $rs->close();
+
+        // Find a record where the user did not self enroled in a the Track.
+        $sql = "SELECT id, timecreated
+                 FROM {logstore_standard_log}
+                WHERE userid <> :userid
+                      AND relateduserid = :relateduserid
+                      AND component = :component
+                      AND action = :action
+                      AND target = :target
+                      AND crud = :crud
+                      AND edulevel = :edulevel
+                      AND contextid = :contextid
+                      AND contextlevel = :contextlevel
+                      AND contextinstanceid = :contextinstanceid
+                      AND courseid = :courseid
+                      AND objecttable = :objecttable
+                      AND objectid = :objectid
+             ORDER BY timecreated DESC
+                LIMIT 1";
+        $rs = $DB->get_recordset_sql($sql, $params);
+        // If the recordset is empty then the user self enroled in the Track.
+        if (!$rs->valid()) {
+            $otherenrol = 0;
+        }
+        $otherrec = $rs->current();
+        $rs->close();
+
+        // If both selfenrol and otherenrol is zero then we allow the user to self unenrol.  This condition covers the case where the user self enrols
+        // for the first time; the event has not yet triggered and no log is inserted, in addition the user is unable to see the unernol link in the
+        // Track enrolment widget until the user refreshes the page and the code finds the log entry.
+        if (empty($selfenrol) && empty($otherenrol)) {
+            return 1;
+        } else if ($selfenrol != $otherenrol) {
+            // If selfenrol and otherenrol are not equal, then return a 0 if selfenrol is 0, otherwise return a 1.
+            return (empty($selfenrol)) ? 0 : 1;
+        }
+        // If the self Track assignment record has a timestamp greater than the non self Track assignment, then return true
+        if ($selfrec->timecreated > $otherrec->timecreated) {
+            return 1;
+        }
+        return 0;
+   }
 }

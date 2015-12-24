@@ -409,14 +409,9 @@ class userset extends data_object_with_custom_fields {
      */
     public static function cluster_deassigned_handler($eventdata) {
         global $DB;
-        require_once(elispm::lib('data/usertrack.class.php'));
-        require_once(elispm::lib('data/track.class.php'));
-        require_once(elispm::lib('data/pmclass.class.php'));
-        require_once(elispm::lib('data/curriculumcourse.class.php'));
-        require_once(elispm::lib('data/curriculumstudent.class.php'));
-        require_once(elispm::lib('data/student.class.php'));
+        require_once(elispm::lib('lib.php'));
 
-        // If cascade unenrol is not enabled the no further work is needed.
+        // If cascade unenrol is not enabled then no further work is needed.
         if (empty(elis::$config->local_elisprogram->remove_trk_cls_pgr_assoc)) {
             return true;
         }
@@ -430,8 +425,8 @@ class userset extends data_object_with_custom_fields {
         $usettrkassoc = $userset->clustertrack;
 
         list($trkprogram, $trkcls) = userset::unassign_user_from_track($usettrkassoc, $eventdata->clusterid, $eventdata->userid);
-        userset::unenrol_user_from_track_class_instance($trkcls, $trkprogram, $eventdata->userid);
-        userset::unassign_user_from_program($trkprogram, $eventdata->userid);
+        unenrol_user_from_track_class_instance($trkcls, $trkprogram, $eventdata->userid);
+        unassign_user_from_program($trkprogram, $eventdata->userid);
         return true;
     }
 
@@ -441,9 +436,9 @@ class userset extends data_object_with_custom_fields {
      * @return bool true
      */
     public static function userset_track_unassign_handler($eventdata) {
-        require_once(elispm::lib('data/track.class.php'));
+        require_once(elispm::lib('lib.php'));
 
-        // If cascade unenrol is not enabled the no further work is needed.
+        // If cascade unenrol is not enabled then no further work is needed.
         if (empty(elis::$config->local_elisprogram->remove_trk_cls_pgr_assoc)) {
             return true;
         }
@@ -460,8 +455,8 @@ class userset extends data_object_with_custom_fields {
         // Using the trackid from eventdata iterate through the classes attached to the Track where the user is enroled in.
         foreach($usetuserrec as $rec) {
             list($trkprogram, $trkcls) = userset::unassign_user_from_track($usettrkassoc, $eventdata->clusterid, $rec->userid);
-            userset::unenrol_user_from_track_class_instance($trkcls, $trkprogram, $rec->userid);
-            userset::unassign_user_from_program($trkprogram, $rec->userid);
+            unenrol_user_from_track_class_instance($trkcls, $trkprogram, $rec->userid);
+            unassign_user_from_program($trkprogram, $rec->userid);
         }
         return true;
     }
@@ -480,13 +475,12 @@ class userset extends data_object_with_custom_fields {
         global $DB;
         require_once(elispm::lib('data/clusterassignment.class.php'));
         require_once(elispm::lib('data/clustertrack.class.php'));
-        require_once(elispm::lib('data/usertrack.class.php'));
-        require_once(elispm::lib('data/track.class.php'));
 
         $trkprogram = array();
         $trkcls = array();
         // Iterate through all of this cluster's track associations and remove the user from each one.
         foreach ($usettrkassoc as $usettrk) {
+
             // If the user is enroled in another User Set associated with the same Track the do not remove the user from the Track.
             $sql = 'SELECT ca.id
                       FROM {'.clusterassignment::TABLE.'} ca
@@ -502,134 +496,18 @@ class userset extends data_object_with_custom_fields {
                 continue;
             }
 
-            // For each Track associated with this User Set, check if the user is enroled in the track and remove them from it.
-            $usrtrkassocrec = usertrack::find(array(new field_filter('userid', $userid), new field_filter('trackid', $usettrk->trackid)));
-            if (!empty($usrtrkassocrec)) {
-                $usrtrkassocrec = $usrtrkassocrec->current();
-                $usrtrkobj = new usertrack($usrtrkassocrec);
-                $usrtrkobj->unenrol();
-                // Save the program the track is associated with potential removal later.
-                $trkrec = track::find(array(new field_filter('id', $usettrk->trackid)));
-                $trkrec = $trkrec->current();
-                // Save the Track and program association.
-                $trkprogram[$usettrk->trackid] = $trkrec->curid;
-                // Save the Track and class instance association.
-                $trkcls[$usettrk->trackid] = trackassignment::find(array(new field_filter('trackid', $usettrk->trackid)));
+            $data = local_elisprogram_usrtrk_unassign($userid, $usettrk->trackid);
+
+            if (empty($data[0]) && empty($data[1])) {
+                continue;
             }
+
+            $trkprogram[$usettrk->trackid] = $data[0];
+            $trkcls[$usettrk->trackid] = $data[1];
         }
         return array($trkprogram, $trkcls);
     }
 
-    /**
-     * Removes a user from Class Instances associated with a Track that was removed from the User Set.
-     * If the Class Instance is also associated with another Track, not belonging to this User Set, then the user
-     * is not removed from the Class Instance.
-     * If the Class Instance is associated with a Program, not belonging to this User Set and the user is enroled in the Program,
-     * then the user is not removed from the Class Instance
-     * @param array $trkcls An array with the Track id as a key and an instance of data_collection for a trackassignment record.
-     * @param array $trkprogram An array with Track id as a key and the Track's curriculum id as a value.
-     * @param int $userid The ELIS user id.
-     * @return int The number of class instances the user was unenroled from.
-     */
-    public static function unenrol_user_from_track_class_instance($trkcls, $trkprogram, $userid) {
-        require_once(elispm::lib('data/track.class.php'));
-        require_once(elispm::lib('data/pmclass.class.php'));
-        require_once(elispm::lib('data/curriculumcourse.class.php'));
-        require_once(elispm::lib('data/curriculumstudent.class.php'));
-        require_once(elispm::lib('data/student.class.php'));
-
-        $numrec = 0;
-        // Iterate throuch each Track -> Track Class Instance association determine if the user can be safely unenroled from the Class Instance.
-        foreach ($trkcls as $trackid => $trkclsrec) {
-            // Search the Track Class Instance association to verify that the Class Instance is only associated with Tracks that the user is removed from.
-            // If there exists a Track Class Instance association to a Track the user was not removed from, then we cannot unenrol the user from the Class Instance.
-            foreach ($trkclsrec as $rec) {
-                $trkassignrec = trackassignment::find(array(
-                            new join_filter('trackid', usertrack::TABLE, 'trackid', new field_filter('userid', $userid)),
-                            new field_filter('classid', $rec->classid),
-                            new in_list_filter('trackid', array_keys($trkcls), true)
-                    )
-                );
-                $trkassignrec = $trkassignrec->to_array();
-                if (!empty($trkassignrec)) {
-                    $msg = "unenrol_user_from_track_class_instance() - There exists an association between the Class Instance and another Track.  ";
-                    $msg .= "Cannot remove user: {$userid} from Class Instance: {$rec->classid}";
-                    debug_error_log($msg);
-                    continue;
-                }
-
-                // Is the Class Instance's Course Description associated with another Program, where that Program is not associated with any of the Tracks the user was removed from.
-                // If there exists such a record, is the user enroled in the other Program.  If so, then we cannot remove them from the Class Instance.
-                $curcrsrec = curriculumcourse::find(array(
-                            new join_filter('courseid', pmclass::TABLE, 'courseid', new field_filter('id', $rec->classid)),
-                            new join_filter('curriculumid', curriculumstudent::TABLE, 'curriculumid', new field_filter('userid', $userid)),
-                            new in_list_filter('curriculumid', array_values($trkprogram), true)));
-                $curcrsrec = $curcrsrec->to_array();
-                if (!empty($curcrsrec)) {
-                    $msg = "unenrol_user_from_track_class_instance() - There exists an association between the Class Instance: {$rec->classid} ";
-                    $msg .= "Course Description: {$curriculumid->courseid} and another Program: {$curcrsrec->curriculumid}, ";
-                    $msg .= "that is not associated with this Track.  Cannot remove user: {$userid} from Class Instance: {$rec->classid}";
-                    debug_error_log($msg);
-                    continue;
-                }
-
-                // Both checks have passed.  Proceed to unenrol the user from the class instance and Moodle course.
-                $sturec = student::find(array(new field_filter('userid', $userid), new field_filter('classid', $rec->classid)));
-                $sturec = $sturec->to_array();
-                if (!empty($sturec)) {
-                    $sturec = current($sturec);
-                    $sturec = new student($sturec->id);
-                    $sturec->load();
-                    $sturec->delete();
-                    $numrec++;
-                }
-            }
-        }
-        return $numrec;
-    }
-
-    /**
-     * Removes a user from a Program.  If the user is enroled in another Class Instance associated with the Program the user
-     * will not be removed from the Program.
-     * @param array $trkprogram An array with Track id as a key and the Track's curriculum id as a value.
-     * @param int $userid The ELIS user id.
-     * @return int The number of Programs the user was removed from.
-     */
-    public static function unassign_user_from_program($trkprogram, $userid) {
-        global $DB;
-        require_once(elispm::lib('data/curriculumstudent.class.php'));
-
-        $numrec = 0;
-        // Iterate through each Track -> Program association.  Determine if the user is enroled in any other Class Instances of the Program.
-        // If the user is enroled in another Class Instance, then do not remove from the Program.  Otherwise remove from Program.
-        foreach ($trkprogram as $trackid => $currid) {
-            $sql = 'SELECT clsenr.id
-                    FROM {'.curriculumcourse::TABLE.'} curcrs
-                    JOIN {'.pmclass::TABLE.'} cls ON curcrs.courseid = cls.courseid
-                    JOIN {'.student::TABLE.'} clsenr ON cls.id = clsenr.classid AND clsenr.userid = :usrid
-                    WHERE curcrs.curriculumid = :curid';
-            $params = array('usrid' => $userid, 'curid' => $currid);
-            $exists = $DB->record_exists_sql($sql, $params);
-            // There exists an enrolment in a Class Instance of a Course Description beloning to this Program.  Do not unenrol the user.
-            if ($exists) {
-                $msg = "unassign_user_from_program() - The user: {$userid} is enroled into another Class Instance associated with the Program.  ";
-                $msg .= "Cannot remove user from this Program: {$currid}";
-                debug_error_log($msg);
-                continue;
-            }
-            // Remove the user enrolment from the curriculum.
-            $stuenrrec = curriculumstudent::find(array(new field_filter('userid', $userid), new field_filter('curriculumid', $currid)));
-            $stuenrrec = $stuenrrec->to_array();
-            if (!empty($stuenrrec)) {
-                $stuenrrec = current($stuenrrec);
-                $stuenrrec = new curriculumstudent($stuenrrec->id);
-                $stuenrrec->load();
-                $stuenrrec->delete();
-                $numrec++;
-            }
-        }
-        return $numrec;
-    }
     /**
      * Returns an array of cluster ids that are parents of the supplied cluster
      * and the current user has access to enrol users into
@@ -1255,6 +1133,9 @@ function cluster_assign_to_user($clusterid, $userid, $autoenrol=true, $leader=fa
         'context' => context_system::instance(),
         'other' => $usass->to_array(true)
     );
+    $eventdata['other']['clusterid'] = $clusterid;
+    $eventdata['other']['userid'] = $userid;
+
     $event = \local_elisprogram\event\cluster_assigned::create($eventdata);
     $event->trigger();
 

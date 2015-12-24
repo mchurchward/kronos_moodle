@@ -46,11 +46,10 @@ class widget extends \local_elisprogram\lib\widgetbase {
         $html .= \html_writer::tag('div', \html_writer::tag('div', '', array('id' => 'childrenlist', 'class' => 'childrenlist', 'style' => 'display:inline;')),
                 array('id' => 'track', 'class' => 'track', 'data-id' => 'none'));
 
-        $enrolallowed = get_config('enrol_elis', 'enrol_from_course_catalog');
+        $enrolallowed = get_config('eliswidget_trackenrol', 'enrol_into_track');
         $enrolallowed = (!empty($enrolallowed) && $enrolallowed == '1') ? '1' : '0';
-        $unenrolallowed = get_config('enrol_elis', 'unenrol_from_course_catalog');
+        $unenrolallowed = get_config('eliswidget_trackenrol', 'unenrol_from_track');
         $unenrolallowed = (!empty($unenrolallowed) && $unenrolallowed == '1') ? '1' : '0';
-
         $initopts = [
             'endpoint' => $CFG->wwwroot.'/local/elisprogram/widgets/trackenrol/ajax.php',
             'enrolallowed' => $enrolallowed,
@@ -74,7 +73,7 @@ class widget extends \local_elisprogram\lib\widgetbase {
                 'enddate' => get_string('enddate', 'eliswidget_trackenrol'),
                 'enrol_confirm_enrol' => get_string('enrol_confirm_enrol', 'eliswidget_trackenrol'),
                 'enrol_confirm_title' => get_string('enrol_confirm_title', 'eliswidget_trackenrol'),
-                'enrol_confirm_unenrol' => get_string('enrol_confirm_unenrol', 'eliswidget_trackenrol'),
+                'enrol_confirm_unenrol' => widget::get_unenrol_confirm_message(),
                 'idnumber' => get_string('idnumber', 'eliswidget_trackenrol'),
                 'startdate' => get_string('startdate', 'eliswidget_trackenrol'),
                 'enrolled' => get_string('enrolled', 'eliswidget_trackenrol'),
@@ -126,6 +125,8 @@ class widget extends \local_elisprogram\lib\widgetbase {
                 new \moodle_url('/local/elisprogram/lib/deepsight/js/buttons/deepsight_tools_button.js'),
                 new \moodle_url('/local/elisprogram/lib/deepsight/js/buttons/deepsight_loadsearch_button.js'),
                 new \moodle_url('/local/elisprogram/lib/deepsight/js/buttons/deepsight_savesearch_button.js'),
+                new \moodle_url('/local/elisprogram/lib/deepsight/js/filters/deepsight_filter_switch.js'),
+                new \moodle_url('/local/elisprogram/lib/deepsight/js/filters/deepsight_filter_switch_kronos_trackenrol.js')
         ];
     }
 
@@ -239,5 +240,29 @@ class widget extends \local_elisprogram\lib\widgetbase {
         } else {
             return false;
         }
+    }
+
+    /**
+     * Return a link to the Individual course progress report.  The link returned will include the user's userid.
+     * @return string A link to the Individual course progress report.
+     */
+    public static function get_individual_report_url() {
+        global $DB;
+        $cuserid = $DB->get_field(\usermoodle::TABLE, 'cuserid', array('muserid' => widget::get_userid()));
+        $url = new \moodle_url('/local/elisreports/render_report_page.php', array('report' => 'individual_course_progress', 'filterautoc_id' => $cuserid));
+        $url = \html_writer::link($url, get_string('individual_course_progress_report', 'eliswidget_trackenrol'));
+        return $url;
+    }
+
+    /**
+     * Returns the confirm unenrol message.  The message will change depending on whether ELIS is configured to cascade unenrol from a Track.
+     * @return string A confirmation message.
+     */
+    public static function get_unenrol_confirm_message() {
+        if (empty(\elis::$config->local_elisprogram->remove_trk_cls_pgr_assoc)) {
+            return get_string('enrol_confirm_unenrol', 'eliswidget_trackenrol');
+        }
+
+        return get_string('enrol_confirm_unenrol_cascade', 'eliswidget_trackenrol', widget::get_individual_report_url());
     }
 }

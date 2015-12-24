@@ -46,7 +46,7 @@ class cluster_assigned extends \core\event\base {
      * @return string
      */
     public function get_description() {
-        return 'A userset has been assigned';
+        return "ELIS user id: {$this->other['userid']} assigned to User Set id: {$this->other['clusterid']}";
     }
 
     /**

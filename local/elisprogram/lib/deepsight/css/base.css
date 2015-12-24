@@ -893,4 +893,6 @@ body.ie8 .deepsight_modal .buttonset input.checked + label {
   padding: 10px 0;
   background-color: rgba(0, 0, 0, 0.3); }
 
+a.deepsight_anchor_on_dark {
+  color: #25b6ff; }
 /*# sourceMappingURL=base.css.map */

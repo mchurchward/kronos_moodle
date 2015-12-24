@@ -282,7 +282,7 @@
              * @param string status The student's current status in the track.
              * @return object jQuery object for the status/link element.
              */
-            this.renderstatus = function(status) {
+            this.renderstatus = function(status, canunenrol) {
                 var status2action = {
                     enroled: 'unenrol',
                     available: 'enrol'
@@ -291,7 +291,7 @@
                 if (action == 'enrol' && opts.enrolallowed != '1') {
                     action = '';
                 }
-                if (action == 'unenrol' && opts.unenrolallowed != '1') {
+                if (action == 'unenrol' && (opts.unenrolallowed != '1' || canunenrol != '1')) {
                     action = '';
                 }
                 var statusele = $('<span id="'+main.generateid('status')+'" class="pmclassstatus"></span>');
@@ -319,7 +319,7 @@
                     return false;
                 }
                 // Add confirm dialog.
-                var height = 175;
+                var height = 225;
                 var prompt = '<b>'+opts.lang['enrol_confirm_'+action]+'</b><br/>&nbsp;&nbsp;'+opts.lang.idnumber+': '+main.data.element_idnumber;
                 if (action == 'enrol' || action == 'unenrol') {
                     if (Date.parse(main.data.element_startdate)) {
@@ -355,7 +355,7 @@
                                         dataType: 'json',
                                         type: 'POST',
                                         success: function(data, textStatus, jqXHR) {
-                                            var newstatus = main.renderstatus(data.data.newstatus);
+                                            var newstatus = main.renderstatus(data.data.newstatus, data.data.canunenrol);
                                             $('#'+main.generateid('status')).replaceWith(newstatus);
                                         }
                                     });
@@ -392,7 +392,7 @@
                 } else {
                     status = 'available';
                 }
-                details.append(this.generateitem(opts.lang.data_status, main.renderstatus(status)));
+                details.append(this.generateitem(opts.lang.data_status, main.renderstatus(status, this.data.can_unenrol)));
 
                 // Hidden details.
                 var detailshidden = $('<div class="detailshidden" style="display:none;"></div>');

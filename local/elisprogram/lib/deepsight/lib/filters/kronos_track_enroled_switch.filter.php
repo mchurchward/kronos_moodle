@@ -19,16 +19,27 @@
  * @package    local_elisprogram
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (C) 2008-2015 Remote-Learner.net Inc (http://www.remote-learner.net)
- *
+ * @copyright  (C) 2015 Remote Learner.net Inc http://www.remote-learner.net
  */
 
-defined('MOODLE_INTERNAL') || die();
+/**
+ * A filter providing selection of a single value.
+ */
+class kronos_track_enroled_switch extends deepsight_filter_switch {
+    const TYPE = 'switch_kronos_trackenrol';
+    public static function get_custom_choices() {
+        $langshowenrolall = get_string('showenrolall', 'eliswidget_trackenrol');
+        $langshowenrol = get_string('showenrol', 'eliswidget_trackenrol');
+        return array('onlyenrol' => $langshowenrol, 'all' => $langshowenrolall);
+    }
 
-$plugin->version = 2014082507.04;
-$plugin->release = '2.7.10.1 (Build: 20151021)';
-$plugin->maturity = MATURITY_STABLE;
-$plugin->dependencies = array(
-    'enrol_elis' => 2014082501,
-    'local_eliscore' => 2014082501
-);
+    /**
+     * Gets filter SQL based on the assigned fields, and chosen values.
+     *
+     * @param mixed $data The data from the filter send from the javascript.
+     * @return array An array of filter SQL, and SQL parameters.
+     */
+    public function get_filter_sql($data) {
+        return array('', array());
+    }
+}
