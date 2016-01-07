@@ -377,12 +377,12 @@ class repository_elisfiles extends repository {
 
         // Get editing privileges - set canedit flag...
         // NOTE: next call MUST occur AFTER while-loop above gets path params!
-        $canedit = self::check_editing_permissions($cid ? $cid : $courseid //TBD
+        $canedit = $this->check_editing_permissions($cid ? $cid : $courseid //TBD
                                                    , $shared, $oid, $uuid, $uid);
         if ($canedit) {
             $canview = true;
         } else {
-            $canview = self::check_viewing_permissions($cid ? $cid : $courseid //TBD
+            $canview = $this->check_viewing_permissions($cid ? $cid : $courseid //TBD
                                                        , $shared, $oid, $uuid, $uid);
         }
         $ret['canedit'] = $canedit;
@@ -670,7 +670,7 @@ class repository_elisfiles extends repository {
         $str .= '<div>'.get_string('deletecheckfiles','repository_elisfiles').'</div>';
         $filelist = array();
 
-        $str .= self::printfilelist($files_array, $filelist);
+        $str .= $this->printfilelist($files_array, $filelist);
         $str .= '<input type="hidden" name="fileslist" id="fileslist" value="'.implode(",",$filelist).'">';
         $resourcelist = false;
         $fs = get_file_storage();
@@ -861,7 +861,7 @@ class repository_elisfiles extends repository {
             $uid = 0;
         }
 
-        $canedit = self::check_editing_permissions($COURSE->id, $shared, $oid, $uuid, $uid);
+        $canedit = $this->check_editing_permissions($COURSE->id, $shared, $oid, $uuid, $uid);
 
         $ret['canedit'] = $canedit;
 
@@ -1712,7 +1712,7 @@ class repository_elisfiles extends repository {
                     }
                 }
 
-                $str .= self::printfilelist($subfilelist, $filelist, false);
+                $str .= $this->printfilelist($subfilelist, $filelist, false);
             } else {
 
                 $icon = $OUTPUT->pix_url(file_extension_icon($file->icon, 90));
@@ -1891,14 +1891,14 @@ class repository_elisfiles extends repository {
         // Call the appropriate get_parent_path method
         if ($type == 'tree') {
             $foldertree = elis_files_folder_structure();
-            self::get_parent_path_from_tree($uuid, $foldertree, $path, $cid, $uid, $shared, $oid);
+            $this->get_parent_path_from_tree($uuid, $foldertree, $path, $cid, $uid, $shared, $oid);
 
             // add Company Home to the top of the array that has been returned, as elis files folder structure does not return Company Home
             $encodedpath = self::build_encodedpath($this->elis_files->get_root()->uuid, $uid, $cid, $oid, $shared);
             $folderparent = array('name'=> $this->elis_files->get_root()->title,'path'=>$encodedpath);
             array_unshift($path,$folderparent);
         } elseif ($type == 'parent') {
-            self::get_parent_path_from_parent($uuid, $path, $cid, $uid, $shared, $oid);
+            $this->get_parent_path_from_parent($uuid, $path, $cid, $uid, $shared, $oid);
             $path = array_reverse($path);
         }
     }
@@ -1927,8 +1927,8 @@ class repository_elisfiles extends repository {
 
         //we want to find the path via elis_files_folder_structure
         $encodedpath = self::build_encodedpath($parent_node->uuid, $uid, $cid, $oid, $shared);
-        $path[] = array('name'=>$parent_node->title,'path'=>$encodedpath);
-        self::get_parent_path_from_parent($parent_node->uuid,$path, $cid, $uid, $shared, $oid);
+        $path[] = array('name' => $parent_node->title,'path' => $encodedpath);
+        return $this->get_parent_path_from_parent($parent_node->uuid, $path, $cid, $uid, $shared, $oid);
     }
 
     /**
@@ -1975,7 +1975,7 @@ class repository_elisfiles extends repository {
                 return true;
             }
             if (!empty($folder['children'])) {
-                if (self::get_parent_path_from_tree($uuid, $folder['children'], $resultpath, $cid, $uid, $shared, $oid, false)) {
+                if ($this->get_parent_path_from_tree($uuid, $folder['children'], $resultpath, $cid, $uid, $shared, $oid, false)) {
                     return true;
                 }
             }

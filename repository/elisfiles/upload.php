@@ -132,8 +132,8 @@ class qqFileUploader {
     }
 
     private function checkServerSettings(){
-        $postSize = $this->toBytes(ini_get('post_max_size'));
-        $uploadSize = $this->toBytes(ini_get('upload_max_filesize'));
+        $postSize = static::toBytes(ini_get('post_max_size'));
+        $uploadSize = static::toBytes(ini_get('upload_max_filesize'));
 
         if ($postSize < $this->sizeLimit || $uploadSize < $this->sizeLimit){
             $size = max(1, $this->sizeLimit / 1024 / 1024) . 'M';
@@ -141,7 +141,7 @@ class qqFileUploader {
         }
     }
 
-    function toBytes($str){
+    public static function toBytes($str) {
         $val = trim($str);
         $last = strtolower($str[strlen($str)-1]);
         switch($last) {

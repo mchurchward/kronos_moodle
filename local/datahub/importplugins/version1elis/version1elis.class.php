@@ -811,7 +811,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         }
 
         //string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record);
+        $user_descriptor = static::get_user_descriptor($record);
 
         //log success
         $success_message = "User with {$user_descriptor} successfully created.";
@@ -1191,7 +1191,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         }
 
         //string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record);
+        $user_descriptor = static::get_user_descriptor($record);
 
         //log success
         $success_message = "User with {$user_descriptor} successfully updated.";
@@ -1241,7 +1241,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         }
 
         //string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record);
+        $user_descriptor = static::get_user_descriptor($record);
 
         //log success
         $success_message = "User with {$user_descriptor} successfully deleted.";
@@ -3405,7 +3405,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         $userid = $this->get_userid_from_record($record, $filename);
 
         //string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record, false, 'user_');
+        $user_descriptor = static::get_user_descriptor($record, null, 'user_');
 
         if ($DB->record_exists(curriculumstudent::TABLE, array('curriculumid' => $curid, 'userid' => $userid))) {
             $this->fslogger->log_failure("User with {$user_descriptor} is already enrolled in program \"{$idnumber}\".", 0, $filename, $this->linenumber, $record, "enrolment");
@@ -3457,7 +3457,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         $stucur->delete();
 
         //string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record, false, 'user_');
+        $user_descriptor = static::get_user_descriptor($record, null, 'user_');
 
         //log success
         $success_message = "User with {$user_descriptor} successfully unenrolled from program \"{$idnumber}\".";
@@ -3550,7 +3550,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         $userid = $this->get_userid_from_record($record, $filename);
 
         //string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record, false, 'user_');
+        $user_descriptor = static::get_user_descriptor($record, null, 'user_');
 
         if ($DB->record_exists(usertrack::TABLE, array('trackid' => $trackid, 'userid' => $userid))) {
             $this->fslogger->log_failure("User with {$user_descriptor} is already enrolled in track \"{$idnumber}\".", 0, $filename, $this->linenumber, $record, "enrolment");
@@ -3607,7 +3607,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         $userid = $this->get_userid_from_record($record, $filename);
 
         //string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record, false, 'user_');
+        $user_descriptor = static::get_user_descriptor($record, null, 'user_');
 
         if (!$DB->record_exists(usertrack::TABLE, array('trackid' => $trackid, 'userid' => $userid))) {
             $this->fslogger->log_failure("User with {$user_descriptor} is not enrolled in track \"{$idnumber}\".", 0, $filename, $this->linenumber, $record, "enrolment");
@@ -3728,7 +3728,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         $userid = $this->get_userid_from_record($record, $filename);
 
         //string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record, false, 'user_');
+        $user_descriptor = static::get_user_descriptor($record, null, 'user_');
 
         if ($DB->record_exists(clusterassignment::TABLE, array('clusterid' => $clusterid, 'userid' => $userid))) {
             $this->fslogger->log_failure("User with {$user_descriptor} is already enrolled in user set \"{$name}\".", 0, $filename, $this->linenumber, $record, "enrolment");
@@ -3778,7 +3778,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         $userid = $this->get_userid_from_record($record, $filename);
 
         //string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record, false, 'user_');
+        $user_descriptor = static::get_user_descriptor($record, null, 'user_');
 
         if (!$DB->record_exists(clusterassignment::TABLE, array('clusterid' => $clusterid, 'userid' => $userid))) {
             $this->fslogger->log_failure("User with {$user_descriptor} is not enrolled in user set \"{$name}\".", 0, $filename, $this->linenumber, $record, "enrolment");
@@ -4002,7 +4002,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         $userid = $this->get_userid_from_record($record, $filename);
 
         //string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record, false, 'user_');
+        $user_descriptor = static::get_user_descriptor($record, null, 'user_');
 
         if ($DB->record_exists(student::TABLE, array('classid' => $crsid, 'userid' => $userid))) {
             $this->fslogger->log_failure("User with {$user_descriptor} is already enrolled in class \"{$idnumber}\".", 0, $filename, $this->linenumber, $record, "enrolment");
@@ -4201,7 +4201,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         $userid = $this->get_userid_from_record($record, $filename);
 
         // string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record, false, 'user_');
+        $user_descriptor = static::get_user_descriptor($record, null, 'user_');
 
         if ($DB->record_exists(instructor::TABLE, array('classid' => $crsid, 'userid' => $userid))) {
             $this->fslogger->log_failure("User with {$user_descriptor} is already enrolled in " .
@@ -4348,7 +4348,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         }
 
         //string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record, false, 'user_');
+        $user_descriptor = static::get_user_descriptor($record, null, 'user_');
 
         //log success
         $success_message = "Student enrolment for user with {$user_descriptor} in class instance \"{$idnumber}\" successfully updated.";
@@ -4407,7 +4407,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         $instructor->save();
 
         // string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record, false, 'user_');
+        $user_descriptor = static::get_user_descriptor($record, null, 'user_');
 
         // log success
         $success_message = "Instructor enrolment for user with {$user_descriptor} in class instance \"{$idnumber}\" successfully updated.";
@@ -4459,7 +4459,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         $userid = $this->get_userid_from_record($record, $filename);
 
         // string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record, false, 'user_');
+        $user_descriptor = static::get_user_descriptor($record, null, 'user_');
 
         if (!$DB->record_exists(student::TABLE, array('classid' => $crsid, 'userid' => $userid))) {
             $this->fslogger->log_failure("User with {$user_descriptor} is not enrolled in class instance \"{$idnumber}\" as student.",
@@ -4514,7 +4514,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         $userid = $this->get_userid_from_record($record, $filename);
 
         // string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record, false, 'user_');
+        $user_descriptor = static::get_user_descriptor($record, null, 'user_');
 
         if (!$DB->record_exists(instructor::TABLE, array('classid' => $crsid, 'userid' => $userid))) {
             $this->fslogger->log_failure("User with {$user_descriptor} is not enrolled in " .
@@ -4640,7 +4640,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         role_assign($roleid, $userid, $targetcontext->id);
 
         // string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record, false, 'user_');
+        $user_descriptor = static::get_user_descriptor($record, null, 'user_');
 
         // log success
         $success_message = "User with {$user_descriptor} successfully assigned role with shortname \"{$record->role}\" on user \"{$idnumber}\".";
@@ -4686,7 +4686,7 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
         role_unassign($roleid, $userid, $targetcontext->id);
 
         // string to describe the user
-        $user_descriptor = $this->get_user_descriptor($record, false, 'user_');
+        $user_descriptor = static::get_user_descriptor($record, null, 'user_');
 
         // log success
         $success_message = "User with {$user_descriptor} successfully unassigned role with shortname \"{$record->role}\" on user \"{$idnumber}\".";
@@ -4870,18 +4870,14 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
      * Calculates a string that specifies which fields can be used to identify
      * a user record based on the import record provided
      *
-     * Can be called statically if $value_syntax is false
-     *
      * @param object $record
-     * @param boolean $value_syntax true if we want to use "field" value of
-     *                              "value" syntax, otherwise use field "value"
-     *                              syntax
+     * @param rlip_importplugin_version1elis $obj the object for mappings (defaults to none).
      * @param string $prefix a string prefix to expect at the beginning of properties
      * @return string The description of identifying fields, as a
      *                comma-separated string
      * [field1] "value1", ...
      */
-    public static function get_user_descriptor($record, $value_syntax = false, $prefix = '') {
+    public static function get_user_descriptor($record, $obj = null, $prefix = '') {
         $fragments = array();
 
         // the fields we care to check
@@ -4899,8 +4895,8 @@ class rlip_importplugin_version1elis extends rlip_importplugin_base {
                     $value = $record->$customkey;
 
                     // calculate syntax fragment
-                    if ($value_syntax) {
-                        $identifier = $this->mappings[$customkey];
+                    if (!is_null($obj)) {
+                        $identifier = $obj->mappings[$customkey];
                         $fragments[] = "{$identifier} value of \"{$value}\"";
                     } else {
                         $fragments[] = "{$field} \"{$value}\"";
