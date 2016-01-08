@@ -24,7 +24,7 @@
  * @package    repository_elisfiles
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (C) 2008-2013 Remote-Learner.net Inc (http://www.remote-learner.net)
+ * @copyright  (C) 2008-2016 Remote-Learner.net Inc (http://www.remote-learner.net)
  *
  */
 
@@ -111,7 +111,10 @@ class ELIS_files {
     public static $type_document = null;
     public static $type_folder   = null;
 
-    function ELIS_files() {
+    /**
+     * Constructor
+     */
+    public function __construct() {
         global $CFG, $USER, $DB;
 
         if (ELIS_FILES_DEBUG_TRACE) mtrace('ELIS_files()');
@@ -133,13 +136,12 @@ class ELIS_files {
         $result = $this->verify_setup();
     }
 
-
-/**
- * See if the plug-in is configured correctly.
- *
- * @param none
- * @return bool True if the plug-in has the minimum setup done, False otherwise.
- */
+    /**
+     * See if the plug-in is configured correctly.
+     *
+     * @param none
+     * @return bool True if the plug-in has the minimum setup done, False otherwise.
+     */
     function is_configured() {
         return (!empty($this->config->server_host) &&
                 !empty($this->config->server_port) &&

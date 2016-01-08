@@ -3,7 +3,7 @@
  * ELIS Files SSO authentication plugin
  *
  * ELIS(TM): Enterprise Learning Intelligence Suite
- * Copyright (C) 2008-2013 Remote-Learner.net Inc (http://www.remote-learner.net)
+ * Copyright (C) 2008-2016 Remote-Learner.net Inc (http://www.remote-learner.net)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * @package    auth_elisfilessso
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (C) 2008-2013 Remote Learner.net Inc (http://www.remote-learner.net)
+ * @copyright  (C) 2008-2016 Remote Learner.net Inc (http://www.remote-learner.net)
  *
  */
 
@@ -39,14 +39,13 @@ class auth_plugin_elisfilessso extends auth_plugin_base {
     /**
      * Constructor.
      */
-    function auth_plugin_elisfilessso() {
+    public function __construct() {
         global $CFG;
 
         $this->authtype = 'elisfilessso';
         $this->config   = get_config('auth/elisfilessso');
         $this->isactive = file_exists($CFG->dirroot.'/repository/elisfiles/ELIS_files_factory.class.php');
     }
-
 
     /**
      * Returns true if the username and password work and false if they are
