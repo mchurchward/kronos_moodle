@@ -47,7 +47,7 @@ $string['date_format'] = '%d/%m/%Y';
 $string['date_format_grouping'] = 'M Y';
 $string['date_range'] = 'Date range: ';
 $string['date_to'] = 'to';
-$string['displayname'] = 'Course Completion By User Set Report';
+$string['displayname'] = 'Completion by Learning Path Report';
 
 $string['enable_dropdown'] = 'Enable Dropdown';
 $string['enable_tree'] = 'Enable Tree';

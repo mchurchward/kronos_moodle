@@ -250,7 +250,7 @@ class widget extends \local_elisprogram\lib\widgetbase {
         global $DB;
         $cuserid = $DB->get_field(\usermoodle::TABLE, 'cuserid', array('muserid' => widget::get_userid()));
         $url = new \moodle_url('/local/elisreports/render_report_page.php', array('report' => 'individual_course_progress', 'filterautoc_id' => $cuserid));
-        $url = \html_writer::link($url, get_string('individual_course_progress_report', 'eliswidget_trackenrol'));
+        $url = \html_writer::link($url, get_string('individual_course_progress_report', 'eliswidget_trackenrol'), array('target' => '_blank'));
         return $url;
     }
 

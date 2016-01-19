@@ -249,7 +249,8 @@ class deepsight_action_usersetuser_unassign extends deepsight_action_confirm {
         if (class_exists('individual_course_progress_report') && !empty(elis::$config->local_elisprogram->remove_trk_cls_pgr_assoc)) {
             $url = new \moodle_url('/local/elisreports/render_report_page.php', array('report' => 'individual_course_progress', 'filterautoc_id' => $this->cascademsgtoken));
             $stub = new \individual_course_progress_report('temp');
-            $langelements->reportlink = \html_writer::link($url, get_string('displayname', $stub->lang_file), array('class' => 'deepsight_anchor_on_dark'));
+            $attr = array('class' => 'deepsight_anchor_on_dark', 'target' => '_blank');
+            $langelements->reportlink = \html_writer::link($url, get_string('displayname', $stub->lang_file), $attr);
             return get_string('ds_action_unassign_confirm_cascade', 'local_elisprogram', $langelements);
         }
         return '';
@@ -264,7 +265,8 @@ class deepsight_action_usersetuser_unassign extends deepsight_action_confirm {
     protected function get_cascade_bulk_warning_msg($langelements) {
         if (class_exists('course_completion_by_cluster_report') && !empty(elis::$config->local_elisprogram->remove_trk_cls_pgr_assoc)) {
             $url = new \moodle_url('/local/elisreports/render_report_page.php', array('report' => 'course_completion_by_cluster'));
-            $langelements->reportlink = \html_writer::link($url, get_string('displayname', 'rlreport_course_completion_by_cluster'), array('class' => 'deepsight_anchor_on_dark'));
+            $attr = array('class' => 'deepsight_anchor_on_dark', 'target' => '_blank');
+            $langelements->reportlink = \html_writer::link($url, get_string('displayname', 'rlreport_course_completion_by_cluster'), $attr);
             return get_string('ds_action_unassign_confirm_multi_cascade', 'local_elisprogram', $langelements);
         }
         return '';

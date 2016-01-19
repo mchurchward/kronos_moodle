@@ -377,7 +377,8 @@ class deepsight_action_usersettrack_unassign extends deepsight_action_standard {
     protected function get_cascade_warning_msg($langelements) {
         if (class_exists('course_completion_by_cluster_report') && !empty(elis::$config->local_elisprogram->remove_trk_cls_pgr_assoc)) {
             $url = new \moodle_url('/local/elisreports/render_report_page.php', array('report' => 'course_completion_by_cluster'));
-            $langelements->reportlink = \html_writer::link($url, get_string('displayname', 'rlreport_course_completion_by_cluster'), array('class' => 'deepsight_anchor_on_dark'));
+            $attr = array('class' => 'deepsight_anchor_on_dark', 'target' => '_blank');
+            $langelements->reportlink = \html_writer::link($url, get_string('displayname', 'rlreport_course_completion_by_cluster'), $attr);
             return get_string('ds_action_unassign_confirm_multi_cascade', 'local_elisprogram', $langelements);
         }
         return '';
