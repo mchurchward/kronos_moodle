@@ -46,6 +46,19 @@ class alfresco_filemanager extends MoodleQuickForm_filemanager {
         parent::__construct($elementName, $elementLabel, $attributes, $options);
     }
 
+    /**
+     * Due to implementation in: lib/pear/HTML/QuickForm/element.php on line 363
+     * This 'classname' method is required for Moodle.
+     * Construct an alfresco_filemanager.
+     *
+     * @param string $elementname Element's name
+     * @param mixed $elementlabel Label(s) for an element
+     * @param array $options Options to control the element's display
+     * @param mixed $attributes Either a typical HTML attribute string or an associative array
+     */
+    public function alfresco_filemanager($elementname=null, $elementlabel=null, $attributes=null, $options=null) {
+        return self::__construct($elementname, $elementlabel, $attributes, $options);
+    }
 }
 
 /* first argument is the string that will be used to identify the element.
