@@ -416,6 +416,8 @@ class userset extends data_object_with_custom_fields {
             return true;
         }
 
+        $numrecs = 0;
+        $excludeclsinst = array();
         $trkprogram = array();
         $trkcls = array();
         $eventdata = (object) $eventdata->other;
@@ -425,8 +427,8 @@ class userset extends data_object_with_custom_fields {
         $usettrkassoc = $userset->clustertrack;
 
         list($trkprogram, $trkcls) = userset::unassign_user_from_track($usettrkassoc, $eventdata->clusterid, $eventdata->userid);
-        unenrol_user_from_track_class_instance($trkcls, $trkprogram, $eventdata->userid);
-        unassign_user_from_program($trkprogram, $eventdata->userid);
+        list($numrecs, $excludeclsinst) = unenrol_user_from_track_class_instance($trkcls, $trkprogram, $eventdata->userid);
+        unassign_user_from_program($trkprogram, $eventdata->userid, $excludeclsinst);
         return true;
     }
 
@@ -443,6 +445,8 @@ class userset extends data_object_with_custom_fields {
             return true;
         }
 
+        $numrecs = 0;
+        $excludeclsinst = array();
         $trkprogram = array();
         $trkcls = array();
         $eventdata = (object) $eventdata->other;
@@ -455,8 +459,8 @@ class userset extends data_object_with_custom_fields {
         // Using the trackid from eventdata iterate through the classes attached to the Track where the user is enroled in.
         foreach($usetuserrec as $rec) {
             list($trkprogram, $trkcls) = userset::unassign_user_from_track($usettrkassoc, $eventdata->clusterid, $rec->userid);
-            unenrol_user_from_track_class_instance($trkcls, $trkprogram, $rec->userid);
-            unassign_user_from_program($trkprogram, $rec->userid);
+            list($numrecs, $excludeclsinst) = unenrol_user_from_track_class_instance($trkcls, $trkprogram, $rec->userid);
+            unassign_user_from_program($trkprogram, $rec->userid, $excludeclsinst);
         }
         return true;
     }
