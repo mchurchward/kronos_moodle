@@ -230,12 +230,15 @@ class usertrack extends elis_data_object {
         if (empty(elis::$config->local_elisprogram->remove_trk_cls_pgr_assoc)) {
             return true;
         }
+
+        $numrecs = 0;
+        $excludeclsinst = array();
         $trkprogram = array();
         $trkcls = array();
         $trkprogram[$this->trackid] = $data[0];
         $trkcls[$this->trackid] = $data[1];
-        unenrol_user_from_track_class_instance($trkcls, $trkprogram, $this->userid);
-        unassign_user_from_program($trkprogram, $this->userid);
+        list($numrecs, $excludeclsinst) = unenrol_user_from_track_class_instance($trkcls, $trkprogram, $this->userid);
+        unassign_user_from_program($trkprogram, $this->userid, $excludeclsinst);
         return true;
     }
 
