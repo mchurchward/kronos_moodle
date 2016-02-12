@@ -2389,6 +2389,7 @@ function unenrol_user_from_track_class_instance($trkcls, $trkprogram, $userid) {
  */
 function unassign_user_from_program($trkprogram, $userid, $excludeclsinst = array()) {
     global $DB;
+
     require_once(elispm::lib('data/curriculumstudent.class.php'));
     require_once(elispm::lib('data/curriculumcourse.class.php'));
     require_once(elispm::lib('data/student.class.php'));
@@ -2415,11 +2416,10 @@ function unassign_user_from_program($trkprogram, $userid, $excludeclsinst = arra
 
         // Update query if exclude Class Instance array is not empty.
         if (!empty($excludeclsinst)) {
-            $sql .= ' AND cls.id NOT IN (:excludeclsinst)';
-            $params['excludeclsinst'] = $excludeclsinst;
+            $sql .= " AND cls.id NOT IN ($excludeclsinst)";
         }
 
-        $exists = $DB->record_exists_sql($sql, $params);
+        $exists = $DB->get_records_sql($sql, $params);
         // There exists an enrolment in a Class Instance of a Course Description beloning to this Program.  Do not unenrol the user.
         if ($exists) {
             $msg = "unassign_user_from_program() - The user: {$userid} is enroled into another Class Instance associated with the Program.  ";
