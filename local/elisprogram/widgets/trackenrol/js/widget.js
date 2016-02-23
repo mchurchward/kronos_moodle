@@ -320,7 +320,7 @@
                 }
                 // Add confirm dialog.
                 var height = 225;
-                var prompt = '<b>'+opts.lang['enrol_confirm_'+action]+'</b><br/>&nbsp;&nbsp;'+opts.lang.idnumber+': '+main.data.element_idnumber;
+                var prompt = '<b>'+opts.lang['enrol_confirm_'+action]+'</b><br/>&nbsp;&nbsp;'+main.data.element_idnumber+': '+main.data.element_name;
                 if (action == 'enrol' || action == 'unenrol') {
                     if (Date.parse(main.data.element_startdate)) {
                         height += 25;
