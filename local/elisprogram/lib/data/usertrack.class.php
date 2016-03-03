@@ -47,6 +47,8 @@ class usertrack extends elis_data_object {
     protected $_dbfield_id;
     protected $_dbfield_userid;
     protected $_dbfield_trackid;
+    /** @var integer The user who initaited the enrolment.  Added via KRONOSDEV-145.*/
+    protected $_dbfield_owneruserid;
 
     private $location;
     private $templateclass;
@@ -116,8 +118,11 @@ class usertrack extends elis_data_object {
      *
      * @param int $userid The user id
      * @param int $trackid The track id
+     * @param int $owneruserid The user who initiated the enrollment.  This parameter was added as part of
+     * KRONOSDEV-145 to meet the business requirement and avoid quering the Moodle log table.  This parameter
+     * is only set when a user enrols into a Track via the Track Enrolment widget.
      */
-    public static function enrol($userid, $trackid) {
+    public static function enrol($userid, $trackid, $owneruserid = null) {
         global $DB;
 
         // make sure we don't double-enrol
@@ -129,6 +134,7 @@ class usertrack extends elis_data_object {
         $record = new usertrack();
         $record->userid = $userid;
         $record->trackid = $trackid;
+        $record->owneruserid = $owneruserid;
         $record->save();
 
         $user = new user($userid);

@@ -290,101 +290,18 @@ class track extends \eliswidget_enrolment\datatable\base {
     }
 
     /**
-     * This function is to enforce Kronos specific business rules, where by a Track cannot be unenroled from
-     * a user unless that user initiall enroled themselves into the Track.  The function first checks the
-     * Moodle log table to see if there is a record that indicate the current user enrolled themself in the
-     * Track.  If no record is found the user will not be able to unenrol from the Track.  If a record is found
-     * then another check is performed to ensure that there is no other Track assign log record that has a newer
-     * date.
+     * This function checks the local_elisprogram_usr_trk table to see if the user self enroled into a Track
+     * via the Track enrolment widget.
      * @param int $trackid The Track id
-     * @return int Returns 1 if the user can unenrol.  Otherwise 0 is returned.
+     * @return bool True if the user self enroled via the widget.  Otherwise false.
      */
     public static function user_can_unenrol($trackid) {
-        global $USER, $DB;
-
-        $selfenrol = 1;
-        $otherenrol = 1;
-        $context = \context_system::instance();
-        $params = array(
-            'userid' => $USER->id,
-            'relateduserid' => $USER->id,
-            'component' => 'local_elisprogram',
-            'action' => 'assigned',
-            'target' => 'track',
-            'crud' => 'r',
-            'edulevel' => 0,
-            'contextid' => $context->id,
-            'contextlevel' => $context->contextlevel,
-            'contextinstanceid' => $context->instanceid,
-            'courseid' => 0,
-            'objecttable' => 'local_elisprogram_usr_trk',
-            'objectid' => $trackid
-        );
-        // Find a record where the user self enroled in a the Track.
-        $sql = "SELECT id, timecreated
-                 FROM {logstore_standard_log}
-                WHERE userid = :userid
-                      AND relateduserid = :relateduserid
-                      AND component = :component
-                      AND action = :action
-                      AND target = :target
-                      AND crud = :crud
-                      AND edulevel = :edulevel
-                      AND contextid = :contextid
-                      AND contextlevel = :contextlevel
-                      AND contextinstanceid = :contextinstanceid
-                      AND courseid = :courseid
-                      AND objecttable = :objecttable
-                      AND objectid = :objectid
-             ORDER BY timecreated DESC
-                LIMIT 1";
-        $rs = $DB->get_recordset_sql($sql, $params);
-        // If record set is empty then no evidence exists that the user assigned themselves to the Track
-        if (!$rs->valid()) {
-            $selfenrol = 0;
+        global $DB;
+        $euserid = \user::get_current_userid();
+        $rec = $DB->record_exists('local_elisprogram_usr_trk', array('trackid' => $trackid, 'userid' => $euserid, 'owneruserid' => $euserid));
+        if (!empty($rec)) {
+            return true;
         }
-        $selfrec = $rs->current();
-        $rs->close();
-
-        // Find a record where the user did not self enroled in a the Track.
-        $sql = "SELECT id, timecreated
-                 FROM {logstore_standard_log}
-                WHERE userid <> :userid
-                      AND relateduserid = :relateduserid
-                      AND component = :component
-                      AND action = :action
-                      AND target = :target
-                      AND crud = :crud
-                      AND edulevel = :edulevel
-                      AND contextid = :contextid
-                      AND contextlevel = :contextlevel
-                      AND contextinstanceid = :contextinstanceid
-                      AND courseid = :courseid
-                      AND objecttable = :objecttable
-                      AND objectid = :objectid
-             ORDER BY timecreated DESC
-                LIMIT 1";
-        $rs = $DB->get_recordset_sql($sql, $params);
-        // If the recordset is empty then the user self enroled in the Track.
-        if (!$rs->valid()) {
-            $otherenrol = 0;
-        }
-        $otherrec = $rs->current();
-        $rs->close();
-
-        // If both selfenrol and otherenrol is zero then we allow the user to self unenrol.  This condition covers the case where the user self enrols
-        // for the first time; the event has not yet triggered and no log is inserted, in addition the user is unable to see the unernol link in the
-        // Track enrolment widget until the user refreshes the page and the code finds the log entry.
-        if (empty($selfenrol) && empty($otherenrol)) {
-            return 1;
-        } else if ($selfenrol != $otherenrol) {
-            // If selfenrol and otherenrol are not equal, then return a 0 if selfenrol is 0, otherwise return a 1.
-            return (empty($selfenrol)) ? 0 : 1;
-        }
-        // If the self Track assignment record has a timestamp greater than the non self Track assignment, then return true
-        if ($selfrec->timecreated > $otherrec->timecreated) {
-            return 1;
-        }
-        return 0;
+        return false;
    }
 }
