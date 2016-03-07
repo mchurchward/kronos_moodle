@@ -266,8 +266,6 @@ class ajax {
         if (empty($data['action']) || empty($data['trackid'])) {
             throw new \Exception('No action or classid received.');
         }
-        // Check if the user assignment into the Track meets the required conditions (this is specific to Kronos).
-        $canunenrol = \eliswidget_trackenrol\datatable\track::user_can_unenrol($data['trackid']);
         switch($data['action']) {
             case 'enrol':
                 $enrolallowed = get_config('eliswidget_trackenrol', 'enrol_into_track');
@@ -281,15 +279,21 @@ class ajax {
                 }
                 try {
                     $usertrack = new \usertrack();
-                    $usertrack->enrol($euserid, $data['trackid']);
+                    $usertrack->enrol($euserid, $data['trackid'], $euserid);
                 } catch (Exception $e) {
                     // TBD: log error?
                     throw $e;
                 }
+                // Check if the user assignment into the Track meets the required conditions (this is specific to Kronos).
+                $canunenrol = \eliswidget_trackenrol\datatable\track::user_can_unenrol($data['trackid']);
+
                 // Include the flag to enable the unenrol link to appear, if the user has the ability to unenrol.
                 return ['newstatus' => 'enroled', 'canunenrol' => $canunenrol];
 
             case 'unenrol':
+                // Check if the user assignment into the Track meets the required conditions (this is specific to Kronos).
+                $canunenrol = \eliswidget_trackenrol\datatable\track::user_can_unenrol($data['trackid']);
+
                 $unenrolallowed = get_config('eliswidget_trackenrol', 'unenrol_from_track');
                 if (empty($unenrolallowed) || $unenrolallowed != '1') {
                     throw new \Exception('Self-unenrolments from dashboard not allowed.');
