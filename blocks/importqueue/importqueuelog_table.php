@@ -58,7 +58,7 @@ class importqueuelog_table extends table_sql {
         }
         $this->set_sql($fields, $from, $where, array($queueid, $USER->id));
         $this->no_sorting("id");
-        $this->define_baseurl("$CFG->wwwroot/blocks/importqueue/queuelog.php?id=".$queueid);
+        $this->define_baseurl("$CFG->wwwroot/blocks/importqueue/queuelog.php?id=".$queueid."&errors=".$errors);
     }
 
     /**
