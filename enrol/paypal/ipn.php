@@ -96,12 +96,14 @@ $plugin = enrol_get_plugin('paypal');
 
 /// Open a connection back to PayPal to validate the data
 $paypaladdr = empty($CFG->usepaypalsandbox) ? 'www.paypal.com' : 'www.sandbox.paypal.com';
+$curlinfo = curl_version();
 $c = new curl();
 $options = array(
     'returntransfer' => true,
     'httpheader' => array('application/x-www-form-urlencoded', "Host: $paypaladdr"),
     'timeout' => 30,
     'CURLOPT_HTTP_VERSION' => CURL_HTTP_VERSION_1_1,
+    'CURLOPT_SSLVERSION' => ((float)$curlinfo['version'] >= 7.34) ? CURL_SSLVERSION_TLSv1_2 : CURL_SSLVERSION_TLSv1
 );
 $location = "https://$paypaladdr/cgi-bin/webscr";
 $result = $c->post($location, $req, $options);
