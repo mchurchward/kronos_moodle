@@ -50,10 +50,291 @@
             requestdata: {},
             childrenderer: '',
             childopts: {},
-            lang: {}
+            lang: {},
         }
         var opts = $.extend({}, this.default_opts, options);
         var main = this;
+
+        main.contextid = opts.contextid;
+        main.can_load_searches = true;
+        main.can_save_searches = true;
+        main.current_search = opts.current_search;
+
+        main.savesearchurl = opts.savesearchurl;
+        main.savesearch_queue = {timeout: null, ajax: null};
+
+        main.starting_searches = opts.starting_searches;
+        main.initial_filters = opts.initial_filters;
+        main.current_search = opts.current_search;
+
+        /**
+         * Load saved search.
+         *
+         * @param object object Object containing saved search.
+         */
+        this.loadsearchbyobject = function (object) {
+            main.current_search = object;
+            main.filters = {};
+            if (typeof (main.current_search.fieldsort) !== 'undefined') {
+                main.fieldsort = main.current_search.fieldsort;
+            }
+        };
+
+        /**
+         * Load saved search
+         *
+         * @param int id Id of saved search.
+         * @return void
+         */
+        this.loadsearch = function (id) {
+            if (!opts.can_load_searches) {
+                return;
+            }
+            id = Number(id);
+            if (typeof main.current_search !== "undefined" &&
+                    typeof main.current_search.id !== "undefined" &&
+                    Number(main.current_search.id) == id) {
+                // This should never happen and if it does. Ignore.
+                return;
+            }
+
+            if (typeof main.starting_searches !== "undefined") {
+                // Check starting searches.
+                total = main.starting_searches.length;
+                for (var i = 0; i < total; i++) {
+                    if (Number(main.starting_searches[i].id) == id) {
+                        main.filters = {};
+                        main.current_search = main.starting_searches[i];
+                        if (typeof (main.current_search.data.fieldsort) !== 'undefined') {
+                            main.fieldsort = main.current_search.fieldsort;
+                        }
+                        return;
+                    }
+                }
+            }
+        };
+
+        /**
+         * Sort searches in alphabecical order
+         * @return int -1 for a < b, 1 for a > b and 0 for equal.
+         */
+        this.sort_saved_searches = function () {
+            main.starting_searches.sort(function (a, b) {
+                if (a.name < b.name) {
+                    return -1;
+                }
+                if (a.name > b.name) {
+                    return 1;
+                }
+                return 0;
+            });
+        };
+
+        /**
+         * Abort a previous ajax call to save the search.
+         *
+         * This is fired every time dosavesearch is fired, but will only abort a request if there is another request current in
+         * process.
+         */
+        this.abortsavesearch = function() {
+            if (main.updatetable_queue.ajax && main.updatetable_queue.ajax.readyState != 4) {
+                main.updatetable_queue.ajax.abort();
+            }
+        };
+
+        /**
+         * Updates the search.
+         *
+         * Makes an asynchronous request to opts.savedataurl with contextid, pagename and fields.
+         * Receives data and sends to renderers.
+         *
+         * @param string action Action to preform, save or delete.
+         * @param string divid Div id to send error messages and to trigger saved message.
+         * @requestdata int requestdata Optional id to delete when action is delete.
+         * @return boolean Return false on improper action.
+         */
+        this.dosavesearch = function(action, divid, requestdata) {
+            var total = 0, id = null;
+            ds_debug('[datatable.dosavesearch] About to update search with filter data: ', main.filters);
+
+            if (typeof divid == "undefined") {
+                divid = 'search';
+            }
+
+            main.abortsavesearch();
+
+            var ajaxdata = {
+                action: action,
+                contextid: main.contextid,
+                pagename: main.pagename,
+                sesskey: opts.sesskey
+            };
+
+            if (action === 'save') {
+                if (typeof main.current_search.id !== "undefined") {
+                    id = main.current_search.id;
+                }
+                main.current_search.data = main.filters;
+                main.current_search.fieldsort = main.fieldsort;
+                ajaxdata.searchdata = JSON.stringify(main.current_search);
+                // If saving a new default clear default flag for other searches.
+                var contextid = main.current_search.contextid;
+                if (main.current_search.isdefault) {
+                    $.each(main.starting_searches, function (i, el) {
+                        if (main.starting_searches[i].id !== id && main.starting_searches[i].contextid == contextid) {
+                            // Only update default if in the same context.
+                            main.starting_searches[i].isdefault = false;
+                        }
+                    });
+                }
+            } else if (action === 'delete') {
+                ajaxdata.id = requestdata;
+            } else {
+                // No action.
+                return false;
+            }
+
+            main.savesearch_queue.ajax = $.ajax({
+                type: 'POST',
+                url: opts.savesearchurl,
+                data: ajaxdata,
+                dataType: 'text',
+                success: function(data) {
+                    try {
+                        data = ds_parse_safe_json(data);
+                    } catch(err) {
+                        main.render_save_error(opts.lang_search_form_save_error, divid);
+                        return false;
+                    }
+
+                    ds_debug('[datatable.dosavesearch] Updated. Data received: ', data);
+
+                    if (typeof (data.result) !== 'undefined' && data.result == 'success') {
+                        if (typeof (data.id) !== 'undefined') {
+                            main.current_search.id = data.id;
+                        }
+                        if (action === 'save' && typeof main.starting_searches !== "undefined") {
+                            // Check starting searches.
+                            total = main.starting_searches.length;
+                            found = false;
+                            $.each(main.starting_searches, function (i, el) {
+                                if (main.starting_searches[i].id == main.current_search.id) {
+                                    main.starting_searches[i] = main.current_search;
+                                    found = true;
+                                }
+                            });
+                            if (!found) {
+                                main.starting_searches.push(main.current_search);
+                            }
+                            main.sort_saved_searches();
+                        }
+                        $('#'+main.name+'_deepsight_'+divid+'_saving').trigger('searchsaved');
+                    } else {
+                        main.render_save_error(opts.lang_search_form_save_error, divid);
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    main.removeClass('loading');
+                    if (errorThrown != 'abort') {
+                        main.render_save_error(textStatus+' :: '+errorThrown, divid);
+                    }
+                }
+            });
+            return true;
+        };
+
+        /**
+         * Clear search.
+         */
+        this.clearsearch = function () {
+            main.filters = {};
+            main.current_search = { cansave: true };
+            main.fieldsort = {};
+            main.remove_sort();
+        };
+
+        /**
+         * Removes sorting indication from all columns
+         */
+        this.remove_sort = function() {
+            main.find('tr:first').find('th.sorting').removeClass('sorting').find('i').removeClass().addClass('elisicon-sortable');
+        }
+
+        /**
+         * Delete search.
+         *
+         * @param int id Id of search to delete.
+         * @param string divid Div id to post messages to.
+         */
+        this.deletesearch = function (id, divid) {
+            var newsearches = [];
+            if (typeof main.starting_searches !== "undefined") {
+                // Check starting searches.
+                $.each(main.starting_searches, function (i, val) {
+                    if (main.starting_searches[i].id !== id) {
+                        newsearches.push(main.starting_searches[i]);
+                    }
+                });
+                main.starting_searches = newsearches;
+            }
+
+            main.sort_saved_searches();
+            main.dosavesearch('delete', divid, id);
+        };
+
+        /**
+         * Find a search other then the id, priority given to default search.
+         *
+         * @param int id Id of search to exclude.
+         * @return int|boolean Id of search or false on no search found.
+         */
+        this.findothersearch = function (id) {
+            var result = false;
+            // Attempt to locate default search.
+            $.each(main.starting_searches, function (i, el) {
+                if (main.starting_searches[i].isdefault && main.starting_searches[i].id !== id) {
+                    result = main.starting_searches[i].id;
+                    return false;
+                }
+            });
+            if (result !== false) {
+                return result;
+            }
+            // Locate any search that does not have the same id.
+            $.each(main.starting_searches, function (i, el) {
+                if (main.starting_searches[i].id !== id) {
+                    result = main.starting_searches[i].id;
+                    return false;
+                }
+            });
+            return result;
+        };
+
+        /**
+         * Check to see if user can save searches.
+         * @return boolean Return true if user can save searches.
+         */
+        this.cansave = function () {
+            return opts.can_save_searches;
+        };
+
+        /**
+         * Check to see if user can save current loaded search.
+         * @return boolean Return true if user can save current search.
+         */
+        this.cansavecurrent = function () {
+            if (typeof main.current_search == "undefined") {
+                return false;
+            }
+            if (typeof main.current_search.id == "undefined") {
+                return false;
+            }
+            if (typeof main.current_search.cansave == "undefined") {
+                return false;
+            }
+            return main.current_search.cansave;
+        };
+
 
         /** @var bool Whether the filters for this list have been initialized. */
         this.filtersinit = false;
@@ -145,14 +426,21 @@
                     if (main.filtersinit === false) {
                         // Initialize filterbar.
                         var filterbar = main.siblings('.childrenlistheader').find('.filterbar');
-
-                        filterbar.show().deepsight_filterbar({
+                        var filterbaroptions = {
                             datatable: main,
                             filters: data.data.filters,
                             starting_filters: data.data.initialfilters,
                             lang_add: '',
-                            lang_addtitle: opts.lang.generatortitle,
-                        });
+                            lang_addtitle: opts.lang.generatortitle
+                        };
+                        for (var langstring in opts.lang) {
+                            filterbaroptions['lang_' + langstring] = opts.lang[langstring];
+                        }
+                        filterbaroptions.contextid = opts.contextid;
+                        filterbaroptions.current_search = opts.current_search;
+                        filterbaroptions.starting_searches = opts.starting_searches;
+                        filterbaroptions.initial_filters = opts.initial_filters;
+                        filterbar.show().deepsight_filterbar(filterbaroptions);
                         main.filtersinit = true;
                     }
                 }
@@ -366,7 +654,7 @@
                                     $(this).dialog("close");
                             }
                         }],
-                        close: function(event, ui) { $(this).remove(); },
+                        close: function(event, ui) { $(this).remove(); }
                 });
             }
 
@@ -455,7 +743,10 @@
 
             var childrenlist = jqthis.children('.childrenlist');
             if (childrenlist.is(':empty')) {
-                var trackwrapper = $('<div id="'+main.generateid('trackwrapper')+'"></div>');
+                var searchesbar = '<div class="deepsight_searches"><div id="trackenrol_'+main.widgetid+'_searchestitle"></div>';
+                searchesbar += '<div id="trackenrol_'+main.widgetid+'_searchesbar"></div></div>';
+                searchesbar = $(searchesbar);
+                var trackwrapper = $('<div id="'+main.generateid('trackwrapper')+'" class="widgetwrapper"></div>');
                 var trackheading = $('<div class="childrenlistheader"></div>');
                 trackheading.append('<h6>'+opts.lang.tracks+'</h6>');
                 // New line for track filters
@@ -465,6 +756,7 @@
                 trackwrapper.append(tracklist);
                 var trackpagination = $('<div id="'+main.generateid('trackpagination')+'" class="ds_pagelinks"></div>');
                 trackwrapper.append(trackpagination);
+                childrenlist.append(searchesbar);
                 childrenlist.append(trackwrapper);
 
                 // Initialize track datatable.
@@ -475,7 +767,14 @@
                     requestdata: {widgetid: main.widgetid},
                     childrenderer: 'eliswidget_trackenrol_track',
                     childopts: opts,
-                    lang: opts.lang
+                    savesearchurl: opts.savesearchurl,
+                    lang: opts.lang,
+                    contextid: opts.contextid,
+                    current_search: opts.current_search,
+                    starting_searches: opts.starting_searches,
+                    initial_filters: opts.initial_filters,
+                    can_save_searches: opts.can_save_searches,
+                    can_load_searches: opts.can_load_searches
                 });
                 main.datatable.doupdatetable();
             }

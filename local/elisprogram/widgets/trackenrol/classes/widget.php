@@ -19,7 +19,7 @@
  * @package    eliswidget_trackenrol
  * @author     Remote-Learner.net Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright  (C) 2014 onwards Remote-Learner.net Inc (http://www.remote-learner.net)
+ * @copyright  (C) 2016 onwards Remote-Learner.net Inc (http://www.remote-learner.net)
  * @author     Brent Boghosian <brent.boghosian@remote-learner.net>
  *
  */
@@ -50,10 +50,37 @@ class widget extends \local_elisprogram\lib\widgetbase {
         $enrolallowed = (!empty($enrolallowed) && $enrolallowed == '1') ? '1' : '0';
         $unenrolallowed = get_config('eliswidget_trackenrol', 'unenrol_from_track');
         $unenrolallowed = (!empty($unenrolallowed) && $unenrolallowed == '1') ? '1' : '0';
+        // Context to save searches under.
+        $syscontext = \context_system::instance();
+        $savedsearch = new \eliswidget_trackenrol\savedsearch($syscontext, 'trackenrol');
+        $startingsearches = $savedsearch->starting_searches();
+        // Contains the currently loaded search.
+        $currentsearch = new \stdClass();
+
+        // Load first result as initial filter critira.
+        if (empty($startingsearches[0]['data'])) {
+            // Set initial filters based on widget configuration here.
+            $initialfilters = [];
+        } else {
+            $initialfilters = array();
+            foreach ($startingsearches[0]['data'] as $name => $value) {
+                $initialfilters[] = $name;
+            }
+            // Depending on kronos, maybe load initial widget configuration here instead.
+            $currentsearch = $startingsearches[0];
+        }
+
         $initopts = [
             'endpoint' => $CFG->wwwroot.'/local/elisprogram/widgets/trackenrol/ajax.php',
             'enrolallowed' => $enrolallowed,
             'unenrolallowed' => $unenrolallowed,
+            'savesearchurl' => $CFG->wwwroot.'/local/elisprogram/widgets/trackenrol/deepsight.php',
+            'contextid' => $syscontext->id,
+            'initial_filters' => $initialfilters,
+            'starting_searches' => $startingsearches,
+            'current_search' => $currentsearch,
+            'can_save_searches' => true,
+            'can_load_searches' => true,
             'lang' => [
                 'status_available' => get_string('status_available', 'eliswidget_trackenrol'),
                 'status_notenroled' => get_string('status_notenroled', 'eliswidget_trackenrol'),
@@ -81,6 +108,33 @@ class widget extends \local_elisprogram\lib\widgetbase {
                 'yes' => get_string('yes'),
                 'program' => get_string('track_program', 'eliswidget_trackenrol'),
                 'tracks' => get_string('tracks', 'eliswidget_trackenrol'),
+                'add' => get_string('add', 'local_elisprogram'),
+                'search' => get_string('search', 'local_elisprogram'),
+                'search_for' => get_string('search_for', 'local_elisprogram'),
+                'search_noresults' => get_string('search_noresults', 'local_elisprogram'),
+                'search_form_saving' => get_string('search_form_saving', 'local_elisprogram'),
+                'search_form_name' => get_string('search_form_name', 'local_elisprogram'),
+                'search_form_default' => get_string('search_form_default', 'local_elisprogram'),
+                'search_form_save' => get_string('search_form_save', 'local_elisprogram'),
+                'search_form_save_copy' => get_string('search_form_save_copy', 'local_elisprogram'),
+                'search_form_saved' => get_string('search_form_saved', 'local_elisprogram'),
+                'search_form_save_title' => get_string('search_form_save_title', 'local_elisprogram'),
+                'search_load' => get_string('search_load', 'local_elisprogram'),
+                'search_save' => get_string('search_save', 'local_elisprogram'),
+                'search_tools' => get_string('search_tools', 'local_elisprogram'),
+                'search_clearsearch' => get_string('search_clearsearch', 'local_elisprogram'),
+                'search_delete' => get_string('search_delete', 'local_elisprogram'),
+                'search_setdefault' => get_string('search_setdefault', 'local_elisprogram'),
+                'addtitle' => get_string('search_addtitle', 'local_elisprogram'),
+                'search_loadtitle' => get_string('search_load', 'local_elisprogram'),
+                'search_savetitle' => get_string('search_save', 'local_elisprogram'),
+                'search_toolstitle' => get_string('search_toolstitle', 'local_elisprogram'),
+                'search_deletetitle' => get_string('search_delete', 'local_elisprogram'),
+                'search_setdefault_saved' => get_string('search_setdefault_saved', 'local_elisprogram'),
+                'search_deleted' => get_string('search_deleted', 'local_elisprogram'),
+                'search_setdefaulttitle' => get_string('search_setdefault', 'local_elisprogram'),
+                'search_form_name_error' => get_string('search_form_name_error', 'local_elisprogram'),
+                'search_delete_confirm' => get_string('search_delete_confirm', 'local_elisprogram'),
             ],
         ];
         $initjs = "\n(function($) {"."\n";
@@ -102,8 +156,9 @@ class widget extends \local_elisprogram\lib\widgetbase {
      */
     public function get_css_dependencies($fullscreen = false) {
         return [
-                new \moodle_url('/local/elisprogram/widgets/enrolment/css/widget.css'),
-                new \moodle_url('/local/elisprogram/widgets/trackenrol/css/widget.css')
+                new \moodle_url('/local/elisprogram/lib/deepsight/css/base.css'),
+                // new \moodle_url('/local/elisprogram/widgets/enrolment/css/widget.css'),
+                // new \moodle_url('/local/elisprogram/widgets/trackenrol/css/widget.css')
         ];
     }
 
