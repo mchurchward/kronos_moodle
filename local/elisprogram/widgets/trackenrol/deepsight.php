@@ -32,10 +32,19 @@ require_once(elispm::file('lib/deepsight/lib/lib.php'));
 require_login();
 
 $action = required_param('action', PARAM_TEXT);
-$contextid = required_param('contextid', PARAM_INT);
 
+$solutionid = \eliswidget_trackenrol\savedsearch::get_user_solution_id($USER->id);
+if (empty($solutionid)) {
+    $context = \context_system::instance();
+} else {
+    $auth = get_auth_plugin('kronosportal');
+    $usersetcontext = $auth->userset_solutionid_exists($solutionid);
+    if (!empty($usersetcontext)) {
+        $context = $usersetcontext;
+    }
+}
 $result = array('result' => 'success');
-$savedsearch = new \eliswidget_trackenrol\savedsearch(context::instance_by_id($contextid), 'trackenrol');
+$savedsearch = new \eliswidget_trackenrol\savedsearch(\context::instance_by_id($context->id), 'trackenrol');
 switch ($action) {
     case 'search':
         $query = required_param('q', PARAM_TEXT);

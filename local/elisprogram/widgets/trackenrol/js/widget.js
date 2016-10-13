@@ -350,7 +350,6 @@
             $('#'+main.name+'_deepsight_'+divid+'_body').show();
         }
 
-
         /** @var bool Whether the filters for this list have been initialized. */
         this.filtersinit = false;
 

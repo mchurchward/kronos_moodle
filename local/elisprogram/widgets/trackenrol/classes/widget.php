@@ -38,7 +38,7 @@ class widget extends \local_elisprogram\lib\widgetbase {
      * @return string The HTML to display the widget.
      */
     public function get_html($fullscreen = false) {
-        global $CFG;
+        global $CFG, $USER;
         $uniqid = uniqid();
 
         $html = \html_writer::start_tag('div', ['id' => $uniqid]);
@@ -51,8 +51,19 @@ class widget extends \local_elisprogram\lib\widgetbase {
         $unenrolallowed = get_config('eliswidget_trackenrol', 'unenrol_from_track');
         $unenrolallowed = (!empty($unenrolallowed) && $unenrolallowed == '1') ? '1' : '0';
         // Context to save searches under.
-        $syscontext = \context_system::instance();
-        $savedsearch = new \eliswidget_trackenrol\savedsearch($syscontext, 'trackenrol');
+        $solutionid = \eliswidget_trackenrol\savedsearch::get_user_solution_id($USER->id);
+        if (empty($solutionid)) {
+            $context = \context_system::instance();
+        } else {
+            $auth = get_auth_plugin('kronosportal');
+            $usersetcontext = $auth->userset_solutionid_exists($solutionid);
+            if (!empty($usersetcontext)) {
+                $context = $usersetcontext;
+            }
+        }
+        $savedsearch = new \eliswidget_trackenrol\savedsearch(\context::instance_by_id($context->id), 'trackenrol');
+        $cansave = $savedsearch->cansavesearches();
+        $canload = $savedsearch->canloadsearches();
         $startingsearches = $savedsearch->starting_searches();
         // Contains the currently loaded search.
         $currentsearch = new \stdClass();
@@ -75,12 +86,12 @@ class widget extends \local_elisprogram\lib\widgetbase {
             'enrolallowed' => $enrolallowed,
             'unenrolallowed' => $unenrolallowed,
             'savesearchurl' => $CFG->wwwroot.'/local/elisprogram/widgets/trackenrol/deepsight.php',
-            'contextid' => $syscontext->id,
+            'contextid' => $context->id,
             'initial_filters' => $initialfilters,
             'starting_searches' => $startingsearches,
             'current_search' => $currentsearch,
-            'can_save_searches' => true,
-            'can_load_searches' => true,
+            'can_save_searches' => $cansave,
+            'can_load_searches' => $canload,
             'lang' => [
                 'status_available' => get_string('status_available', 'eliswidget_trackenrol'),
                 'status_notenroled' => get_string('status_notenroled', 'eliswidget_trackenrol'),

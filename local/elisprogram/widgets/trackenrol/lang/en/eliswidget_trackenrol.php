@@ -87,3 +87,7 @@ $string['status_failed'] = 'Failed';
 $string['status_unavailable'] = 'Unavailable';
 $string['waiting'] = 'waiting';
 $string['working'] = 'Working...';
+$string['trackenrol:studenttrackwidgetsearchload'] = 'Load personally saved searches on widget';
+$string['trackenrol:trackwidgetsearchload'] = 'Load globally saved searches on widget';
+$string['trackenrol:studenttrackwidgetsearchsave'] = 'Save personally saved searches on widget';
+$string['trackenrol:trackwidgetsearchsave'] = 'Save globally saved searches on widget';
