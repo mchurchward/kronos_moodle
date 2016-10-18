@@ -2,8 +2,15 @@
 @import '../../../enrolment/css/sass/_animation.scss';
 @import '../../../enrolment/css/sass/_icons.scss';
 @import '../../../enrolment/css/sass/_utils.scss';
+@import '../../../../lib/deepsight/css/sass/_filter.scss';
+@import '_filter.scss';
 
 .eliswidget_trackenrol {
+    button.elisicon-more.deepsight_filter_generator.deepsight_dropdown_activator {
+        color: #fff;
+        background: #4d92d5;
+        border-color: rgba(0, 0, 0, .3);
+    }
     .elisloader {
         display: block;
         text-align: center;

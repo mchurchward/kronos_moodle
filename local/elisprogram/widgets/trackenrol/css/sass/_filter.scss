@@ -1,16 +1,16 @@
 @import 'icons';
 
-.enrolment_searchicon {
+.trackenrol_searchicon {
+    padding: 0 !important;
     background: #fff !important;
     margin-bottom: 4px !important;
-	padding: 0;
-	&:before {
-		font-size: 0.7rem;
-		margin: 0;
-		color: #aaa;
-		content: '' !important;
-		font-family: inherit !important;
-		background: {
+    &:before {
+        font-size: 0.7rem;
+        margin: 0;
+        color: #aaa;
+        content: '' !important;
+        font-family: inherit !important;
+        background: {
             image: url($searchicon);
             repeat: no-repeat;
             position: center;
@@ -20,9 +20,9 @@
         width: 1.6rem;
         height: 1.6rem;
         vertical-align: middle;
-	}
+    }
 }
 
-.deepsight_filter_generator_choice {
-	padding: 0.25rem 0.5rem;
+.trackenrol_deepsight_filter_generator_choice {
+    padding: 0.25rem 0.5rem;
 }

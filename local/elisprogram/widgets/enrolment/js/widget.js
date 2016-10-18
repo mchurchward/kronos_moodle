@@ -153,6 +153,12 @@
                             starting_filters: data.data.initialfilters,
                             lang_add: '',
                             lang_addtitle: opts.lang.generatortitle,
+                            postcreatehandler: function (filterbar) {
+                                // When clearing filters, the search button is deleted and recreated.
+                                // This function is called after the filterbar is created.
+                                var button = filterbar.find('.elisicon-more.deepsight_filter_generator.deepsight_dropdown_activator');
+                                button.addClass('enrolment_searchicon').html('');
+                            }
                         });
                         main.filtersinit = true;
                     }

@@ -335,6 +335,21 @@
             return main.current_search.cansave;
         };
 
+        /**
+         * Renders an error message for saving a search.
+         *
+         * @param string error_message The error message to render.
+         * @param string divid Div id to post messages to.
+         */
+        this.render_save_error = function(error_message, divid) {
+            if (typeof (divid) == "undefined") {
+                divid = 'search';
+            }
+            $('#'+main.name+'_deepsight_'+divid+'_saving').removeClass('deepsight_search_saving').html('<span>'+error_message+'</span>');
+            $('#'+main.name+'_deepsight_'+divid+'_saving').addClass('deepsight_search_saving_error');
+            $('#'+main.name+'_deepsight_'+divid+'_body').show();
+        }
+
 
         /** @var bool Whether the filters for this list have been initialized. */
         this.filtersinit = false;
@@ -349,7 +364,7 @@
         this.filters = {};
 
         /** @var string Name of widget. */
-        this.name = 'trackenrol_'+opts.ids.widgetid;
+        this.name = 'eliswidget_trackenrol_'+opts.ids.widgetid;
 
         /**
          * Does a delayed table update.
@@ -440,7 +455,14 @@
                         filterbaroptions.current_search = opts.current_search;
                         filterbaroptions.starting_searches = opts.starting_searches;
                         filterbaroptions.initial_filters = opts.initial_filters;
+                        // When clearing filters, the search button is deleted and recreated.
+                        // This function is called after the filterbar is created.
+                        filterbaroptions.postcreatehandler = function (filterbar) {
+                            var button = filterbar.find('.elisicon-more.deepsight_filter_generator.deepsight_dropdown_activator');
+                            button.addClass('trackenrol_searchicon').html('');
+                        }
                         filterbar.show().deepsight_filterbar(filterbaroptions);
+                        filterbaroptions.postcreatehandler(filterbar);
                         main.filtersinit = true;
                     }
                 }
@@ -738,19 +760,19 @@
              * @return string A unique name that contains the given ID.
              */
             this.generateid = function(name) {
-                return 'eliswidget_trackenrol'+main.widgetid+'_'+name;
+                return 'eliswidget_trackenrol_'+main.widgetid+'_'+name;
             }
 
             var childrenlist = jqthis.children('.childrenlist');
             if (childrenlist.is(':empty')) {
-                var searchesbar = '<div class="deepsight_searches"><div id="trackenrol_'+main.widgetid+'_searchestitle"></div>';
-                searchesbar += '<div id="trackenrol_'+main.widgetid+'_searchesbar"></div></div>';
+                var searchesbar = '<div class="deepsight_searches"><div id="eliswidget_trackenrol_'+main.widgetid+'_searchestitle"></div>';
+                searchesbar += '<div id="eliswidget_trackenrol_'+main.widgetid+'_searchesbar"></div></div>';
                 searchesbar = $(searchesbar);
                 var trackwrapper = $('<div id="'+main.generateid('trackwrapper')+'" class="widgetwrapper"></div>');
                 var trackheading = $('<div class="childrenlistheader"></div>');
                 trackheading.append('<h6>'+opts.lang.tracks+'</h6>');
                 // New line for track filters
-                trackheading.append('<span id="'+main.generateid('trackfilterbar')+'" class="filterbar"></span>');
+                trackheading.append('<span id="'+main.generateid('filterbar')+'" class="filterbar"></span>');
                 trackwrapper.append(trackheading);
                 var tracklist = $('<div id="'+main.generateid('tracklist')+'"></div>');
                 trackwrapper.append(tracklist);

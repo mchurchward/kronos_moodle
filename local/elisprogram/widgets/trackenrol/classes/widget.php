@@ -157,8 +157,7 @@ class widget extends \local_elisprogram\lib\widgetbase {
     public function get_css_dependencies($fullscreen = false) {
         return [
                 new \moodle_url('/local/elisprogram/lib/deepsight/css/base.css'),
-                // new \moodle_url('/local/elisprogram/widgets/enrolment/css/widget.css'),
-                // new \moodle_url('/local/elisprogram/widgets/trackenrol/css/widget.css')
+                new \moodle_url('/local/elisprogram/widgets/trackenrol/css/widget.css'),
         ];
     }
 
