@@ -392,7 +392,7 @@ class savedsearch extends \deepsight_savedsearch {
         if (empty($usersetcontext)) {
             return false;
         }
-        $sql = "SELECT c.id contextid, c.instanceid usersetid, a.roleid, a.userid
+        $sql = "SELECT a.id, c.id contextid, c.instanceid usersetid, a.roleid, a.userid
                   FROM {context} c,
                        {role_assignments} a
                  WHERE a.roleid = ?

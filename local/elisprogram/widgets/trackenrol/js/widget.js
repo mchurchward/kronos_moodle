@@ -454,14 +454,7 @@
                         filterbaroptions.current_search = opts.current_search;
                         filterbaroptions.starting_searches = opts.starting_searches;
                         filterbaroptions.initial_filters = opts.initial_filters;
-                        // When clearing filters, the search button is deleted and recreated.
-                        // This function is called after the filterbar is created.
-                        filterbaroptions.postcreatehandler = function (filterbar) {
-                            var button = filterbar.find('.elisicon-more.deepsight_filter_generator.deepsight_dropdown_activator');
-                            button.addClass('trackenrol_searchicon').html('');
-                        }
                         filterbar.show().deepsight_filterbar(filterbaroptions);
-                        filterbaroptions.postcreatehandler(filterbar);
                         main.filtersinit = true;
                     }
                 }
