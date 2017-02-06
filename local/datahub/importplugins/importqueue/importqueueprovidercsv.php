@@ -44,11 +44,12 @@ class importqueueprovidercsv extends rlip_importprovider_csv {
         $queue = $DB->get_records('dhimport_importqueue', array('status' => 3), 'id desc');
         if (!empty($queue)) {
             $current = array_pop($queue);
-            $files = $this->build_files($current->id);
-            // Record currently is being processed, by default the csv files will not exist.
-            // When files do not exist there is no processing done by import plugin.
-            parent::__construct($entitytypes, $files);
-            return;
+            // Something went wrong when processing this queue. The file was marked as processing,
+            // but it did not finish gracefully and update its status to 0.
+            // See run function in importqueue.class.php.
+            $current->status = 4;
+            $DB->update_record('dhimport_importqueue', $current);
+            $this->send_debug_email($current->id);
         }
 
         // Nothing is currently being processed, checking for unprocessed.
@@ -82,6 +83,62 @@ class importqueueprovidercsv extends rlip_importprovider_csv {
         $files['course'] = $base.$coursefile;
         $files['enrolment'] = $base.$enrolfile;
         return $files;
+    }
+
+    /**
+     * Get or make the user objects for the provided email addresses
+     * @param array $emails An array of emails.
+     * @return array $users An array of real and/or manufactured Mooodle users.
+     */
+    protected function get_email_users($emails) {
+        global $DB;
+        $found = array();
+        foreach ($emails as $key => $email) {
+            $email = trim($email);
+            $emails[$key] = $email;
+            $found[$email] = false;
+        }
+        $users  = $DB->get_records_list('user', 'email', $emails);
+        foreach ($users as $user) {
+            $found[$user->email] = true;
+        }
+        foreach ($found as $email => $exist) {
+            if (!$exist) {
+                $user = new \stdClass();
+                $user->id    = 1;
+                $user->email = $email;
+                $users[] = $user;
+            }
+        }
+        return $users;
+    }
+
+    /**
+     * Send debug email to debug email addresses.
+     *
+     * @param int $queueid The ID of the queue to alert debug recipients about.
+     */
+    protected function send_debug_email($queueid) {
+        global $CFG;
+
+        $data = new \stdClass();
+        $data->queueid = $queueid;
+        $data->wwwroot = $CFG->wwwroot;
+
+        $from = get_string('email_debug_error_from', 'dhimport_importqueue');
+        $subject = get_string('email_debug_error_subject', 'dhimport_importqueue', $data);
+        $message = get_string('email_debug_error_message', 'dhimport_importqueue', $data);
+
+        $debugemails = get_config('dhimport_importqueue', 'debugnotification');
+        $emails = explode(",", $debugemails);
+        $users = $this->get_email_users($emails);
+        foreach ($users as $user) {
+            ob_start();
+            if (!defined('BEHAT_TEST')) {
+                email_to_user($user, $from, $subject, $message, '');
+            }
+            ob_end_flush();
+        }
     }
 
     /**

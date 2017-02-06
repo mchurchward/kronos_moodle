@@ -54,3 +54,7 @@ $settings->add(new admin_setting_configtext('dhimport_importqueue/logfilelocatio
 // Email notification.
 $settings->add(new admin_setting_configtext('dhimport_importqueue/emailnotification', get_string('emailnotification', 'dhimport_importqueue'),
         get_string('configemailnotification', 'dhimport_importqueue'), ''));
+
+// Debug email notification for files that have not processed.
+$settings->add(new admin_setting_configtext('dhimport_importqueue/debugnotification', get_string('debugnotification', 'dhimport_importqueue'),
+        get_string('configdebugnotification', 'dhimport_importqueue'), ''));

@@ -86,6 +86,10 @@ class importqueue_table extends table_sql {
                 $text = get_string('processing', 'block_importqueue');
                 $options['style'] = 'color: green';
                 break;
+            case 4:
+                $text = get_string('unknownerror', 'block_importqueue');
+                $options['style'] = 'color: red';
+                break;
         }
         return html_writer::tag('span', $text, $options);
     }
@@ -106,6 +110,9 @@ class importqueue_table extends table_sql {
             $link = new moodle_url($CFG->wwwroot.'/blocks/importqueue/queuelog.php', array('id' => $values->id, 'errors' => 1));
             $options = array('href' => $link, 'style' => 'color: red');
             $html .= ' '.html_writer::tag('a', get_string('viewerrors', 'block_importqueue'), $options);
+        } else if ($values->status == 4) {
+            $options = array('style' => 'color: red');
+            $html = html_writer::tag('span', get_string('unknownerrordesc', 'block_importqueue'), $options);
         } else if ($values->status != 0) {
             $link = new moodle_url($CFG->wwwroot.'/blocks/importqueue/queuelog.php', array('id' => $values->id));
             $html = html_writer::tag('a', get_string('logs', 'block_importqueue'), array('href' => $link));

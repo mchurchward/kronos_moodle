@@ -134,7 +134,7 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
         $DB->update_record('dhimport_importqueue', $record);
         $result = parent::run($targetstarttime, $lastruntime, $maxruntime, $state);
         if ($result !== null) {
-            // Job not is finished and state is saved for next cron job run.
+            // Job is not finished, and state is saved for next cron job run.
             $record->status = 0;
             $DB->update_record('dhimport_importqueue', $record);
             return $result;
@@ -142,7 +142,7 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
         // Queued import has been completed.
         $count = $DB->count_records('dhimport_importqueuelog', array('queueid' => $record->id, 'status' => 0));
         if ($count) {
-            // There is errors.
+            // There are errors.
             $record->status = 2;
         } else {
             $record->status = 1;
@@ -160,7 +160,7 @@ class rlip_importplugin_importqueue extends rlip_importplugin_version1 {
                 $import = new rlip_importplugin_importqueue($provider, false);
                 $result = $import->run($targetstarttime, $lastruntime, $maxruntime, null);
                 if ($result !== null) {
-                    // Job not is finished and state is saved for next cron job run.
+                    // Job is not finished, and state is saved for next cron job run.
                     return $result;
                 }
             }
