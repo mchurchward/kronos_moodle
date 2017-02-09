@@ -56,8 +56,8 @@
         var main = this;
 
         main.contextid = opts.contextid;
-        main.can_load_searches = true;
-        main.can_save_searches = true;
+        main.can_load_searches = opts.can_load_searches;
+        main.can_save_searches = opts.can_save_searches;
         main.current_search = opts.current_search;
 
         main.savesearchurl = opts.savesearchurl;
@@ -248,7 +248,7 @@
          */
         this.clearsearch = function () {
             main.filters = {};
-            main.current_search = { cansave: true };
+            main.current_search = { cansave: main.can_save_searches };
             main.fieldsort = {};
             main.remove_sort();
         };

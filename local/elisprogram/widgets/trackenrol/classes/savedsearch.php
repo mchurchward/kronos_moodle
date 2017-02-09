@@ -55,6 +55,7 @@ class savedsearch extends \deepsight_savedsearch {
         global $USER;
         // Allows for passing of phpunit test deepsight_datatable_testcase.
         if (!empty($context)) {
+            $syscontext = \context_system::instance();
             // Load user saved searches if they have permission at solution userset id context level or system level.
             $this->canloadsearches = false;
             if (has_capability('eliswidget/trackenrol:studenttrackwidgetsearchload', $this->context, $USER->id) ||
@@ -62,12 +63,18 @@ class savedsearch extends \deepsight_savedsearch {
                     has_capability('eliswidget/trackenrol:trackwidgetsearchload', $syscontext, $USER->id)) {
                 $this->canloadsearches = true;
             }
+            $studenttrackenrol = has_capability('eliswidget/trackenrol:studenttrackwidgetsearchload', $syscontext, $USER->id);
             // Allow saved user saved searches if they have permission at solution userset id context level or system level.
             $this->cansavesearches = false;
             if ((has_capability('eliswidget/trackenrol:studenttrackwidgetsearchsave', $this->context, $USER->id) ||
                     has_capability('eliswidget/trackenrol:studenttrackwidgetsearchsave', $syscontext, $USER->id) ||
                     has_capability('eliswidget/trackenrol:trackwidgetsearchsave', $syscontext, $USER->id))) {
                 $this->cansavesearches = true;
+            }
+
+            // Override for system context passed without being an admin.
+            if ($context->id === $syscontext->id && is_siteadmin($USER->id) === false) {
+                $this->cansavesearches = false;
             }
         }
     }
