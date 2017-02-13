@@ -76,7 +76,7 @@ $string['complete'] = 'Complete';
 $string['errors'] = 'Errors';
 $string['processing'] = 'Processing';
 $string['unknownerror'] = 'Unknown Error';
-$string['unknownerrordesc'] = 'Unknown Error. Please try uploading this file again.';
+$string['unknownerrordesc'] = 'Please try uploading again in a little while, or contact <a href="mailto:knowledgepass@kronos.com">knowledgepass@kronos.com</a>.';
 $string['error'] = 'Error';
 $string['success'] = 'Success';
 $string['successlogs'] = 'Successful';
