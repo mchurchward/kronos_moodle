@@ -49,7 +49,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
             'idnumber' => 'idnumbertest1',
             'firstname' => 'First Name User Test 1',
             'lastname' => 'Last Name User Test 1',
-            'email' => 'usertest1@email.com',
+            'email' => 'usertest1@example.com',
             'address' => '2 Test Street Perth 6000 WA',
             'phone1' => '01010101010',
             'phone2' => '02020203',
@@ -208,7 +208,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
             'idnumber' => 'idnumbertest1',
             'firstname' => 'First Name User Test 1',
             'lastname' => 'Last Name User Test 1',
-            'email' => 'usertest1@email.com',
+            'email' => 'usertest1@example.com',
             'address' => '2 Test Street Perth 6000 WA',
             'phone1' => '01010101010',
             'phone2' => '02020203',
@@ -257,6 +257,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
             // Call the external function.
             $returnedusers = core_user_external::get_users_by_field($fieldtosearch,
                         array($USER->{$fieldtosearch}, $user1->{$fieldtosearch}, $user2->{$fieldtosearch}));
+            $returnedusers = external_api::clean_returnvalue(core_user_external::get_users_by_field_returns(), $returnedusers);
 
             // Expected result differ following the searched field
             // Admin user in the PHPunit framework doesn't have an idnumber.
@@ -338,6 +339,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
         // Call the external function.
         $returnedusers = core_user_external::get_users_by_field('username',
                     array($USER->username, $user1->username, $user2->username));
+        $returnedusers = external_api::clean_returnvalue(core_user_external::get_users_by_field_returns(), $returnedusers);
 
         // Only the own $USER username should be returned
         $this->assertEquals(1, count($returnedusers));
@@ -348,6 +350,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
         // Call the external function.
         $returnedusers = core_user_external::get_users_by_field('username',
             array($USER->username, $user1->username, $user2->username));
+        $returnedusers = external_api::clean_returnvalue(core_user_external::get_users_by_field_returns(), $returnedusers);
 
         // Only the own $USER username should be returned still.
         $this->assertEquals(1, count($returnedusers));
@@ -367,7 +370,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
             'idnumber' => 'idnumbertest1',
             'firstname' => 'First Name User Test 1',
             'lastname' => 'Last Name User Test 1',
-            'email' => 'usertest1@email.com',
+            'email' => 'usertest1@example.com',
             'address' => '2 Test Street Perth 6000 WA',
             'phone1' => '01010101010',
             'phone2' => '02020203',
@@ -415,7 +418,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
 
         // Do the same call as admin to receive all possible fields.
         $this->setAdminUser();
-        $USER->email = "admin@fakeemail.com";
+        $USER->email = "admin@example.com";
 
         // Call the external function.
         $enrolledusers = core_user_external::get_course_user_profiles(array(
@@ -472,10 +475,17 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
             'lastnamephonetic' => '最後のお名前のテスト一号',
             'firstnamephonetic' => 'お名前のテスト一号',
             'alternatename' => 'Alternate Name User Test 1',
-            'email' => 'usertest1@email.com',
+            'email' => 'usertest1@example.com',
             'description' => 'This is a description for user 1',
             'city' => 'Perth',
-            'country' => 'au'
+            'country' => 'au',
+            'preferences' => [[
+                'type' => 'htmleditor',
+                'value' => 'atto'
+            ], [
+                'type' => 'invalidpreference',
+                'value' => 'abcd'
+            ]]
             );
 
         $context = context_system::instance();
@@ -500,6 +510,8 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
             $this->assertEquals($dbuser->description, $user1['description']);
             $this->assertEquals($dbuser->city, $user1['city']);
             $this->assertEquals($dbuser->country, $user1['country']);
+            $this->assertEquals('atto', get_user_preferences('htmleditor', null, $dbuser));
+            $this->assertEquals(null, get_user_preferences('invalidpreference', null, $dbuser));
         }
 
         // Call without required capability
@@ -552,7 +564,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
             'idnumber' => 'idnumbertest1',
             'firstname' => 'First Name User Test 1',
             'lastname' => 'Last Name User Test 1',
-            'email' => 'usertest1@email.com',
+            'email' => 'usertest1@example.com',
             'address' => '2 Test Street Perth 6000 WA',
             'phone1' => '01010101010',
             'phone2' => '02020203',
@@ -593,7 +605,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
 
         // Do the same call as admin to receive all possible fields.
         $this->setAdminUser();
-        $USER->email = "admin@fakeemail.com";
+        $USER->email = "admin@example.com";
 
         // Call the external function.
         $returnedusers = core_user_external::get_users_by_id(array(
@@ -651,17 +663,42 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
             'lastnamephonetic' => '最後のお名前のテスト一号',
             'firstnamephonetic' => 'お名前のテスト一号',
             'alternatename' => 'Alternate Name User Test 1',
-            'email' => 'usertest1@email.com',
+            'email' => 'usertest1@example.com',
             'description' => 'This is a description for user 1',
             'city' => 'Perth',
-            'country' => 'au'
+            'country' => 'au',
+            'preferences' => [[
+                'type' => 'htmleditor',
+                'value' => 'atto'
+            ], [
+                'type' => 'invalidpreference',
+                'value' => 'abcd'
+            ]]
             );
 
         $context = context_system::instance();
         $roleid = $this->assignUserCapability('moodle/user:update', $context->id);
 
+        // Check we can't update deleted users, guest users, site admin.
+        $user2 = $user3 = $user4 = $user1;
+        $user2['id'] = $CFG->siteguest;
+
+        $siteadmins = explode(',', $CFG->siteadmins);
+        $user3['id'] = array_shift($siteadmins);
+
+        $userdeleted = self::getDataGenerator()->create_user();
+        $user4['id'] = $userdeleted->id;
+        user_delete_user($userdeleted);
+
         // Call the external function.
-        core_user_external::update_users(array($user1));
+        core_user_external::update_users(array($user1, $user2, $user3, $user4));
+
+        $dbuser2 = $DB->get_record('user', array('id' => $user2['id']));
+        $this->assertNotEquals($dbuser2->username, $user2['username']);
+        $dbuser3 = $DB->get_record('user', array('id' => $user3['id']));
+        $this->assertNotEquals($dbuser3->username, $user3['username']);
+        $dbuser4 = $DB->get_record('user', array('id' => $user4['id']));
+        $this->assertNotEquals($dbuser4->username, $user4['username']);
 
         $dbuser = $DB->get_record('user', array('id' => $user1['id']));
         $this->assertEquals($dbuser->username, $user1['username']);
@@ -672,6 +709,8 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
         $this->assertEquals($dbuser->description, $user1['description']);
         $this->assertEquals($dbuser->city, $user1['city']);
         $this->assertEquals($dbuser->country, $user1['country']);
+        $this->assertEquals('atto', get_user_preferences('htmleditor', null, $dbuser));
+        $this->assertEquals(null, get_user_preferences('invalidpreference', null, $dbuser));
 
         // Call without required capability.
         $this->unassignUserCapability('moodle/user:update', $context->id, $roleid);
@@ -705,6 +744,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
         // Call the files api to create a file.
         $draftfile = core_files_external::upload($contextid, $component, $filearea, $itemid, $filepath,
                                                  $filename, $filecontent, $contextlevel, $instanceid);
+        $draftfile = external_api::clean_returnvalue(core_files_external::upload_returns(), $draftfile);
 
         $draftid = $draftfile['itemid'];
         // Make sure the file was created.
@@ -749,6 +789,31 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
         $created = (array) $created;
 
         $this->assertEquals($device, array_intersect_key((array)$created, $device));
+
+        // Test reuse the same pushid value.
+        $warnings = core_user_external::add_user_device($device['appid'], $device['name'], $device['model'], $device['platform'],
+                                                        $device['version'], $device['pushid'], $device['uuid']);
+        // We need to execute the return values cleaning process to simulate the web service server.
+        $warnings = external_api::clean_returnvalue(core_user_external::add_user_device_returns(), $warnings);
+        $this->assertCount(1, $warnings);
+
+        // Test update and existing device.
+        $device['pushid'] = 'different than before';
+        $warnings = core_user_external::add_user_device($device['appid'], $device['name'], $device['model'], $device['platform'],
+                                                        $device['version'], $device['pushid'], $device['uuid']);
+        $warnings = external_api::clean_returnvalue(core_user_external::add_user_device_returns(), $warnings);
+
+        $this->assertEquals(1, $DB->count_records('user_devices'));
+        $updated = $DB->get_record('user_devices', array('pushid' => $device['pushid']));
+        $this->assertEquals($device, array_intersect_key((array)$updated, $device));
+
+        // Test creating a new device just changing the uuid.
+        $device['uuid'] = 'newuidforthesameuser';
+        $device['pushid'] = 'new different than before';
+        $warnings = core_user_external::add_user_device($device['appid'], $device['name'], $device['model'], $device['platform'],
+                                                        $device['version'], $device['pushid'], $device['uuid']);
+        $warnings = external_api::clean_returnvalue(core_user_external::add_user_device_returns(), $warnings);
+        $this->assertEquals(2, $DB->count_records('user_devices'));
     }
 
 }

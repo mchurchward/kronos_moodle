@@ -289,10 +289,6 @@ switch ($action) {
                 // Some repository plugins (local, user, coursefiles, recent) are hosting moodle
                 // internal files, we cannot use get_file method, so we use copy_to_area method
 
-                // If the moodle file is an alias we copy this alias, otherwise we copy the file
-                // {@link repository::copy_to_area()}.
-                $fileinfo = $repo->copy_to_area($reference, $record, $maxbytes, $areamaxbytes);
-
                 // RL EDIT: BJB140918, BJB130215 - ELIS Files (alfresco)
                 // error_log("repository_ajax.php::download (IV): saveas_path = {$saveas_path}, toelisfiles = {$toelisfiles}");
                 if ($toelisfiles) {
@@ -337,6 +333,10 @@ switch ($action) {
                         $err->error = get_string('cannotdownload', 'repository');
                         die(json_encode($err));
                     }
+                } else {
+                    // If the moodle file is an alias we copy this alias, otherwise we copy the file
+                    // {@link repository::copy_to_area()}.
+                    $fileinfo = $repo->copy_to_area($reference, $record, $maxbytes, $areamaxbytes);
                 }
                 // End RL EDIT
                 ajax_check_captured_output();

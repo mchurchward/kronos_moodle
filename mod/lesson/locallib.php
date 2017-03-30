@@ -575,7 +575,12 @@ function lesson_add_header_buttons($cm, $context, $extraeditbuttons=false, $less
             print_error('invalidpageid', 'lesson');
         }
         if (!empty($lessonpageid) && $lessonpageid != LESSON_EOL) {
-            $url = new moodle_url('/mod/lesson/editpage.php', array('id'=>$cm->id, 'pageid'=>$lessonpageid, 'edit'=>1));
+            $url = new moodle_url('/mod/lesson/editpage.php', array(
+                'id'       => $cm->id,
+                'pageid'   => $lessonpageid,
+                'edit'     => 1,
+                'returnto' => $PAGE->url->out(false)
+            ));
             $PAGE->set_button($OUTPUT->single_button($url, get_string('editpagecontent', 'lesson')));
         }
     }
@@ -697,6 +702,11 @@ abstract class lesson_add_page_form_base extends moodleform {
         $editoroptions = $this->_customdata['editoroptions'];
 
         $mform->addElement('header', 'qtypeheading', get_string('createaquestionpage', 'lesson', get_string($this->qtypestring, 'lesson')));
+
+        if (!empty($this->_customdata['returnto'])) {
+            $mform->addElement('hidden', 'returnto', $this->_customdata['returnto']);
+            $mform->setType('returnto', PARAM_URL);
+        }
 
         $mform->addElement('hidden', 'id');
         $mform->setType('id', PARAM_INT);
@@ -1872,6 +1882,8 @@ abstract class lesson_page extends lesson_base {
         global $DB;
         // first delete all the associated records...
         $DB->delete_records("lesson_attempts", array("pageid" => $this->properties->id));
+
+        $DB->delete_records("lesson_branch", array("pageid" => $this->properties->id));
         // ...now delete the answers...
         $DB->delete_records("lesson_answers", array("pageid" => $this->properties->id));
         // ..and the page itself
@@ -1996,6 +2008,19 @@ abstract class lesson_page extends lesson_base {
         } else {
             if (!has_capability('mod/lesson:manage', $context)) {
                 $nretakes = $DB->count_records("lesson_grades", array("lessonid"=>$this->lesson->id, "userid"=>$USER->id));
+
+                // Get the number of attempts that have been made on this question for this student and retake,
+                $nattempts = $DB->count_records('lesson_attempts', array('lessonid' => $this->lesson->id,
+                    'userid' => $USER->id, 'pageid' => $this->properties->id, 'retry' => $nretakes));
+
+                // Check if they have reached (or exceeded) the maximum number of attempts allowed.
+                if ($nattempts >= $this->lesson->maxattempts) {
+                    $result->maxattemptsreached = true;
+                    $result->feedback = get_string('maximumnumberofattemptsreached', 'lesson');
+                    $result->newpageid = $this->lesson->get_next_page($this->properties->nextpageid);
+                    return $result;
+                }
+
                 // record student's attempt
                 $attempt = new stdClass;
                 $attempt->lessonid = $this->lesson->id;
@@ -2020,14 +2045,14 @@ abstract class lesson_page extends lesson_base {
                 if (!$userisreviewing) {
                     if ($this->lesson->retake || (!$this->lesson->retake && $nretakes == 0)) {
                         $DB->insert_record("lesson_attempts", $attempt);
+
+                        // Increase the number of attempts made.
+                        $nattempts++;
                     }
                 }
                 // "number of attempts remaining" message if $this->lesson->maxattempts > 1
                 // displaying of message(s) is at the end of page for more ergonomic display
                 if (!$result->correctanswer && ($result->newpageid == 0)) {
-                    // wrong answer and student is stuck on this page - check how many attempts
-                    // the student has had at this page/question
-                    $nattempts = $DB->count_records("lesson_attempts", array("pageid"=>$this->properties->id, "userid"=>$USER->id, "retry" => $attempt->retry));
                     // retreive the number of attempts left counter for displaying at bottom of feedback page
                     if ($nattempts >= $this->lesson->maxattempts) {
                         if ($this->lesson->maxattempts > 1) { // don't bother with message if only one attempt
@@ -2201,41 +2226,68 @@ abstract class lesson_page extends lesson_base {
         $properties->timemodified = time();
         $properties = file_postupdate_standard_editor($properties, 'contents', array('noclean'=>true, 'maxfiles'=>EDITOR_UNLIMITED_FILES, 'maxbytes'=>$maxbytes), $context, 'mod_lesson', 'page_contents', $properties->id);
         $DB->update_record("lesson_pages", $properties);
-
-        for ($i = 0; $i < $this->lesson->maxanswers; $i++) {
-            if (!array_key_exists($i, $this->answers)) {
-                $this->answers[$i] = new stdClass;
-                $this->answers[$i]->lessonid = $this->lesson->id;
-                $this->answers[$i]->pageid = $this->id;
-                $this->answers[$i]->timecreated = $this->timecreated;
+        if ($this->type == self::TYPE_STRUCTURE && $this->get_typeid() != LESSON_PAGE_BRANCHTABLE) {
+            if (count($answers) > 1) {
+                $answer = array_shift($answers);
+                foreach ($answers as $a) {
+                    $DB->delete_record('lesson_answers', array('id' => $a->id));
+                }
+            } else if (count($answers) == 1) {
+                $answer = array_shift($answers);
+            } else {
+                $answer = new stdClass;
+                $answer->lessonid = $properties->lessonid;
+                $answer->pageid = $properties->id;
+                $answer->timecreated = time();
             }
 
-            if (!empty($properties->answer_editor[$i]) && is_array($properties->answer_editor[$i])) {
-                $this->answers[$i]->answer = $properties->answer_editor[$i]['text'];
-                $this->answers[$i]->answerformat = $properties->answer_editor[$i]['format'];
+            $answer->timemodified = time();
+            if (isset($properties->jumpto[0])) {
+                $answer->jumpto = $properties->jumpto[0];
             }
-            if (!empty($properties->response_editor[$i]) && is_array($properties->response_editor[$i])) {
-                $this->answers[$i]->response = $properties->response_editor[$i]['text'];
-                $this->answers[$i]->responseformat = $properties->response_editor[$i]['format'];
+            if (isset($properties->score[0])) {
+                $answer->score = $properties->score[0];
             }
-
-            // we don't need to check for isset here because properties called it's own isset method.
-            if ($this->answers[$i]->answer != '') {
-                if (isset($properties->jumpto[$i])) {
-                    $this->answers[$i]->jumpto = $properties->jumpto[$i];
-                }
-                if ($this->lesson->custom && isset($properties->score[$i])) {
-                    $this->answers[$i]->score = $properties->score[$i];
-                }
-                if (!isset($this->answers[$i]->id)) {
-                    $this->answers[$i]->id =  $DB->insert_record("lesson_answers", $this->answers[$i]);
-                } else {
-                    $DB->update_record("lesson_answers", $this->answers[$i]->properties());
+            if (!empty($answer->id)) {
+                $DB->update_record("lesson_answers", $answer->properties());
+            } else {
+                $DB->insert_record("lesson_answers", $answer);
+            }
+        } else {
+            for ($i = 0; $i < $this->lesson->maxanswers; $i++) {
+                if (!array_key_exists($i, $this->answers)) {
+                    $this->answers[$i] = new stdClass;
+                    $this->answers[$i]->lessonid = $this->lesson->id;
+                    $this->answers[$i]->pageid = $this->id;
+                    $this->answers[$i]->timecreated = $this->timecreated;
                 }
 
-            } else if (isset($this->answers[$i]->id)) {
-                $DB->delete_records('lesson_answers', array('id'=>$this->answers[$i]->id));
-                unset($this->answers[$i]);
+                if (!empty($properties->answer_editor[$i]) && is_array($properties->answer_editor[$i])) {
+                    $this->answers[$i]->answer = $properties->answer_editor[$i]['text'];
+                    $this->answers[$i]->answerformat = $properties->answer_editor[$i]['format'];
+                }
+                if (!empty($properties->response_editor[$i]) && is_array($properties->response_editor[$i])) {
+                    $this->answers[$i]->response = $properties->response_editor[$i]['text'];
+                    $this->answers[$i]->responseformat = $properties->response_editor[$i]['format'];
+                }
+
+                if (isset($this->answers[$i]->answer) && $this->answers[$i]->answer != '') {
+                    if (isset($properties->jumpto[$i])) {
+                        $this->answers[$i]->jumpto = $properties->jumpto[$i];
+                    }
+                    if ($this->lesson->custom && isset($properties->score[$i])) {
+                        $this->answers[$i]->score = $properties->score[$i];
+                    }
+                    if (!isset($this->answers[$i]->id)) {
+                        $this->answers[$i]->id = $DB->insert_record("lesson_answers", $this->answers[$i]);
+                    } else {
+                        $DB->update_record("lesson_answers", $this->answers[$i]->properties());
+                    }
+
+                } else if (isset($this->answers[$i]->id)) {
+                    $DB->delete_records('lesson_answers', array('id' => $this->answers[$i]->id));
+                    unset($this->answers[$i]);
+                }
             }
         }
         return true;

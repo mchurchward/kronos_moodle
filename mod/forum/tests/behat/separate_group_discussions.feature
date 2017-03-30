@@ -7,10 +7,10 @@ Feature: Posting to all groups in a separate group discussion is restricted to u
   Background:
     Given the following "users" exist:
       | username | firstname | lastname | email |
-      | teacher1 | Teacher | 1 | teacher1@asd.com |
-      | noneditor1 | Non-editing teacher | 1 | noneditor1@asd.com |
-      | noneditor2 | Non-editing teacher | 2 | noneditor2@asd.com |
-      | student1 | Student | 1 | student1@asd.com |
+      | teacher1 | Teacher | 1 | teacher1@example.com |
+      | noneditor1 | Non-editing teacher | 1 | noneditor1@example.com |
+      | noneditor2 | Non-editing teacher | 2 | noneditor2@example.com |
+      | student1 | Student | 1 | student1@example.com |
     And the following "courses" exist:
       | fullname | shortname | category |
       | Course 1 | C1 | 0 |
@@ -82,3 +82,16 @@ Feature: Posting to all groups in a separate group discussion is restricted to u
     Then the "Group" select box should not contain "All participants"
     And the "Group" select box should contain "Group A"
     And the "Group" select box should contain "Group B"
+
+  Scenario: Students can view all participants discussions in separate groups mode
+    Given I log in as "teacher1"
+    And I follow "Course 1"
+    When I add a new discussion to "Standard forum name" forum with:
+      | Subject | Forum post to all participants |
+      | Message | This is the body |
+      | Group   | All participants |
+    And I log out
+    And I log in as "student1"
+    And I follow "Course 1"
+    And I follow "Standard forum name"
+    Then I should see "Forum post to all participants"

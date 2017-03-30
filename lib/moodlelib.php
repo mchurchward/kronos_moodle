@@ -1029,10 +1029,20 @@ function clean_param($param, $type) {
             // Allow http absolute, root relative and relative URLs within wwwroot.
             $param = clean_param($param, PARAM_URL);
             if (!empty($param)) {
-                if (preg_match(':^/:', $param)) {
+
+                // Simulate the HTTPS version of the site.
+                $httpswwwroot = str_replace('http://', 'https://', $CFG->wwwroot);
+
+                if ($param === $CFG->wwwroot) {
+                    // Exact match;
+                } else if (!empty($CFG->loginhttps) && $param === $httpswwwroot) {
+                    // Exact match;
+                } else if (preg_match(':^/:', $param)) {
                     // Root-relative, ok!
-                } else if (preg_match('/^'.preg_quote($CFG->wwwroot, '/').'/i', $param)) {
+                } else if (preg_match('/^' . preg_quote($CFG->wwwroot . '/', '/') . '/i', $param)) {
                     // Absolute, and matches our wwwroot.
+                } else if (!empty($CFG->loginhttps) && preg_match('/^' . preg_quote($httpswwwroot . '/', '/') . '/i', $param)) {
+                    // Absolute, and matches our httpswwwroot.
                 } else {
                     // Relative - let's make sure there are no tricks.
                     if (validateUrlSyntax('/' . $param, 's-u-P-a-p-f+q?r?')) {
@@ -1099,7 +1109,7 @@ function clean_param($param, $type) {
             // Remove some nasties.
             $param = preg_replace('~[[:cntrl:]]|[<>`]~u', '', $param);
             // Convert many whitespace chars into one.
-            $param = preg_replace('/\s+/', ' ', $param);
+            $param = preg_replace('/\s+/u', ' ', $param);
             $param = core_text::substr(trim($param), 0, TAG_MAX_LENGTH);
             return $param;
 
@@ -4735,6 +4745,7 @@ function hash_internal_user_password($password, $fasthash = false) {
  *
  * Updating the password will modify the $user object and the database
  * record to use the current hashing algorithm.
+ * It will remove Web Services user tokens too.
  *
  * @param stdClass $user User object (password property may be updated).
  * @param string $password Plain text password.
@@ -4782,6 +4793,10 @@ function update_internal_user_password($user, $password, $fasthash = false) {
         // Trigger event.
         $user = $DB->get_record('user', array('id' => $user->id));
         \core\event\user_password_updated::create_from_user($user)->trigger();
+
+        // Remove WS user tokens.
+        require_once($CFG->dirroot.'/webservice/lib.php');
+        webservice::delete_user_ws_tokens($user->id);
     }
 
     return true;
@@ -5823,6 +5838,18 @@ function email_to_user($user, $from, $subject, $messagetext, $messagehtml = '', 
     $tempreplyto = array();
 
     $supportuser = core_user::get_support_user();
+    $noreplyaddressdefault = 'noreply@' . get_host_from_url($CFG->wwwroot);
+    $noreplyaddress = empty($CFG->noreplyaddress) ? $noreplyaddressdefault : $CFG->noreplyaddress;
+
+    if (!validate_email($noreplyaddress)) {
+        debugging('email_to_user: Invalid noreply-email '.s($noreplyaddress));
+        $noreplyaddress = $noreplyaddressdefault;
+    }
+
+    if (!validate_email($supportuser->email)) {
+        debugging('email_to_user: Invalid support-email '.s($supportuser->email));
+        $supportuser->email = $noreplyaddress;
+    }
 
     // Make up an email address for handling bounces.
     if (!empty($CFG->handlebounces)) {
@@ -5840,17 +5867,28 @@ function email_to_user($user, $from, $subject, $messagetext, $messagehtml = '', 
         }
     }
 
+    // Make sure that the explicit replyto is valid, fall back to the implicit one.
+    if (!empty($replyto) && !validate_email($replyto)) {
+        debugging('email_to_user: Invalid replyto-email '.s($replyto));
+        $replyto = $noreplyaddress;
+    }
+
     if (is_string($from)) { // So we can pass whatever we want if there is need.
-        $mail->From     = $CFG->noreplyaddress;
+        $mail->From     = $noreplyaddress;
         $mail->FromName = $from;
     } else if ($usetrueaddress and $from->maildisplay) {
+        if (!validate_email($from->email)) {
+            debugging('email_to_user: Invalid from-email '.s($from->email).' - not sending');
+            // Better not to use $noreplyaddress in this case.
+            return false;
+        }
         $mail->From     = $from->email;
         $mail->FromName = fullname($from);
     } else {
-        $mail->From     = $CFG->noreplyaddress;
+        $mail->From     = $noreplyaddress;
         $mail->FromName = fullname($from);
         if (empty($replyto)) {
-            $tempreplyto[] = array($CFG->noreplyaddress, get_string('noreplyname'));
+            $tempreplyto[] = array($noreplyaddress, get_string('noreplyname'));
         }
     }
 
@@ -7777,14 +7815,16 @@ function count_letters($string) {
  * @param int $length The length of the string to be created.
  * @return string
  */
-function random_string ($length=15) {
+function random_string($length=15) {
+    $randombytes = random_bytes_emulate($length);
     $pool  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     $pool .= 'abcdefghijklmnopqrstuvwxyz';
     $pool .= '0123456789';
     $poollen = strlen($pool);
     $string = '';
     for ($i = 0; $i < $length; $i++) {
-        $string .= substr($pool, (mt_rand()%($poollen)), 1);
+        $rand = ord($randombytes[$i]);
+        $string .= substr($pool, ($rand%($poollen)), 1);
     }
     return $string;
 }
@@ -7805,11 +7845,54 @@ function complex_random_string($length=null) {
     if ($length===null) {
         $length = floor(rand(24, 32));
     }
+    $randombytes = random_bytes_emulate($length);
     $string = '';
     for ($i = 0; $i < $length; $i++) {
-        $string .= $pool[(mt_rand()%$poollen)];
+        $rand = ord($randombytes[$i]);
+        $string .= $pool[($rand%$poollen)];
     }
     return $string;
+}
+
+/**
+ * Try to generates cryptographically secure pseudo-random bytes.
+ *
+ * Note this is achieved by fallbacking between:
+ *  - PHP 7 random_bytes().
+ *  - OpenSSL openssl_random_pseudo_bytes().
+ *  - In house random generator getting its entropy from various, hard to guess, pseudo-random sources.
+ *
+ * @param int $length requested length in bytes
+ * @return string binary data
+ */
+function random_bytes_emulate($length) {
+    global $CFG;
+    if ($length <= 0) {
+        debugging('Invalid random bytes length', DEBUG_DEVELOPER);
+        return '';
+    }
+    if (function_exists('random_bytes')) {
+        // Use PHP 7 goodness.
+        $hash = @random_bytes($length);
+        if ($hash !== false) {
+            return $hash;
+        }
+    }
+    if (function_exists('openssl_random_pseudo_bytes')) {
+        // For PHP 5.3 and later with openssl extension.
+        $hash = openssl_random_pseudo_bytes($length);
+        if ($hash !== false) {
+            return $hash;
+        }
+    }
+
+    // Bad luck, there is no reliable random generator, let's just hash some unique stuff that is hard to guess.
+    $hash = sha1(serialize($CFG) . serialize($_SERVER) . microtime(true) . uniqid('', true), true);
+    // NOTE: the last param in sha1() is true, this means we are getting 20 bytes, not 40 chars as usual.
+    if ($length <= 20) {
+        return substr($hash, 0, $length);
+    }
+    return $hash . random_bytes_emulate($length - 20);
 }
 
 /**
@@ -9585,6 +9668,58 @@ function get_course_display_name_for_list($course) {
     } else {
         return $course->fullname;
     }
+}
+
+/**
+ * Safe analogue of unserialize() that can only parse arrays
+ *
+ * Arrays may contain only integers or strings as both keys and values. Nested arrays are allowed.
+ * Note: If any string (key or value) has semicolon (;) as part of the string parsing will fail.
+ * This is a simple method to substitute unnecessary unserialize() in code and not intended to cover all possible cases.
+ *
+ * @param string $expression
+ * @return array|bool either parsed array or false if parsing was impossible.
+ */
+function unserialize_array($expression) {
+    $subs = [];
+    // Find nested arrays, parse them and store in $subs , substitute with special string.
+    while (preg_match('/([\^;\}])(a:\d+:\{[^\{\}]*\})/', $expression, $matches) && strlen($matches[2]) < strlen($expression)) {
+        $key = '--SUB' . count($subs) . '--';
+        $subs[$key] = unserialize_array($matches[2]);
+        if ($subs[$key] === false) {
+            return false;
+        }
+        $expression = str_replace($matches[2], $key . ';', $expression);
+    }
+
+    // Check the expression is an array.
+    if (!preg_match('/^a:(\d+):\{([^\}]*)\}$/', $expression, $matches1)) {
+        return false;
+    }
+    // Get the size and elements of an array (key;value;key;value;....).
+    $parts = explode(';', $matches1[2]);
+    $size = intval($matches1[1]);
+    if (count($parts) < $size * 2 + 1) {
+        return false;
+    }
+    // Analyze each part and make sure it is an integer or string or a substitute.
+    $value = [];
+    for ($i = 0; $i < $size * 2; $i++) {
+        if (preg_match('/^i:(\d+)$/', $parts[$i], $matches2)) {
+            $parts[$i] = (int)$matches2[1];
+        } else if (preg_match('/^s:(\d+):"(.*)"$/', $parts[$i], $matches3) && strlen($matches3[2]) == (int)$matches3[1]) {
+            $parts[$i] = $matches3[2];
+        } else if (preg_match('/^--SUB\d+--$/', $parts[$i])) {
+            $parts[$i] = $subs[$parts[$i]];
+        } else {
+            return false;
+        }
+    }
+    // Combine keys and values.
+    for ($i = 0; $i < $size * 2; $i += 2) {
+        $value[$parts[$i]] = $parts[$i+1];
+    }
+    return $value;
 }
 
 /**

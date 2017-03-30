@@ -2161,11 +2161,11 @@ class file_storage {
         global $CFG, $DB;
         require_once($CFG->libdir.'/cronlib.php');
 
-        // find out all stale draft areas (older than 4 days) and purge them
+        // find out all stale draft areas (older than 4.5 days) and purge them
         // those are identified by time stamp of the /. root dir
         mtrace('Deleting old draft files... ', '');
         cron_trace_time_and_memory();
-        $old = time() - 60*60*24*4;
+        $old = time() - (60*60*24*4.5);
         $sql = "SELECT *
                   FROM {files}
                  WHERE component = 'user' AND filearea = 'draft' AND filepath = '/' AND filename = '.'

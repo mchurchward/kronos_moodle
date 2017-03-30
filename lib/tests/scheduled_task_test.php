@@ -132,8 +132,8 @@ class core_scheduled_task_testcase extends advanced_testcase {
         // We are testing a difference between $CFG->timezone and the php.ini timezone.
         // GMT+8.
         date_default_timezone_set('Australia/Perth');
-        // GMT-04:30.
-        $CFG->timezone = 'America/Caracas';
+        // GMT+04:30.
+        $CFG->timezone = 'Asia/Kabul';
 
         $testclass = new \core\task\scheduled_test_task();
 
@@ -149,9 +149,9 @@ class core_scheduled_task_testcase extends advanced_testcase {
         $userdate = userdate($nexttime);
 
         // Should be displayed in user timezone.
-        // I used http://www.timeanddate.com/worldclock/fixedtime.html?msg=Moodle+Test&iso=20140314T01&p1=58
-        // to verify this time.
-        $this->assertContains('11:15 AM', core_text::strtoupper($userdate));
+        // I used http://www.timeanddate.com/worldclock/fixedtime.html?msg=Moodle+Test&iso=20160502T01&p1=113
+        // setting my location to Kathmandu to verify this time.
+        $this->assertContains('2:15 AM', core_text::strtoupper($userdate));
 
         $CFG->timezone = $currenttimezonecfg;
         date_default_timezone_set($currenttimezonephp);
@@ -357,8 +357,10 @@ class core_scheduled_task_testcase extends advanced_testcase {
         $iter = new \RecursiveIteratorIterator($dir, \RecursiveIteratorIterator::CHILD_FIRST);
 
         for ($iter->rewind(); $iter->valid(); $iter->next()) {
-            $node = $iter->getRealPath();
-            touch($node, time() - (8 * 24 * 3600));
+            if ($iter->isDir() && !$iter->isDot()) {
+                $node = $iter->getRealPath();
+                touch($node, time() - (8 * 24 * 3600));
+            }
         }
 
         // Run the scheduled task again to remove all of the files and directories.

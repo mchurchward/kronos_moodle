@@ -3772,6 +3772,48 @@ function forum_rating_validate($params) {
     return true;
 }
 
+/**
+ * Can the current user see ratings for a given itemid?
+ *
+ * @param array $params submitted data
+ *            contextid => int contextid [required]
+ *            component => The component for this module - should always be mod_forum [required]
+ *            ratingarea => object the context in which the rated items exists [required]
+ *            itemid => int the ID of the object being rated [required]
+ *            scaleid => int scale id [optional]
+ * @return bool
+ * @throws coding_exception
+ * @throws rating_exception
+ */
+function mod_forum_rating_can_see_item_ratings($params) {
+    global $DB, $USER;
+
+    // Check the component is mod_forum.
+    if (!isset($params['component']) || $params['component'] != 'mod_forum') {
+        throw new rating_exception('invalidcomponent');
+    }
+
+    // Check the ratingarea is post (the only rating area in forum).
+    if (!isset($params['ratingarea']) || $params['ratingarea'] != 'post') {
+        throw new rating_exception('invalidratingarea');
+    }
+
+    if (!isset($params['itemid'])) {
+        throw new rating_exception('invaliditemid');
+    }
+
+    $post = $DB->get_record('forum_posts', array('id' => $params['itemid']), '*', MUST_EXIST);
+    $discussion = $DB->get_record('forum_discussions', array('id' => $post->discussion), '*', MUST_EXIST);
+    $forum = $DB->get_record('forum', array('id' => $discussion->forum), '*', MUST_EXIST);
+    $course = $DB->get_record('course', array('id' => $forum->course), '*', MUST_EXIST);
+    $cm = get_coursemodule_from_instance('forum', $forum->id, $course->id , false, MUST_EXIST);
+
+    // Perform some final capability checks.
+    if (!forum_user_can_see_post($forum, $discussion, $post, $USER, $cm)) {
+        return false;
+    }
+    return true;
+}
 
 /**
  * This function prints the overview of a discussion in the forum listing.
@@ -3871,7 +3913,7 @@ function forum_print_discussion_header(&$post, $forum, $group=-1, $datestring=""
                     echo $post->unread;
                     echo '</a>';
                     echo '<a title="'.$strmarkalldread.'" href="'.$CFG->wwwroot.'/mod/forum/markposts.php?f='.
-                         $forum->id.'&amp;d='.$post->discussion.'&amp;mark=read&amp;returnpage=view.php">' .
+                         $forum->id.'&amp;d='.$post->discussion.'&amp;mark=read&amp;returnpage=view.php&amp;sesskey=' . sesskey() . '">' .
                          '<img src="'.$OUTPUT->pix_url('t/markasread') . '" class="iconsmall" alt="'.$strmarkalldread.'" /></a>';
                     echo '</span>';
                 } else {
@@ -3986,14 +4028,10 @@ function forum_set_return() {
     global $CFG, $SESSION;
 
     if (! isset($SESSION->fromdiscussion)) {
-        if (!empty($_SERVER['HTTP_REFERER'])) {
-            $referer = $_SERVER['HTTP_REFERER'];
-        } else {
-            $referer = "";
-        }
+        $referer = clean_param($_SERVER['HTTP_REFERER'], PARAM_LOCALURL);
         // If the referer is NOT a login screen then save it.
         if (! strncasecmp("$CFG->wwwroot/login", $referer, 300)) {
-            $SESSION->fromdiscussion = $_SERVER["HTTP_REFERER"];
+            $SESSION->fromdiscussion = $referer;
         }
     }
 }
@@ -4149,8 +4187,8 @@ function forum_print_attachments($post, $cm, $type) {
                 $output .= plagiarism_get_links(array('userid' => $post->userid,
                     'file' => $file,
                     'cmid' => $cm->id,
-                    'course' => $post->course,
-                    'forum' => $post->forum));
+                    'course' => $cm->course,
+                    'forum' => $cm->instance));
                 $output .= '<br />';
             }
         }
@@ -4445,41 +4483,55 @@ function forum_add_new_post($post, $mform, &$message) {
  * @global object
  * @global object
  * @global object
- * @param object $post
+ * @param object $newpost
  * @param mixed $mform
  * @param string $message
  * @return bool
  */
-function forum_update_post($post, $mform, &$message) {
+function forum_update_post($newpost, $mform, &$message) {
     global $USER, $CFG, $DB;
 
+    $post       = $DB->get_record('forum_posts', array('id' => $newpost->id));
     $discussion = $DB->get_record('forum_discussions', array('id' => $post->discussion));
     $forum      = $DB->get_record('forum', array('id' => $discussion->forum));
     $cm         = get_coursemodule_from_instance('forum', $forum->id);
     $context    = context_module::instance($cm->id);
 
+    // Allowed modifiable fields.
+    $modifiablefields = [
+        'subject',
+        'message',
+        'messageformat',
+        'messagetrust',
+        'timestart',
+        'timeend',
+        'attachments',
+    ];
+    foreach ($modifiablefields as $field) {
+        if (isset($newpost->{$field})) {
+            $post->{$field} = $newpost->{$field};
+        }
+    }
     $post->modified = time();
 
-    $DB->update_record('forum_posts', $post);
-
-    $discussion->timemodified = $post->modified; // last modified tracking
-    $discussion->usermodified = $post->userid;   // last modified tracking
+    // Last post modified tracking.
+    $discussion->timemodified = $post->modified;
+    $discussion->usermodified = $post->userid;
 
     if (!$post->parent) {   // Post is a discussion starter - update discussion title and times too
         $discussion->name      = $post->subject;
         $discussion->timestart = $post->timestart;
         $discussion->timeend   = $post->timeend;
     }
-    $post->message = file_save_draft_area_files($post->itemid, $context->id, 'mod_forum', 'post', $post->id,
+    $post->message = file_save_draft_area_files($newpost->itemid, $context->id, 'mod_forum', 'post', $post->id,
             mod_forum_post_form::editor_options($context, $post->id), $post->message);
-    $DB->set_field('forum_posts', 'message', $post->message, array('id'=>$post->id));
-
+    $DB->update_record('forum_posts', $post);
     $DB->update_record('forum_discussions', $discussion);
 
     forum_add_attachment($post, $forum, $cm, $mform, $message);
 
     if (forum_tp_can_track_forums($forum) && forum_tp_is_tracked($forum)) {
-        forum_tp_mark_post_read($post->userid, $post, $post->forum);
+        forum_tp_mark_post_read($USER->id, $post, $forum->id);
     }
 
     // Let Moodle know that assessable content is uploaded (eg for plagiarism detection)
@@ -5786,7 +5838,7 @@ function forum_print_latest_discussions($course, $forum, $maxdiscussions=-1, $di
                 if ($forumtracked) {
                     echo '<a title="'.get_string('markallread', 'forum').
                          '" href="'.$CFG->wwwroot.'/mod/forum/markposts.php?f='.
-                         $forum->id.'&amp;mark=read&amp;returnpage=view.php">'.
+                         $forum->id.'&amp;mark=read&amp;returnpage=view.php&amp;sesskey=' . sesskey() . '">'.
                          '<img src="'.$OUTPUT->pix_url('t/markasread') . '" class="iconsmall" alt="'.get_string('markallread', 'forum').'" /></a>';
                 }
                 echo '</th>';

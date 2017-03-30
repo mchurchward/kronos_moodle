@@ -34,7 +34,10 @@
 
     $context = context_module::instance($cm->id);
 
-    if ($action == 'delchoice' and confirm_sesskey() and is_enrolled($context, NULL, 'mod/choice:choose') and $choice->allowupdate) {
+    list($choiceavailable, $warnings) = choice_get_availability_status($choice);
+
+    if ($action == 'delchoice' and confirm_sesskey() and is_enrolled($context, NULL, 'mod/choice:choose') and $choice->allowupdate
+            and $choiceavailable) {
         if ($answer = $DB->get_record('choice_answers', array('choiceid' => $choice->id, 'userid' => $USER->id))) {
             $DB->delete_records('choice_answers', array('id' => $answer->id));
 
@@ -63,6 +66,12 @@
                 redirect("view.php?id=$cm->id");
             }
         }
+
+        if (!$choiceavailable) {
+            $reason = current(array_keys($warnings));
+            throw new moodle_exception($reason, 'choice', '', $warnings[$reason]);
+        }
+
         // Redirection after all POSTs breaks block editing, we need to be more specific!
         $answer = optional_param('answer', '', PARAM_INT);
         if ($answer) {
@@ -160,7 +169,7 @@
         } else if (!is_enrolled($context)) {
             // Only people enrolled can make a choice
             $SESSION->wantsurl = qualified_me();
-            $SESSION->enrolcancel = (!empty($_SERVER['HTTP_REFERER'])) ? $_SERVER['HTTP_REFERER'] : '';
+            $SESSION->enrolcancel = clean_param($_SERVER['HTTP_REFERER'], PARAM_LOCALURL);
 
             $coursecontext = context_course::instance($course->id);
             $courseshortname = format_string($course->shortname, true, array('context' => $coursecontext));

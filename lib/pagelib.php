@@ -1540,10 +1540,10 @@ class moodle_page {
      * @return string the name of the theme that should be used on this page.
      */
     protected function resolve_theme() {
-        global $CFG, $USER, $SESSION;
+        global $DB, $CFG, $USER, $SESSION; // RL EDIT
 
         if (empty($CFG->themeorder)) {
-            $themeorder = array('course', 'category', 'session', 'user', 'site');
+            $themeorder = array('course', 'category', 'session', 'user', 'userset', 'site');
         } else {
             $themeorder = $CFG->themeorder;
             // Just in case, make sure we always use the site theme if nothing else matched.
@@ -1594,6 +1594,76 @@ class moodle_page {
                         }
                     }
                 break;
+
+                // RL EDIT
+                case 'userset':
+                    $localplugins = core_plugin_manager::instance()->get_plugins_of_type('local');
+                    if (empty($localplugins['elisprogram']) || !$localplugins['elisprogram']->is_installed_and_upgraded()) {
+                        continue;
+                    }
+                    $elisprogramsetup = '/local/elisprogram/lib/setup.php';
+                    if (!file_exists($CFG->dirroot.$elisprogramsetup)) {
+                        continue;
+                    }
+                    require_once($CFG->dirroot.$elisprogramsetup);
+                    require_once elispm::lib('data/userset.class.php'); // TBD
+
+                    $dbman = $DB->get_manager();
+                    if (!$dbman->table_exists(new xmldb_table(user::TABLE))) {
+                        continue;
+                    }
+
+                    // get userid
+                    $userid = pm_get_crlmuserid($USER->id);
+                    if (empty($userid)) {
+                        continue;
+                    }
+
+                    // get all assigned clusters
+                    $select = 'SELECT DISTINCT clst.id ';
+                    $tables = "FROM {".clusterassignment::TABLE."} uclst ";
+                    $join   = "JOIN {".userset::TABLE."} clst
+                               ON uclst.clusterid = clst.id ";
+                    $where  = "WHERE uclst.userid = :userid";
+                    $params = array('userid'=> $userid);
+
+                    $sql = $select.$tables.$join.$where;
+
+                    $highestprioritytheme = null;
+                    $highestpriority = 0;
+
+                    if (($userclusterrecords = $DB->get_recordset_sql($sql, $params)) && $userclusterrecords->valid()) {
+                        // Get list of valid themes
+                        $themelist = get_list_of_themes();
+                        // retrieve the cluster context level
+                        foreach($userclusterrecords as $userclusterrecord) {
+                            $contextinstance = \local_elisprogram\context\userset::instance($userclusterrecord->id);
+
+                            // get the userset object
+                            $userset = new userset($userclusterrecord->id);
+                            // use field data magic to get their values
+                            // ELIS-3189
+                            if (!isset($userset->field__elis_userset_theme) || !isset($userset->field__elis_userset_themepriority)) {
+                                continue;
+                            }
+                            $usersettheme = $userset->field__elis_userset_theme;
+                            $usersetthemepriority = (int)$userset->field__elis_userset_themepriority;
+
+                            if (!empty($usersettheme) && isset($themelist[$usersettheme]) && $usersetthemepriority !== null) {
+                                // update chosen theme as appropriate
+                                if ($usersetthemepriority > $highestpriority || empty($highestprioritytheme)) {
+                                    $highestprioritytheme = $usersettheme;
+                                    $highestpriority = $usersetthemepriority;
+                                }
+                            }
+                        }
+                    }
+
+                    if (!empty($highestprioritytheme)) {
+                        return $highestprioritytheme;
+                    }
+                    break;
+                // End: RL EDIT
 
                 case 'site':
                     if ($mnetpeertheme) {

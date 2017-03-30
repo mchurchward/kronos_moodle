@@ -203,8 +203,9 @@ class core_user_external extends external_api {
 
             // Preferences.
             if (!empty($user['preferences'])) {
+                $userobject = (object)$user;
                 foreach ($user['preferences'] as $preference) {
-                    set_user_preference($preference['type'], $preference['value'], $user['id']);
+                    self::set_user_preference($preference['type'], $preference['value'], $userobject);
                 }
             }
 
@@ -389,7 +390,7 @@ class core_user_external extends external_api {
      * @since Moodle 2.2
      */
     public static function update_users($users) {
-        global $CFG, $DB;
+        global $CFG, $DB, $USER;
         require_once($CFG->dirroot."/user/lib.php");
         require_once($CFG->dirroot."/user/profile/lib.php"); // Required for customfields related function.
 
@@ -403,6 +404,18 @@ class core_user_external extends external_api {
         $transaction = $DB->start_delegated_transaction();
 
         foreach ($params['users'] as $user) {
+            // First check the user exists.
+            if (!$existinguser = core_user::get_user($user['id'])) {
+                continue;
+            }
+            // Check if we are trying to update an admin.
+            if ($existinguser->id != $USER->id and is_siteadmin($existinguser) and !is_siteadmin($USER)) {
+                continue;
+            }
+            // Other checks (deleted, remote or guest users).
+            if ($existinguser->deleted or is_mnet_remote_user($existinguser) or isguestuser($existinguser->id)) {
+                continue;
+            }
             user_update_user($user, true, false);
             // Update user custom fields.
             if (!empty($user['customfields'])) {
@@ -421,7 +434,7 @@ class core_user_external extends external_api {
             // Preferences.
             if (!empty($user['preferences'])) {
                 foreach ($user['preferences'] as $preference) {
-                    set_user_preference($preference['type'], $preference['value'], $user['id']);
+                    self::set_user_preference($preference['type'], $preference['value'], $existinguser);
                 }
             }
         }
@@ -1119,20 +1132,34 @@ class core_user_external extends external_api {
             return $warnings;
         }
 
-        $userdevice = new stdclass;
-        $userdevice->userid     = $USER->id;
-        $userdevice->appid      = $params['appid'];
-        $userdevice->name       = $params['name'];
-        $userdevice->model      = $params['model'];
-        $userdevice->platform   = $params['platform'];
-        $userdevice->version    = $params['version'];
-        $userdevice->pushid     = $params['pushid'];
-        $userdevice->uuid       = $params['uuid'];
-        $userdevice->timecreated  = time();
-        $userdevice->timemodified = $userdevice->timecreated;
+        // Notice that we can have multiple devices because previously it was allowed to have repeated ones.
+        // Since we don't have a clear way to decide which one is the more appropiate, we update all.
+        if ($userdevices = $DB->get_records('user_devices', array('uuid' => $params['uuid'],
+                'appid' => $params['appid'], 'userid' => $USER->id))) {
 
-        if (!$DB->insert_record('user_devices', $userdevice)) {
-            throw new moodle_exception("There was a problem saving in the database the device with key: " . $params['pushid']);
+            foreach ($userdevices as $userdevice) {
+                $userdevice->version    = $params['version'];   // Maybe the user upgraded the device.
+                $userdevice->pushid     = $params['pushid'];
+                $userdevice->timemodified  = time();
+                $DB->update_record('user_devices', $userdevice);
+            }
+
+        } else {
+            $userdevice = new stdclass;
+            $userdevice->userid     = $USER->id;
+            $userdevice->appid      = $params['appid'];
+            $userdevice->name       = $params['name'];
+            $userdevice->model      = $params['model'];
+            $userdevice->platform   = $params['platform'];
+            $userdevice->version    = $params['version'];
+            $userdevice->pushid     = $params['pushid'];
+            $userdevice->uuid       = $params['uuid'];
+            $userdevice->timecreated  = time();
+            $userdevice->timemodified = $userdevice->timecreated;
+
+            if (!$DB->insert_record('user_devices', $userdevice)) {
+                throw new moodle_exception("There was a problem saving in the database the device with key: " . $params['pushid']);
+            }
         }
 
         return $warnings;
@@ -1150,6 +1177,35 @@ class core_user_external extends external_api {
         );
     }
 
+    /**
+     * Validates preference value and updates the user preference
+     *
+     * @param string $name
+     * @param string $value
+     * @param stdClass $user
+     */
+    protected static function set_user_preference($name, $value, $user) {
+        $preferences = array(
+            'auth_forcepasswordchange' => PARAM_BOOL,
+            'htmleditor' => PARAM_COMPONENT,
+            'usemodchooser' => PARAM_BOOL,
+            'badgeprivacysetting' => PARAM_BOOL,
+            'blogpagesize' => PARAM_INT,
+            'forum_markasreadonnotification' => PARAM_INT,
+            'calendar_timeformat' => PARAM_NOTAGS,
+            'calendar_startwday' => PARAM_INT,
+            'calendar_maxevents' => PARAM_INT,
+            'calendar_lookahead' => PARAM_INT,
+            'calendar_persistflt' => PARAM_INT
+        );
+        if (isset($preferences[$name])) {
+            $value = clean_param($value, $preferences[$name]);
+            if ($preferences[$name] == PARAM_BOOL) {
+                $value = (int)$value;
+            }
+            set_user_preference($name, $value, $user);
+        }
+    }
 }
 
  /**

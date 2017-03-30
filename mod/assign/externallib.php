@@ -780,7 +780,7 @@ class mod_assign_external extends external_api {
                             'locked'           => new external_value(PARAM_INT, 'locked', VALUE_OPTIONAL),
                             'mailed'           => new external_value(PARAM_INT, 'mailed', VALUE_OPTIONAL),
                             'extensionduedate' => new external_value(PARAM_INT, 'extension due date', VALUE_OPTIONAL),
-                            'workflowstate'    => new external_value(PARAM_TEXT, 'marking workflow state', VALUE_OPTIONAL),
+                            'workflowstate'    => new external_value(PARAM_ALPHA, 'marking workflow state', VALUE_OPTIONAL),
                             'allocatedmarker'  => new external_value(PARAM_INT, 'allocated marker', VALUE_OPTIONAL)
                         )
                     )
@@ -1036,7 +1036,7 @@ class mod_assign_external extends external_api {
                             'locked'           => new external_value(PARAM_INT, 'locked'),
                             'mailed'           => new external_value(PARAM_INT, 'mailed'),
                             'extensionduedate' => new external_value(PARAM_INT, 'extension due date'),
-                            'workflowstate'    => new external_value(PARAM_TEXT, 'marking workflow state', VALUE_OPTIONAL),
+                            'workflowstate'    => new external_value(PARAM_ALPHA, 'marking workflow state', VALUE_OPTIONAL),
                             'allocatedmarker'  => new external_value(PARAM_INT, 'allocated marker')
                         )
                     )
@@ -1263,9 +1263,7 @@ class mod_assign_external extends external_api {
      * @since Moodle 2.6
      */
     public static function lock_submissions_returns() {
-        return new external_multiple_structure(
-           new external_warnings()
-        );
+        return new external_warnings();
     }
 
     /**
@@ -1327,9 +1325,7 @@ class mod_assign_external extends external_api {
      * @since Moodle 2.6
      */
     public static function revert_submissions_to_draft_returns() {
-        return new external_multiple_structure(
-           new external_warnings()
-        );
+        return new external_warnings();
     }
 
     /**
@@ -1391,9 +1387,7 @@ class mod_assign_external extends external_api {
      * @since Moodle 2.6
      */
     public static function unlock_submissions_returns() {
-        return new external_multiple_structure(
-           new external_warnings()
-        );
+        return new external_warnings();
     }
 
     /**
@@ -1453,9 +1447,7 @@ class mod_assign_external extends external_api {
      * @since Moodle 2.6
      */
     public static function submit_for_grading_returns() {
-        return new external_multiple_structure(
-           new external_warnings()
-        );
+        return new external_warnings();
     }
 
     /**
@@ -1533,9 +1525,7 @@ class mod_assign_external extends external_api {
      * @since Moodle 2.6
      */
     public static function save_user_extensions_returns() {
-        return new external_multiple_structure(
-           new external_warnings()
-        );
+        return new external_warnings();
     }
 
     /**
@@ -1589,9 +1579,7 @@ class mod_assign_external extends external_api {
      * @since Moodle 2.6
      */
     public static function reveal_identities_returns() {
-        return new external_multiple_structure(
-           new external_warnings()
-        );
+        return new external_warnings();
     }
 
     /**
@@ -1646,9 +1634,12 @@ class mod_assign_external extends external_api {
 
         $notices = array();
 
-        $submissiondata = (object)$params['plugindata'];
-
-        $assignment->save_submission($submissiondata, $notices);
+        if (!$assignment->submissions_open($USER->id)) {
+            $notices[] = get_string('duedatereached', 'assign');
+        } else {
+            $submissiondata = (object)$params['plugindata'];
+            $assignment->save_submission($submissiondata, $notices);
+        }
 
         $warnings = array();
         foreach ($notices as $notice) {
@@ -1667,9 +1658,7 @@ class mod_assign_external extends external_api {
      * @since Moodle 2.6
      */
     public static function save_submission_returns() {
-        return new external_multiple_structure(
-           new external_warnings()
-        );
+        return new external_warnings();
     }
 
     /**
@@ -2017,8 +2006,6 @@ class mod_assign_external extends external_api {
      * @since Moodle 2.6
      */
     public static function copy_previous_attempt_returns() {
-        return new external_multiple_structure(
-           new external_warnings()
-        );
+        return new external_warnings();
     }
 }

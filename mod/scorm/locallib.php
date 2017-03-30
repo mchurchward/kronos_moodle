@@ -840,7 +840,7 @@ function scorm_get_all_attempts($scormid, $userid) {
 function scorm_view_display ($user, $scorm, $action, $cm) {
     global $CFG, $DB, $PAGE, $OUTPUT, $COURSE;
 
-    if ($scorm->scormtype != SCORM_TYPE_LOCAL && $scorm->updatefreq == SCORM_UPDATE_EVERYTIME) {
+    if ($scorm->updatefreq == SCORM_UPDATE_EVERYTIME) {
         scorm_parse($scorm, false);
     }
 
@@ -941,7 +941,7 @@ function scorm_simple_play($scorm, $user, $context, $cmid) {
         return $result;
     }
 
-    if ($scorm->scormtype != SCORM_TYPE_LOCAL && $scorm->updatefreq == SCORM_UPDATE_EVERYTIME) {
+    if ($scorm->updatefreq == SCORM_UPDATE_EVERYTIME) {
         scorm_parse($scorm, false);
     }
     $scoes = $DB->get_records_select('scorm_scoes', 'scorm = ? AND '.
@@ -1962,4 +1962,62 @@ function scorm_check_launchable_sco($scorm, $scoid) {
     }
     // Returning 0 will cause default behaviour which will find the first launchable sco in the package.
     return 0;
+}
+
+/**
+ * Check if a SCORM is available for the current user.
+ *
+ * @param  stdClass  $scorm            SCORM record
+ * @param  boolean $checkviewreportcap Check the scorm:viewreport cap
+ * @param  stdClass  $context          Module context, required if $checkviewreportcap is set to true
+ * @return array                       status (available or not and possible warnings)
+ */
+function scorm_get_availability_status($scorm, $checkviewreportcap = false, $context = null) {
+    $open = true;
+    $closed = false;
+    $warnings = array();
+
+    $timenow = time();
+    if (!empty($scorm->timeopen) and $scorm->timeopen > $timenow) {
+        $open = false;
+    }
+    if (!empty($scorm->timeclose) and $timenow > $scorm->timeclose) {
+        $closed = true;
+    }
+
+    if (!$open or $closed) {
+        if ($checkviewreportcap and !empty($context) and has_capability('mod/scorm:viewreport', $context)) {
+            return array(true, $warnings);
+        }
+
+        if (!$open) {
+            $warnings['notopenyet'] = userdate($scorm->timeopen);
+        }
+        if ($closed) {
+            $warnings['expired'] = userdate($scorm->timeclose);
+        }
+        return array(false, $warnings);
+    }
+
+    // Scorm is available.
+    return array(true, $warnings);
+}
+
+/**
+ * Requires a SCORM package to be available for the current user.
+ *
+ * @param  stdClass  $scorm            SCORM record
+ * @param  boolean $checkviewreportcap Check the scorm:viewreport cap
+ * @param  stdClass  $context          Module context, required if $checkviewreportcap is set to true
+ * @throws moodle_exception
+ */
+function scorm_require_available($scorm, $checkviewreportcap = false, $context = null) {
+
+    list($available, $warnings) = scorm_get_availability_status($scorm, $checkviewreportcap, $context);
+
+    if (!$available) {
+        $reason = current(array_keys($warnings));
+        throw new moodle_exception($reason, 'scorm', '', $warnings[$reason]);
+    }
+
 }
