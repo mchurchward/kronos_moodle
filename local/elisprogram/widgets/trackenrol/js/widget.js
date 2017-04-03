@@ -415,6 +415,7 @@
                 success: function(data, textStatus, jqXHR) {
                     main.removeClass('loading');
                     main.children().remove();
+                    var pagination = main.siblings('.ds_pagelinks');
                     if (typeof data.data.children === 'object' && data.data.children.length > 0) {
                         for (var i in data.data.children) {
                             var child = $('<div></div>')[opts.childrenderer](data.data.children[i], opts.ids, data.data.fields, opts.childopts, main);
@@ -422,7 +423,6 @@
                         }
 
                         // Initialize Pagination.
-                        var pagination = main.siblings('.ds_pagelinks');
                         if (data.data.totalresults > data.data.perpage) {
                             pagination.show();
                             var paginationlang = {lang_showing: '', lang_result: '', lang_results: ''};
@@ -435,7 +435,9 @@
                             pagination.hide();
                         }
                     } else {
+                        // Display 'None found' message and hide pagination.
                         main.append('<span class="empty">'+opts.lang.nonefound+'</span>');
+                        pagination.hide();
                     }
                     if (main.filtersinit === false) {
                         // Initialize filterbar.
