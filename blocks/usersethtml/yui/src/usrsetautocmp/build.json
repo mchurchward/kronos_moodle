@@ -1,0 +1,10 @@
+{
+  "name": "moodle-block_usersethtml-usrsetautocmp",
+  "builds": {
+    "moodle-block_usersethtml-usrsetautocmp": {
+      "jsfiles": [
+        "usrsetautocmp.js"
+      ]
+    }
+  }
+}
